@@ -86,7 +86,7 @@ When using `--macro`, the script strictly adheres to the following pathing archi
 
 **Inputs (Auto-Resolved):**
 
-* Reference edgelist: `data/empirical_networks/netzschleuder/<network>/<network>.csv`
+* Reference edgelist: `data/empirical_networks/networks/<network>/<network>.csv`
 * Reference clustering: `data/reference_clusterings/clusterings/<clustering-id>/<network>/com.csv`
 * Stats (required if `--run-comp`):
     * `data/empirical_networks/stats/<network>/` (reference edgelist statistics)

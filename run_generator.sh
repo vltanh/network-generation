@@ -27,9 +27,13 @@ mark_done() {
     read -r -a inputs <<< "$3"
     local out_dir="$4"
     
-    sha256sum "${inputs[@]}" > "${done_file}"
-    find "${out_dir}" -maxdepth 1 -type f ! -name "$(basename "${done_file}")" -exec sha256sum {} + >> "${done_file}"
-    log "Success [${stage_name}]: I/O hashes recorded."
+    local tmp_done="${done_file}.tmp.$$"
+    
+    sha256sum "${inputs[@]}" > "${tmp_done}"
+    find "${out_dir}" -maxdepth 1 -type f ! -name "$(basename "${done_file}")" ! -name "$(basename "${tmp_done}")" -exec sha256sum {} + >> "${tmp_done}"
+    
+    mv "${tmp_done}" "${done_file}"
+    log "Success [${stage_name}]: I/O hashes recorded atomically."
 }
 
 # ==========================================
@@ -95,7 +99,7 @@ if [ "${is_macro}" -eq 1 ]; then
         exit 1
     fi
     
-    INP_EDGE="data/empirical_networks/netzschleuder/${network_id}/${network_id}.csv"
+    INP_EDGE="data/empirical_networks/networks/${network_id}/${network_id}.csv"
     INP_COM="data/reference_clusterings/clusterings/${clustering_id}/${network_id}/com.csv"
     
     OUT_DIR="data/synthetic_networks/networks/${generator}/${clustering_id}/${network_id}/${run_id}"

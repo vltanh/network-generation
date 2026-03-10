@@ -63,7 +63,6 @@ mark_done() {
     read -r -a inputs <<< "$3"
     read -r -a outputs <<< "$4"
 
-    # Verify expected output integrity
     for target_file in "${outputs[@]}"; do
         if [ ! -f "${target_file}" ]; then
             echo "Error [${stage_name}]: Output file ${target_file} was not created."
@@ -78,17 +77,14 @@ mark_done() {
         echo "Success [${stage_name}]: Verified ${target_file} ($((line_count - 1)) lines)."
     done
     
-    # Get the directory of the first output file to use as our base
     local out_dir=$(dirname "${outputs[0]}")
+    local tmp_done="${done_file}.tmp.$$"
 
-    # Hash explicit inputs
-    sha256sum "${inputs[@]}" > "${done_file}"
+    sha256sum "${inputs[@]}" > "${tmp_done}"
+    find "${out_dir}" -maxdepth 1 -type f ! -name "$(basename "${done_file}")" ! -name "$(basename "${tmp_done}")" -exec sha256sum {} + >> "${tmp_done}"
     
-    # Hash EVERY file in the output directory (excluding the done file itself)
-    # -maxdepth 1 prevents recursive hashing, crucial for Stage 3b's root output
-    find "${out_dir}" -maxdepth 1 -type f ! -name "$(basename "${done_file}")" -exec sha256sum {} + >> "${done_file}"
-    
-    echo "Success [${stage_name}]: I/O hashes recorded. Marked as done."
+    mv "${tmp_done}" "${done_file}"
+    echo "Success [${stage_name}]: I/O hashes recorded atomically. Marked as done."
 }
 
 # ==========================================
