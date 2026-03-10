@@ -30,36 +30,45 @@ fi
 # Helper Functions: State Management
 # ==========================================
 
-# Checks if the done file exists AND all target output files exist and are not empty
+# Usage: is_step_done "done_file" "input1 input2..." "output1 output2..."
 is_step_done() {
-    local done_file=$1
-    shift # The rest of the arguments are the target files
+    local done_file="$1"
+    read -r -a inputs <<< "$2"
+    read -r -a outputs <<< "$3"
 
     if [ ! -f "${done_file}" ]; then
-        return 1 # False
+        return 1 # False: No state ledger exists
     fi
 
-    for target_file in "$@"; do
+    # 1. Verify outputs physically exist and have data
+    for target_file in "${outputs[@]}"; do
         if [ ! -f "${target_file}" ] || [ ! -s "${target_file}" ]; then
             return 1 # False
         fi
     done
 
-    return 0 # True
+    # 2. Cryptographically verify inputs and outputs haven't mutated
+    if ! sha256sum --status -c "${done_file}" 2>/dev/null; then
+        echo "State change detected. Recomputing..."
+        return 1 # False: Hashes mismatch
+    fi
+
+    return 0 # True: State is identical
 }
 
-# Validates all output files and creates the done file
+# Usage: mark_done "done_file" "stage_name" "input1 input2..." "output1 output2..."
 mark_done() {
-    local done_file=$1
-    local stage_name=$2
-    shift 2 # The rest of the arguments are the target files
+    local done_file="$1"
+    local stage_name="$2"
+    read -r -a inputs <<< "$3"
+    read -r -a outputs <<< "$4"
 
-    for target_file in "$@"; do
+    # Verify expected output integrity
+    for target_file in "${outputs[@]}"; do
         if [ ! -f "${target_file}" ]; then
-            echo "Error [${stage_name}]: Output file ${target_file} was not created (possibly timed out)."
+            echo "Error [${stage_name}]: Output file ${target_file} was not created."
             exit 1
         fi
-
         if [ ! -s "${target_file}" ]; then
             echo "Error [${stage_name}]: Output file ${target_file} is completely empty (0 bytes)."
             exit 1
@@ -69,8 +78,17 @@ mark_done() {
         echo "Success [${stage_name}]: Verified ${target_file} ($((line_count - 1)) lines)."
     done
     
-    touch "${done_file}"
-    echo "Success [${stage_name}]: All required files validated. Marked as done."
+    # Get the directory of the first output file to use as our base
+    local out_dir=$(dirname "${outputs[0]}")
+
+    # Hash explicit inputs
+    sha256sum "${inputs[@]}" > "${done_file}"
+    
+    # Hash EVERY file in the output directory (excluding the done file itself)
+    # -maxdepth 1 prevents recursive hashing, crucial for Stage 3b's root output
+    find "${out_dir}" -maxdepth 1 -type f ! -name "$(basename "${done_file}")" -exec sha256sum {} + >> "${done_file}"
+    
+    echo "Success [${stage_name}]: I/O hashes recorded. Marked as done."
 }
 
 # ==========================================
@@ -87,30 +105,39 @@ if [ "${SKIP_STAGE_1}" -eq 0 ]; then
     mkdir -p "${STG1_CLEAN_DIR}" "${STG1_SETUP_DIR}" "${STG1_DIR}"
 
     # 1a. Clean Outliers
-    if ! is_step_done "${STG1_CLEAN_DIR}/done" "${STG1_CLEAN_DIR}/edge.csv" "${STG1_CLEAN_DIR}/com.csv"; then
+    IN_1A="${INPUT_EDGELIST} ${INPUT_CLUSTERING}"
+    OUT_1A="${STG1_CLEAN_DIR}/edge.csv ${STG1_CLEAN_DIR}/com.csv"
+    
+    if ! is_step_done "${STG1_CLEAN_DIR}/done" "${IN_1A}" "${OUT_1A}"; then
         { timeout "${TIMEOUT}" /usr/bin/time -v python "${SCRIPT_DIR}/clean_outlier.py" \
             --edgelist "${INPUT_EDGELIST}" \
             --clustering "${INPUT_CLUSTERING}" \
             --output-folder "${STG1_CLEAN_DIR}"; } 2> "${STG1_CLEAN_DIR}/time_and_err.log"
-        mark_done "${STG1_CLEAN_DIR}/done" "Stage 1a (Clean)" "${STG1_CLEAN_DIR}/edge.csv" "${STG1_CLEAN_DIR}/com.csv"
+        mark_done "${STG1_CLEAN_DIR}/done" "Stage 1a (Clean)" "${IN_1A}" "${OUT_1A}"
     else
-        echo "Skipping Stage 1a: Already done."
+        echo "Skipping Stage 1a: Valid state found."
     fi
 
     # 1b. Setup Profiling
-    if ! is_step_done "${STG1_SETUP_DIR}/done" "${STG1_SETUP_DIR}/node_id.csv" "${STG1_SETUP_DIR}/cluster_id.csv" "${STG1_SETUP_DIR}/assignment.csv" "${STG1_SETUP_DIR}/degree.csv" "${STG1_SETUP_DIR}/mincut.csv" "${STG1_SETUP_DIR}/edge_counts.csv"; then
+    IN_1B="${OUT_1A}"
+    OUT_1B="${STG1_SETUP_DIR}/node_id.csv ${STG1_SETUP_DIR}/cluster_id.csv ${STG1_SETUP_DIR}/assignment.csv ${STG1_SETUP_DIR}/degree.csv ${STG1_SETUP_DIR}/mincut.csv ${STG1_SETUP_DIR}/edge_counts.csv"
+    
+    if ! is_step_done "${STG1_SETUP_DIR}/done" "${IN_1B}" "${OUT_1B}"; then
         { timeout "${TIMEOUT}" /usr/bin/time -v python "${SCRIPT_DIR}/setup.py" \
             --edgelist "${STG1_CLEAN_DIR}/edge.csv" \
             --clustering "${STG1_CLEAN_DIR}/com.csv" \
             --output-folder "${STG1_SETUP_DIR}" \
             --generator ecsbm; } 2> "${STG1_SETUP_DIR}/time_and_err.log"
-        mark_done "${STG1_SETUP_DIR}/done" "Stage 1b (Setup)" "${STG1_SETUP_DIR}/node_id.csv" "${STG1_SETUP_DIR}/cluster_id.csv" "${STG1_SETUP_DIR}/assignment.csv" "${STG1_SETUP_DIR}/degree.csv" "${STG1_SETUP_DIR}/mincut.csv" "${STG1_SETUP_DIR}/edge_counts.csv"
+        mark_done "${STG1_SETUP_DIR}/done" "Stage 1b (Setup)" "${IN_1B}" "${OUT_1B}"
     else
-        echo "Skipping Stage 1b: Already done."
+        echo "Skipping Stage 1b: Valid state found."
     fi
 
     # 1c. Generate Clustered
-    if ! is_step_done "${STG1_DIR}/done" "${STG1_DIR}/edge.csv"; then
+    IN_1C="${OUT_1B}"
+    OUT_1C="${STG1_DIR}/edge.csv"
+    
+    if ! is_step_done "${STG1_DIR}/done" "${IN_1C}" "${OUT_1C}"; then
         { timeout "${TIMEOUT}" /usr/bin/time -v python "${SCRIPT_DIR}/gen_clustered.py" \
             --node-id "${STG1_SETUP_DIR}/node_id.csv" \
             --cluster-id "${STG1_SETUP_DIR}/cluster_id.csv" \
@@ -119,9 +146,9 @@ if [ "${SKIP_STAGE_1}" -eq 0 ]; then
             --mincut "${STG1_SETUP_DIR}/mincut.csv" \
             --edge-counts "${STG1_SETUP_DIR}/edge_counts.csv" \
             --output-folder "${STG1_DIR}"; } 2> "${STG1_DIR}/time_and_err.log"
-        mark_done "${STG1_DIR}/done" "Stage 1c (Gen Clustered)" "${STG1_DIR}/edge.csv"
+        mark_done "${STG1_DIR}/done" "Stage 1c (Gen Clustered)" "${IN_1C}" "${OUT_1C}"
     else
-        echo "Skipping Stage 1c: Already done."
+        echo "Skipping Stage 1c: Valid state found."
     fi
 else
     echo "=== Skipping Stage 1 (--existing-clustered/outlier flag detected) ==="
@@ -141,18 +168,24 @@ if [ "${SKIP_STAGE_2}" -eq 0 ]; then
     mkdir -p "${STG2_OUTLIER_DIR}" "${STG2_DIR}"
 
     # 2a. Generate Outliers
-    if ! is_step_done "${STG2_OUTLIER_DIR}/done" "${STG2_OUTLIER_DIR}/edge_outlier.csv"; then
+    IN_2A="${INPUT_EDGELIST} ${INPUT_CLUSTERING}"
+    OUT_2A="${STG2_OUTLIER_DIR}/edge_outlier.csv"
+    
+    if ! is_step_done "${STG2_OUTLIER_DIR}/done" "${IN_2A}" "${OUT_2A}"; then
         { timeout "${TIMEOUT}" /usr/bin/time -v python "${SCRIPT_DIR}/gen_outlier.py" \
             --edgelist "${INPUT_EDGELIST}" \
             --clustering "${INPUT_CLUSTERING}" \
             --output-folder "${STG2_OUTLIER_DIR}"; } 2> "${STG2_OUTLIER_DIR}/time_and_err.log"
-        mark_done "${STG2_OUTLIER_DIR}/done" "Stage 2a (Outlier Gen)" "${STG2_OUTLIER_DIR}/edge_outlier.csv"
+        mark_done "${STG2_OUTLIER_DIR}/done" "Stage 2a (Outlier Gen)" "${IN_2A}" "${OUT_2A}"
     else
-        echo "Skipping Stage 2a: Already done."
+        echo "Skipping Stage 2a: Valid state found."
     fi
 
     # 2b. Combine Clustered + Outliers
-    if ! is_step_done "${STG2_DIR}/done" "${STG2_DIR}/edge.csv" "${STG2_DIR}/sources.json"; then
+    IN_2B="${STG1_DIR}/edge.csv ${STG2_OUTLIER_DIR}/edge_outlier.csv"
+    OUT_2B="${STG2_DIR}/edge.csv ${STG2_DIR}/sources.json"
+    
+    if ! is_step_done "${STG2_DIR}/done" "${IN_2B}" "${OUT_2B}"; then
         { timeout "${TIMEOUT}" /usr/bin/time -v python "${SCRIPT_DIR}/combine_edgelists.py" \
             --edgelist-1 "${STG1_DIR}/edge.csv" \
             --name-1 "clustered" \
@@ -160,9 +193,9 @@ if [ "${SKIP_STAGE_2}" -eq 0 ]; then
             --name-2 "outlier" \
             --output-folder "${STG2_DIR}" \
             --output-filename "edge.csv"; } 2> "${STG2_DIR}/time_and_err.log"
-        mark_done "${STG2_DIR}/done" "Stage 2b (First Combine)" "${STG2_DIR}/edge.csv" "${STG2_DIR}/sources.json"
+        mark_done "${STG2_DIR}/done" "Stage 2b (First Combine)" "${IN_2B}" "${OUT_2B}"
     else
-        echo "Skipping Stage 2b: Already done."
+        echo "Skipping Stage 2b: Valid state found."
     fi
 else
     echo "=== Skipping Stage 2 (--existing-outlier flag detected) ==="
@@ -181,19 +214,25 @@ STG3_DIR="${OUTPUT_DIR}"
 mkdir -p "${STG3_MATCH_DIR}"
 
 # 3a. Match Degrees
-if ! is_step_done "${STG3_MATCH_DIR}/done" "${STG3_MATCH_DIR}/degree_matching_edge.csv"; then
+IN_3A="${STG2_DIR}/edge.csv ${INPUT_EDGELIST} ${INPUT_CLUSTERING}"
+OUT_3A="${STG3_MATCH_DIR}/degree_matching_edge.csv"
+
+if ! is_step_done "${STG3_MATCH_DIR}/done" "${IN_3A}" "${OUT_3A}"; then
     { timeout "${TIMEOUT}" /usr/bin/time -v python "${SCRIPT_DIR}/match_degree.py" \
         --input-edgelist "${STG2_DIR}/edge.csv" \
         --ref-edgelist "${INPUT_EDGELIST}" \
         --ref-clustering "${INPUT_CLUSTERING}" \
         --output-folder "${STG3_MATCH_DIR}"; } 2> "${STG3_MATCH_DIR}/time_and_err.log"
-    mark_done "${STG3_MATCH_DIR}/done" "Stage 3a (Degree Match)" "${STG3_MATCH_DIR}/degree_matching_edge.csv"
+    mark_done "${STG3_MATCH_DIR}/done" "Stage 3a (Degree Match)" "${IN_3A}" "${OUT_3A}"
 else
-    echo "Skipping Stage 3a: Already done."
+    echo "Skipping Stage 3a: Valid state found."
 fi
 
 # 3b. Final Combination
-if ! is_step_done "${STG3_DIR}/done" "${STG3_DIR}/edge.csv" "${STG3_DIR}/sources.json"; then
+IN_3B="${STG2_DIR}/edge.csv ${STG2_DIR}/sources.json ${STG3_MATCH_DIR}/degree_matching_edge.csv"
+OUT_3B="${STG3_DIR}/edge.csv ${STG3_DIR}/sources.json"
+
+if ! is_step_done "${STG3_DIR}/done" "${IN_3B}" "${OUT_3B}"; then
     { timeout "${TIMEOUT}" /usr/bin/time -v python "${SCRIPT_DIR}/combine_edgelists.py" \
         --edgelist-1 "${STG2_DIR}/edge.csv" \
         --json-1 "${STG2_DIR}/sources.json" \
@@ -201,9 +240,9 @@ if ! is_step_done "${STG3_DIR}/done" "${STG3_DIR}/edge.csv" "${STG3_DIR}/sources
         --name-2 "match_degree" \
         --output-folder "${STG3_DIR}" \
         --output-filename "edge.csv"; } 2> "${STG3_DIR}/time_and_err.log"
-mark_done "${STG3_DIR}/done" "Stage 3b (Final Combine)" "${STG3_DIR}/edge.csv" "${STG3_DIR}/sources.json"
+    mark_done "${STG3_DIR}/done" "Stage 3b (Final Combine)" "${IN_3B}" "${OUT_3B}"
 else
-    echo "Skipping Stage 3b: Already done."
+    echo "Skipping Stage 3b: Valid state found."
 fi
 
 echo "=== Pipeline execution completed successfully! ==="
