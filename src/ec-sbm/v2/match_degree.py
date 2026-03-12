@@ -20,9 +20,9 @@ def parse_args():
     parser.add_argument(
         "--algorithm",
         type=str,
-        choices=["greedy", "true_greedy", "random_greedy", "rewire"],
+        choices=["greedy", "true_greedy", "random_greedy", "rewire", "hybrid"],
         default="true_greedy",
-        help="Choose 'greedy' for max-heap, 'true_greedy' for true greedy matching, 'random_greedy' for unbiased dynamic filtering, or 'rewire' for the configuration model.",
+        help="Choose 'greedy' for max-heap, 'true_greedy' for true greedy matching, 'random_greedy' for unbiased dynamic filtering, 'rewire' for the configuration model, or 'hybrid' for a combination of 'rewire' followed by 'true_greedy'.",
     )
     return parser.parse_args()
 
@@ -236,7 +236,7 @@ def match_missing_degrees_true_greedy(out_degs, exist_neighbor):
     if stuck_nodes:
         stuck_stubs = sum(out_degs[n] for n in stuck_nodes) - sum(
             current_degrees.get(n, 0) for n in stuck_nodes
-        )  # Estimate
+        )
         logging.warning(f"Finished with {len(stuck_nodes)} gridlocked nodes.")
 
     return degree_edges
@@ -340,10 +340,45 @@ def match_missing_degrees_rewire(out_degs, exist_neighbor, max_retries=10):
 
     if invalid_edges:
         logging.warning(
-            f"Finished {max_retries} retries. {len(invalid_edges)} bad edges remain unresolved and will be dropped."
+            f"Finished {max_retries} retries. {len(invalid_edges)} bad edges remain unresolved."
         )
 
-    return valid_edges
+    return valid_edges, list(invalid_edges)
+
+
+def match_missing_degrees_hybrid(out_degs, exist_neighbor):
+    logging.info("Starting Hybrid (Rewire -> True Greedy) matching algorithm...")
+
+    # 1. Extract maximally unbiased connections via Configuration Model
+    valid_edges, invalid_edges = match_missing_degrees_rewire(
+        out_degs, exist_neighbor, max_retries=10
+    )
+
+    if not invalid_edges:
+        return valid_edges
+
+    logging.info(
+        f"Hybrid transition: Passing {len(invalid_edges)} gridlocked edges "
+        f"({len(invalid_edges) * 2} stubs) to True Greedy deterministic fallback."
+    )
+
+    # 2. Reconstruct the residual unfulfilled degree distribution
+    remaining_out_degs = {n: 0 for n in out_degs.keys()}
+    for u, v in invalid_edges:
+        remaining_out_degs[u] += 1
+        remaining_out_degs[v] += 1
+
+    remaining_out_degs = {n: d for n, d in remaining_out_degs.items() if d > 0}
+
+    # 3. Inject successfully paired configurations to prevent multigraph collisions
+    for u, v in valid_edges:
+        exist_neighbor[u].add(v)
+        exist_neighbor[v].add(u)
+
+    # 4. Enforce structural convergence on the remaining stubs
+    greedy_edges = match_missing_degrees_true_greedy(remaining_out_degs, exist_neighbor)
+
+    return valid_edges.union(greedy_edges)
 
 
 def export_degree_matched_edgelist(degree_edges, node_iid2id, output_dir):
@@ -386,10 +421,15 @@ def main():
         degree_edges = match_missing_degrees_random_greedy(
             updated_out_degs, exist_neighbor
         )
-    else:
-        degree_edges = match_missing_degrees_rewire(
+    elif args.algorithm == "rewire":
+        degree_edges, _ = match_missing_degrees_rewire(
             updated_out_degs, exist_neighbor, max_retries=10
         )
+    elif args.algorithm == "hybrid":
+        degree_edges = match_missing_degrees_hybrid(updated_out_degs, exist_neighbor)
+    else:
+        logging.error(f"Unknown algorithm choice: {args.algorithm}")
+        return
 
     logging.info(
         f"Degree matching complete. Added {len(degree_edges)} edges: {time.perf_counter() - start:.4f}s"
