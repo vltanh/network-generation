@@ -10,31 +10,6 @@ log() {
     builtin echo "[$(date +'%Y-%m-%d %H:%M:%S')] $*"
 }
 
-is_step_done() {
-    local done_file="$1"
-    if [ ! -f "${done_file}" ]; then return 1; fi
-    if ! sha256sum --status -c "${done_file}" 2>/dev/null; then
-        log "State change detected. Recomputing..."
-        return 1
-    fi
-    return 0
-}
-
-mark_done() {
-    local done_file="$1"
-    local stage_name="$2"
-    read -r -a inputs <<< "$3"
-    local out_dir="$4"
-    
-    local tmp_done="${done_file}.tmp.$$"
-    
-    sha256sum "${inputs[@]}" > "${tmp_done}"
-    find "${out_dir}" -maxdepth 1 -type f ! -name "$(basename "${done_file}")" ! -name "$(basename "${tmp_done}")" -exec sha256sum {} + >> "${tmp_done}"
-    
-    mv "${tmp_done}" "${done_file}"
-    log "Success [${stage_name}]: I/O hashes recorded atomically."
-}
-
 # ==========================================
 # Argument Parsing
 # ==========================================
@@ -144,6 +119,80 @@ SYNTH_CLUSTER_STATS_DIR="${STATS_DIR}/cluster"
 SYNTH_NETWORK_STATS_DIR="${STATS_DIR}/network"
 
 # ==========================================
+# Evaluation Functions
+# ==========================================
+run_cluster_stats() {
+    if [ "${run_stats_flag}" -eq 0 ]; then return; fi
+    local edge_file=$1; local com_file=$2; local stats_dir=$3
+    
+    log "Evaluating synthetic cluster stats state via Python StateTracker..."
+    mkdir -p "${stats_dir}"
+    
+    { /usr/bin/time -v python "${SCRIPT_DIR}/network_evaluation/network_stats/compute_cluster_stats.py" \
+        --network "${edge_file}" \
+        --community "${com_file}" \
+        --outdir "${stats_dir}"; } 2> "${stats_dir}/error.log"
+        
+    if [ ${?} -ne 0 ]; then
+        log "ERROR: Cluster stats computation failed."
+    else
+        log "Cluster stats evaluation complete."
+    fi
+}
+
+run_network_stats() {
+    if [ "${run_stats_flag}" -eq 0 ]; then return; fi
+    local edge_file=$1; local stats_dir=$2
+    
+    log "Evaluating synthetic network stats state via Python StateTracker..."
+    mkdir -p "${stats_dir}"
+    
+    { /usr/bin/time -v python "${SCRIPT_DIR}/network_evaluation/network_stats/compute_network_stats.py" \
+        --network "${edge_file}" \
+        --outdir "${stats_dir}"; } 2> "${stats_dir}/error.log"
+        
+    if [ ${?} -ne 0 ]; then
+        log "ERROR: Network stats computation failed."
+    else
+        log "Network stats evaluation complete."
+    fi
+}
+
+run_comparison() {
+    if [ "${run_comp_flag}" -eq 0 ]; then return; fi
+    local synth_c_stats=$1; local ref_c_stats=$2
+    local synth_n_stats=$3; local ref_n_stats=$4
+    local out_dir=$5
+    
+    if [ -d "${synth_c_stats}" ] && [ -d "${ref_c_stats}" ] && \
+       [ -d "${synth_n_stats}" ] && [ -d "${ref_n_stats}" ]; then
+        
+        log "Running statistics comparison..."
+        mkdir -p "${out_dir}"
+        
+        { /usr/bin/time -v python "${SCRIPT_DIR}/network_evaluation/compare/compare_pair.py" \
+            --cluster-1-folder "${synth_c_stats}" \
+            --cluster-2-folder "${ref_c_stats}" \
+            --network-1-folder "${synth_n_stats}" \
+            --network-2-folder "${ref_n_stats}" \
+            --output-file "${out_dir}/comparison.csv" \
+            --is-compare-sequence; } 2> "${out_dir}/error.log"
+            
+        if [ ${?} -ne 0 ]; then
+            log "ERROR: Statistics comparison failed."
+        else
+            log "Statistics comparison complete."
+        fi
+    else
+        log "Warning: Skipping comparison. One or more stat directories do not exist."
+        log "  - Synth Cluster Stats: ${synth_c_stats}"
+        log "  - Synth Network Stats: ${synth_n_stats}"
+        log "  - Ref Cluster Stats:   ${ref_c_stats}"
+        log "  - Ref Network Stats:   ${ref_n_stats}"
+    fi
+}
+
+# ==========================================
 # Orchestration
 # ==========================================
 log "============================"
@@ -188,75 +237,15 @@ if [ ! -f "${OUT_DIR}/edge.csv" ]; then
 fi
 
 # ==========================================
-# 2. Run Statistics (Synthetic)
+# 2. Run Statistics & Comparisons
 # ==========================================
-if [ "${run_stats_flag}" -eq 1 ]; then
-    log "Evaluating statistics state..."
-    
-    # 1. Compute Cluster-Dependent Stats
-    if ! is_step_done "${SYNTH_CLUSTER_STATS_DIR}/done"; then
-        log "Computing Cluster Stats..."
-        mkdir -p "${SYNTH_CLUSTER_STATS_DIR}"
-        { /usr/bin/time -v python "${SCRIPT_DIR}/network_evaluation/network_stats/compute_cluster_stats.py" \
-            --network "${OUT_DIR}/edge.csv" \
-            --community "${INP_COM}" \
-            --outdir "${SYNTH_CLUSTER_STATS_DIR}"; } 2> "${SYNTH_CLUSTER_STATS_DIR}/cluster_time.log"
-            
-        mark_done "${SYNTH_CLUSTER_STATS_DIR}/done" "Synth Cluster Stats" "${OUT_DIR}/edge.csv ${INP_COM}" "${SYNTH_CLUSTER_STATS_DIR}"
-    else
-        log "Cluster stats already up-to-date."
-    fi
+run_cluster_stats "${OUT_DIR}/edge.csv" "${INP_COM}" "${SYNTH_CLUSTER_STATS_DIR}"
 
-    # 2. Compute Network-Only Stats
-    if ! is_step_done "${SYNTH_NETWORK_STATS_DIR}/done"; then
-        log "Computing Network Stats..."
-        mkdir -p "${SYNTH_NETWORK_STATS_DIR}"
-        { /usr/bin/time -v python "${SCRIPT_DIR}/network_evaluation/network_stats/compute_network_stats.py" \
-            --network "${OUT_DIR}/edge.csv" \
-            --outdir "${SYNTH_NETWORK_STATS_DIR}"; } 1> "${SYNTH_NETWORK_STATS_DIR}/out.log" 2> "${SYNTH_NETWORK_STATS_DIR}/network_time.log"
-            
-        mark_done "${SYNTH_NETWORK_STATS_DIR}/done" "Synth Network Stats" "${OUT_DIR}/edge.csv" "${SYNTH_NETWORK_STATS_DIR}"
-    else
-        log "Network stats already up-to-date."
-    fi
-fi
+run_network_stats "${OUT_DIR}/edge.csv" "${SYNTH_NETWORK_STATS_DIR}"
 
-# ==========================================
-# 3. Compare Statistics
-# ==========================================
-if [ "${run_comp_flag}" -eq 1 ]; then
-    if [ -d "${SYNTH_CLUSTER_STATS_DIR}" ] && [ -d "${REFERENCE_STATS_DIR}" ] && \
-       [ -d "${SYNTH_NETWORK_STATS_DIR}" ] && [ -d "${EMPIRICAL_NETWORK_STATS_DIR}" ]; then
-        
-        if ! is_step_done "${STATS_DIR}/done"; then
-            log "Comparing stats..."
-            mkdir -p "${STATS_DIR}"
-            { /usr/bin/time -v python "${SCRIPT_DIR}/network_evaluation/compare/compare_pair.py" \
-                --cluster-1-folder "${SYNTH_CLUSTER_STATS_DIR}" \
-                --cluster-2-folder "${REFERENCE_STATS_DIR}" \
-                --network-1-folder "${SYNTH_NETWORK_STATS_DIR}" \
-                --network-2-folder "${EMPIRICAL_NETWORK_STATS_DIR}" \
-                --output-file "${STATS_DIR}/comparison.csv" \
-                --is-compare-sequence; } 1> "${STATS_DIR}/out.log" 2> "${STATS_DIR}/error.log"
-            
-            # Use upstream ledgers as dependencies
-            mark_done "${STATS_DIR}/done" "Comparison" "${REFERENCE_STATS_DIR}/done ${EMPIRICAL_NETWORK_STATS_DIR}/done ${SYNTH_CLUSTER_STATS_DIR}/done ${SYNTH_NETWORK_STATS_DIR}/done" "${STATS_DIR}"
-        else
-            log "Statistics comparison already up-to-date."
-        fi
-    else
-        log "Warning: Skipping comparison. One or more stat directories do not exist."
-        log "  - Synth Cluster Stats: ${SYNTH_CLUSTER_STATS_DIR}"
-        log "  - Synth Network Stats: ${SYNTH_NETWORK_STATS_DIR}"
-        log "  - Ref Cluster Stats:   ${REFERENCE_STATS_DIR}"
-        log "  - Ref Network Stats:   ${EMPIRICAL_NETWORK_STATS_DIR}"
-    fi
-
-    if [ ! -f "${STATS_DIR}/comparison.csv" ]; then
-        log "CRITICAL: Comparison failed or timed out."
-        exit 1
-    fi
-fi
+run_comparison "${SYNTH_CLUSTER_STATS_DIR}" "${REFERENCE_STATS_DIR}" \
+               "${SYNTH_NETWORK_STATS_DIR}" "${EMPIRICAL_NETWORK_STATS_DIR}" \
+               "${STATS_DIR}"
 
 log "Process completed for ${generator} on ${dataset_name}"
 log "[gen] ${generator} ${network_id:-custom} ${clustering_id:-custom} ${run_id}" >> complete.log
