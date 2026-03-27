@@ -84,7 +84,7 @@ if [ -z "${run_id}" ]; then
     exit 1
 fi
 
-ACCEPTED_GENERATORS=("ec-sbm-v2" "ec-sbm-v2-SDG" "ec-sbm-v1.5")
+ACCEPTED_GENERATORS=("ec-sbm-v2" "ec-sbm-v2H" "ec-sbm-v1.5")
 if [[ ! " ${ACCEPTED_GENERATORS[*]} " =~ " ${generator} " ]]; then
     log "Error: Unsupported generator '${generator}'. Accepted generators are: ${ACCEPTED_GENERATORS[*]}"
     exit 1
@@ -156,19 +156,15 @@ log "Running: ${generator} on ${dataset_name}"
 log "Evaluating synthetic network generation state..."
 
 if [[ "${generator}" == ec-sbm-v2* ]]; then
+    OUTLIER_MODE="combined"
+
     # Generator Configuration Parsing
     if [[ "${generator}" == "ec-sbm-v2" ]]; then
-        OUTLIER_MODE="combined"
         EDGE_CORRECTION="rewire"
         MATCH_ALGO="true_greedy"
-    elif [[ "${generator}" == "ec-sbm-v2-SDG" ]]; then
-        OUTLIER_MODE="singleton"
-        EDGE_CORRECTION="drop"
-        MATCH_ALGO="greedy"
-    else
-        OUTLIER_MODE="combined"
+    elif [[ "${generator}" == "ec-sbm-v2H" ]]; then
         EDGE_CORRECTION="rewire"
-        MATCH_ALGO="true_greedy"
+        MATCH_ALGO="hybrid"
     fi
 
     mkdir -p "${OUT_DIR}"
@@ -245,7 +241,7 @@ if [ "${run_comp_flag}" -eq 1 ]; then
                 --is-compare-sequence; } 1> "${STATS_DIR}/out.log" 2> "${STATS_DIR}/error.log"
             
             # Use upstream ledgers as dependencies
-            mark_done "${STATS_DIR}/done" "Comparison" "${SYNTH_CLUSTER_STATS_DIR}/done ${SYNTH_NETWORK_STATS_DIR}/done" "${STATS_DIR}"
+            mark_done "${STATS_DIR}/done" "Comparison" "${REFERENCE_STATS_DIR}/done ${EMPIRICAL_NETWORK_STATS_DIR}/done ${SYNTH_CLUSTER_STATS_DIR}/done ${SYNTH_NETWORK_STATS_DIR}/done" "${STATS_DIR}"
         else
             log "Statistics comparison already up-to-date."
         fi
