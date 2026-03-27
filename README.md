@@ -26,16 +26,14 @@ Use this mode to provide explicit file paths for your own datasets.
 
 | Argument | Description |
 | --- | --- |
-| `--network <id>` | Optional identifier to group outputs in the directory structure. |
-| `--clustering-id <id>` | Optional identifier to group outputs in the directory structure. |
+| `--network <id>` | Network identifier; used to sub-group outputs under `<generator>/<clustering-id>/<network>/`. |
+| `--clustering-id <id>` | Clustering identifier; used to sub-group outputs under `<generator>/<clustering-id>/`. |
 | `--input-network-stats <p>` | Path to empirical network stats directory (for `--run-comp`). |
 | `--input-cluster-stats <p>` | Path to reference cluster stats directory (for `--run-comp`). |
 | `--run-stats` | Enables computation of synthetic network and cluster statistics. |
 | `--run-comp` | Enables statistical comparison. **Requires** `--input-network-stats` and `--input-cluster-stats`. |
 
-### Intended Custom Structure
-
-Outputs are dynamically nested based on the identifiers provided.
+### Directory Structure
 
 **Inputs (Manually Provided):**
 
@@ -53,7 +51,7 @@ Outputs are dynamically nested based on the identifiers provided.
     * `network/`       (Network-only metrics)
     * `comparison.csv` (Generated if `--run-comp` is enabled)
 
-## 2. Macro Mode (Internal / Pre-configured Usage)
+## 2. Macro Mode
 
 Use this mode to automatically map inputs and outputs to the standard `data/` directory structure.
 
@@ -67,7 +65,7 @@ Use this mode to automatically map inputs and outputs to the standard `data/` di
 
 | Argument | Description |
 | --- | --- |
-| `--macro` | Flag to trigger the internal pathing engine. |
+| `--macro` | Enable macro mode; auto-resolves all paths from `data/`. |
 | `--generator <gen>` | Generator to use. |
 | `--run-id <id>` | Numerical run identifier. |
 | `--network <id>` | Network identifier used to locate empirical data. |
@@ -80,9 +78,7 @@ Use this mode to automatically map inputs and outputs to the standard `data/` di
 | `--run-stats` | Enables computation of synthetic network and cluster statistics. |
 | `--run-comp` | Enables statistical comparison. |
 
-### Intended Macro Structure
-
-When using `--macro`, the script strictly adheres to the following pathing architecture based on the provided IDs.
+### Directory Structure
 
 **Inputs (Auto-Resolved):**
 
@@ -102,29 +98,29 @@ When using `--macro`, the script strictly adheres to the following pathing archi
 
 ## Pipeline Execution Steps
 
-Regardless of the mode used, the script executes the following stages (skipping Steps 2 and 3 unless their flags are provided):
+Regardless of the mode used, the script executes the following steps (Steps 2 and 3 are skipped unless their flags are provided):
 
 ### Step 1: Generation Pipeline
 
 Generates the synthetic edge list based on the provided empirical bounds.
 
-* **Outputs:** `[OUT_DIR]/edge.csv`
+* **Outputs:** `<output-dir>/edge.csv`
 
 ### Step 2: Statistics Computation (`--run-stats`)
 
-Calculates structural and community-dependent metrics for the newly generated network.
+Calculates structural and community-dependent metrics for the generated network.
 
-* **Outputs:** `[STATS_DIR]/cluster/`, `[STATS_DIR]/network/`
+* **Outputs:** `<stats-dir>/cluster/`, `<stats-dir>/network/`
 
 ### Step 3: Statistics Comparison (`--run-comp`)
 
-Statistically compares the synthetic outputs against the empirical baseline distributions.
+Compares the synthetic statistics against the empirical baseline distributions.
 
-* **Outputs:** `[STATS_DIR]/comparison.csv`
+* **Outputs:** `<stats-dir>/comparison.csv`
 
 ## Examples
 
-Both of these scripts will generate to the same structure, although the macro mode will output to its pre-configured paths while the custom mode will output to the specified directory.
+The two examples below are equivalent invocations for the same network and clustering. Custom mode writes to the specified directory; macro mode writes to its pre-configured `data/` paths.
 
 ```bash
 ./run_generator.sh \
