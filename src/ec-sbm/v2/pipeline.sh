@@ -33,6 +33,19 @@ fi
 # Helper Functions: State Management
 # ==========================================
 
+# Check whether a pipeline stage has already been completed and its results
+# are still valid.
+#
+# Returns 0 (true) if:
+#   - the done-file exists,
+#   - every output file exists and is non-empty, and
+#   - sha256sum verifies every hash recorded in the done-file.
+#
+# Note: the $2 "inputs" argument is parsed but not used directly.  Input
+# integrity is verified implicitly because mark_done hashed both the input
+# files and the full output directory into the done-file; sha256sum -c
+# validates all of them together.
+#
 # Usage: is_step_done "done_file" "input1 input2..." "output1 output2..."
 is_step_done() {
     local done_file="$1"
@@ -59,6 +72,22 @@ is_step_done() {
     return 0 # True: State is identical
 }
 
+# Record that a pipeline stage has completed successfully.
+#
+# Verifies every output file exists and is non-empty, then writes a done-file
+# containing SHA-256 hashes of:
+#   1. All explicit input files (the $3 argument).
+#   2. Every file in the same directory as outputs[0] (via find -maxdepth 1),
+#      excluding the done-file itself.
+#      NOTE: this includes run.log and time_and_err.log.  Any change in log
+#      content (e.g. different timestamps) will invalidate the done-file and
+#      cause the stage to re-run.  This is intentional conservatism.
+#
+# The write is atomic: hashes are collected into a .tmp.$$ file first, then
+# renamed into place so is_step_done never reads a partial done-file.
+#
+# Exits the whole pipeline if any output is missing or empty.
+#
 # Usage: mark_done "done_file" "stage_name" "input1 input2..." "output1 output2..."
 mark_done() {
     local done_file="$1"
@@ -122,7 +151,7 @@ if [ "${SKIP_STAGE_1}" -eq 0 ]; then
     OUT_1B="${STG1_SETUP_DIR}/node_id.csv ${STG1_SETUP_DIR}/cluster_id.csv ${STG1_SETUP_DIR}/assignment.csv ${STG1_SETUP_DIR}/degree.csv ${STG1_SETUP_DIR}/mincut.csv ${STG1_SETUP_DIR}/edge_counts.csv"
     
     if ! is_step_done "${STG1_SETUP_DIR}/done" "${IN_1B}" "${OUT_1B}"; then
-        { timeout "${TIMEOUT}" /usr/bin/time -v python "${SCRIPT_DIR}/setup.py" \
+        { timeout "${TIMEOUT}" /usr/bin/time -v python "${SCRIPT_DIR}/profile.py" \
             --edgelist "${STG1_CLEAN_DIR}/edge.csv" \
             --clustering "${STG1_CLEAN_DIR}/com.csv" \
             --output-folder "${STG1_SETUP_DIR}" \

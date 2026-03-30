@@ -10,7 +10,7 @@ import pandas as pd
 import graph_tool.all as gt
 from scipy.sparse import dok_matrix
 
-from utils import setup_logging
+from utils import setup_logging, normalize_edge, run_rewire_attempts
 
 
 def load_network_data(orig_edgelist_fp, orig_clustering_fp, exist_edgelist_fp):
@@ -131,19 +131,34 @@ def prepare_residual_sbm_inputs(
 
 
 def rewire_invalid_edges(g, b, max_retries=10):
+    """
+    Fix self-loops and multi-edges in graph g via 2-opt block-preserving rewiring.
+
+    Edges are grouped into pools by block pair bp = (min_block, max_block).
+    For each invalid edge, a random valid edge from the same block pair is
+    chosen and the two edges are 2-opt swapped while preserving block membership
+    for both endpoints.  Edges that cannot be resolved within max_retries passes
+    are dropped from the output.
+
+    Args:
+        g: graph_tool Graph whose edge set may contain self-loops or duplicates.
+        b: integer array where b[v] is the block index of vertex v.
+        max_retries (int): Number of rewiring passes before giving up.
+
+    Returns:
+        List of normalized (min, max) edge tuples, free of self-loops and
+        duplicates.
+    """
     edges = g.get_edges()
     valid_pool = defaultdict(list)
     valid_set = set()
     invalid_edges = deque()
 
-    def make_edge(u, v):
-        return (int(min(u, v)), int(max(u, v)))
-
     def get_bp(u, v):
         return (int(min(b[u], b[v])), int(max(b[u], b[v])))
 
     for u, v in edges:
-        e = make_edge(u, v)
+        e = normalize_edge(u, v)
         if u == v or e in valid_set:
             invalid_edges.append((u, v))
         else:
@@ -153,76 +168,64 @@ def rewire_invalid_edges(g, b, max_retries=10):
 
     logging.info(f"Initial bad edges before rewiring: {len(invalid_edges)}")
 
-    for attempt in range(max_retries):
-        if not invalid_edges:
-            logging.info("All bad edges resolved! Exiting rewiring loop early.")
-            break
+    def process_one_edge(raw_edge, invalid_edges):
+        """
+        Attempt one 2-opt block-preserving swap for raw_edge.
 
-        last_recycle = len(invalid_edges)
-        recycle_counter = last_recycle
+        Picks a random valid edge from the same block pair and swaps endpoints
+        so that both new edges cross the same two blocks.  Re-appends raw_edge
+        if the block pair pool is empty or the swap would produce a duplicate.
+        Always returns False (continue the inner pass).
+        """
+        u, v = raw_edge
+        bp = get_bp(u, v)
+        pool = valid_pool[bp]
 
-        while invalid_edges:
-            recycle_counter -= 1
-            if recycle_counter < 0:
-                if len(invalid_edges) < last_recycle:
-                    last_recycle = len(invalid_edges)
-                    recycle_counter = last_recycle
-                else:
-                    break
+        if not pool:
+            invalid_edges.append((u, v))
+            return False  # continue inner pass
 
-            u, v = invalid_edges.popleft()
-            bp = get_bp(u, v)
-            pool = valid_pool[bp]
+        idx = random.randrange(len(pool))
+        x, y = pool[idx]
+        A, B = bp
 
-            if not pool:
-                invalid_edges.append((u, v))
-                continue
-
-            idx = random.randrange(len(pool))
-            x, y = pool[idx]
-            A, B = bp
-
-            if A != B:
-                u_A = u if b[u] == A else v
-                u_B = v if b[u] == A else u
-                x_A = x if b[x] == A else y
-                x_B = y if b[x] == A else x
-
-                new_e1, new_e2 = make_edge(u_A, x_B), make_edge(x_A, u_B)
+        if A != B:
+            u_A = u if b[u] == A else v
+            u_B = v if b[u] == A else u
+            x_A = x if b[x] == A else y
+            x_B = y if b[x] == A else x
+            new_e1, new_e2 = normalize_edge(u_A, x_B), normalize_edge(x_A, u_B)
+        else:
+            if random.random() < 0.5:
+                new_e1, new_e2 = normalize_edge(u, x), normalize_edge(v, y)
             else:
-                if random.random() < 0.5:
-                    new_e1, new_e2 = make_edge(u, x), make_edge(v, y)
-                else:
-                    new_e1, new_e2 = make_edge(u, y), make_edge(v, x)
+                new_e1, new_e2 = normalize_edge(u, y), normalize_edge(v, x)
 
-            if (
-                new_e1[0] != new_e1[1]
-                and new_e2[0] != new_e2[1]
-                and new_e1 not in valid_set
-                and new_e2 not in valid_set
-                and new_e1 != new_e2
-            ):
+        if (
+            new_e1[0] != new_e1[1]
+            and new_e2[0] != new_e2[1]
+            and new_e1 not in valid_set
+            and new_e2 not in valid_set
+            and new_e1 != new_e2
+        ):
+            valid_set.remove(normalize_edge(x, y))
+            pool[idx] = pool[-1]
+            pool.pop()
 
-                valid_set.remove(make_edge(x, y))
-                pool[idx] = pool[-1]
-                pool.pop()
+            valid_set.add(new_e1)
+            valid_set.add(new_e2)
+            pool.append(new_e1)
+            pool.append(new_e2)
+        else:
+            invalid_edges.append((u, v))
 
-                valid_set.add(new_e1)
-                valid_set.add(new_e2)
-                pool.append(new_e1)
-                pool.append(new_e2)
-            else:
-                invalid_edges.append((u, v))
+        return False  # always continue inner pass
 
-        logging.info(
-            f"After attempt {attempt + 1}: {len(invalid_edges)} bad edges remain."
-        )
-
+    run_rewire_attempts(invalid_edges, process_one_edge, max_retries)
     if invalid_edges:
         logging.warning(
             f"Finished {max_retries} retries. {len(invalid_edges)} bad edges remain unresolved and will be dropped."
         )
-
     return list(valid_set)
 
 

@@ -6,6 +6,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 # ==========================================
 # Helper Functions: Logging & State
 # ==========================================
+
+# Prepend a timestamp to every message. Use this instead of echo throughout
+# the script so all output is consistently timestamped.
 log() {
     builtin echo "[$(date +'%Y-%m-%d %H:%M:%S')] $*"
 }
@@ -121,6 +124,11 @@ SYNTH_NETWORK_STATS_DIR="${STATS_DIR}/network"
 # ==========================================
 # Evaluation Functions
 # ==========================================
+# Compute cluster-quality statistics for a generated network.
+# No-ops silently when --run-stats was not passed (run_stats_flag=0).
+# Non-zero exit from the Python script is logged as an ERROR but does not
+# stop the outer script (soft failure).
+# Args: <edge_file> <com_file> <stats_dir>
 run_cluster_stats() {
     if [ "${run_stats_flag}" -eq 0 ]; then return; fi
     local edge_file=$1; local com_file=$2; local stats_dir=$3
@@ -140,6 +148,9 @@ run_cluster_stats() {
     fi
 }
 
+# Compute graph-level statistics for a generated network.
+# Same no-op and soft-failure contract as run_cluster_stats.
+# Args: <edge_file> <stats_dir>
 run_network_stats() {
     if [ "${run_stats_flag}" -eq 0 ]; then return; fi
     local edge_file=$1; local stats_dir=$2
@@ -158,6 +169,11 @@ run_network_stats() {
     fi
 }
 
+# Compare synthetic vs. reference statistics (cluster and network level).
+# No-ops silently when --run-comp was not passed (run_comp_flag=0).
+# Requires all four stat directories to exist; warns and skips if any are
+# absent rather than exiting (soft failure).
+# Args: <synth_cluster_stats> <ref_cluster_stats> <synth_network_stats> <ref_network_stats> <out_dir>
 run_comparison() {
     if [ "${run_comp_flag}" -eq 0 ]; then return; fi
     local synth_c_stats=$1; local ref_c_stats=$2

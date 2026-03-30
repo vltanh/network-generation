@@ -54,7 +54,18 @@ def parse_args():
 
 
 def load_annotated_edgelist(edgelist_fp, name, json_fp):
-    """Loads an edgelist and annotates each row with its source/provenance."""
+    """
+    Load an edgelist CSV and annotate each row with its provenance label.
+
+    If a sources.json is provided, each row is labelled with the source name
+    whose [start, end] range (1-indexed, inclusive, relative to data rows)
+    covers that row's position.  Rows not covered by any range get an empty
+    label.  If no JSON is given, every row receives the fallback `name`
+    (or the filename stem if `name` is also absent).
+
+    Returns:
+        DataFrame with columns [source, target, prov].
+    """
     df = pd.read_csv(edgelist_fp, dtype=str)
 
     # If a JSON exists, unpack the exact source of each line

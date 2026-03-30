@@ -12,6 +12,14 @@ from utils import setup_logging
 
 
 def read_clustering(clustering_path):
+    """
+    Read a clustering CSV and return node membership structures.
+
+    Returns:
+        nodes: Set of node IDs that appear in the clustering.
+        node2com: Dict mapping node_id (str) to cluster_id (str).
+        cluster_counts: Dict mapping cluster_id to its member count.
+    """
     df = pd.read_csv(clustering_path, usecols=[0, 1], dtype=str).dropna()
 
     node2com = dict(zip(df.iloc[:, 0], df.iloc[:, 1]))
@@ -22,6 +30,16 @@ def read_clustering(clustering_path):
 
 
 def read_edgelist(edgelist_path, nodes):
+    """
+    Read an edgelist CSV into a bidirectional adjacency structure.
+
+    Self-loops are ignored.  `nodes` is extended in-place with any network
+    nodes that were absent from the clustering (true outliers).
+
+    Returns:
+        nodes: Updated set containing all nodes in clustering ∪ edgelist.
+        neighbors: defaultdict(set) of undirected adjacency lists.
+    """
     neighbors = defaultdict(set)
     df = pd.read_csv(edgelist_path, usecols=[0, 1], dtype=str).dropna()
 
@@ -36,6 +54,7 @@ def read_edgelist(edgelist_path, nodes):
 
 
 def compute_node_degree(nodes, neighbors):
+    """Return nodes sorted by degree descending and a node_id → iid mapping."""
     node_degree_sorted = sorted(
         [(u, len(neighbors[u])) for u in nodes], reverse=True, key=lambda x: x[1]
     )
@@ -44,24 +63,31 @@ def compute_node_degree(nodes, neighbors):
 
 
 def compute_comm_size(cluster_counts):
+    """Return clusters sorted by size descending and a cluster_id → iid mapping."""
     comm_size_sorted = sorted(cluster_counts.items(), reverse=True, key=lambda x: x[1])
     cluster_id2iid = {c: i for i, (c, _) in enumerate(comm_size_sorted)}
     return comm_size_sorted, cluster_id2iid
 
 
 def export_node_id(out_dir, node_degree_sorted):
+    """Write node IDs in degree-descending order to node_id.csv (no header)."""
     pd.DataFrame([u for u, _ in node_degree_sorted]).to_csv(
         f"{out_dir}/node_id.csv", index=False, header=False
     )
 
 
 def export_cluster_id(out_dir, comm_size_sorted):
+    """Write cluster IDs in size-descending order to cluster_id.csv (no header)."""
     pd.DataFrame([c for c, _ in comm_size_sorted]).to_csv(
         f"{out_dir}/cluster_id.csv", index=False, header=False
     )
 
 
 def export_assignment(out_dir, node_degree_sorted, node2com, cluster_id2iid):
+    """
+    Write per-node cluster iid to assignment.csv (no header).
+    Unclustered nodes (true outliers) are assigned -1.
+    """
     assignments = [
         cluster_id2iid[node2com.get(u)] if u in node2com else -1
         for u, _ in node_degree_sorted
@@ -72,12 +98,20 @@ def export_assignment(out_dir, node_degree_sorted, node2com, cluster_id2iid):
 
 
 def export_degree(out_dir, node_degree_sorted):
+    """Write per-node degree values (aligned with node_id.csv order) to degree.csv."""
     pd.DataFrame([deg for _, deg in node_degree_sorted]).to_csv(
         f"{out_dir}/degree.csv", index=False, header=False
     )
 
 
 def compute_edge_count(nodes, neighbors, node2com, cluster_id2iid):
+    """
+    Count directed inter-cluster edge occurrences for every cluster pair (c_i, c_j).
+
+    Both directions are counted independently (probs[i,j] and probs[j,i]),
+    matching the dok_matrix convention used by gen_clustered.py.
+    Edges incident to unclustered nodes are ignored.
+    """
     edge_counts = defaultdict(int)
     for u in nodes:
         cu = node2com.get(u)
@@ -94,11 +128,19 @@ def compute_edge_count(nodes, neighbors, node2com, cluster_id2iid):
 
 
 def export_edge_count(out_dir, edge_counts):
+    """Write (row, col, weight) triples to edge_counts.csv (no header)."""
     data = [[r, c, w] for (r, c), w in edge_counts.items()]
     pd.DataFrame(data).to_csv(f"{out_dir}/edge_counts.csv", index=False, header=False)
 
 
 def compute_mincut(nodes, neighbors, node2com, comm_size_sorted, node_id2iid):
+    """
+    Compute the minimum edge cut for every cluster's induced subgraph.
+
+    For each cluster, the induced subgraph (only intra-cluster edges) is
+    passed to PyGraph.mincut.  Single-node clusters get min-cut 0.  The
+    result list is aligned with comm_size_sorted (index = cluster iid).
+    """
     clusters_by_id = defaultdict(list)
     for u, c in node2com.items():
         clusters_by_id[c].append(u)
@@ -130,10 +172,23 @@ def compute_mincut(nodes, neighbors, node2com, comm_size_sorted, node_id2iid):
 
 
 def export_mincut(out_dir, mcs):
+    """Write per-cluster min-cut values (aligned with cluster_id.csv order) to mincut.csv."""
     pd.DataFrame(mcs).to_csv(f"{out_dir}/mincut.csv", index=False, header=False)
 
 
 def compute_mixing_parameter(nodes, neighbors, node2com, generator_type):
+    """
+    Compute the network mixing parameter µ (fraction of inter-community edges).
+
+    Two conventions depending on generator_type:
+      "lfr"    — per-node µ_i = out_i / (in_i + out_i), then average over nodes.
+      others   — global µ = sum(out) / sum(in + out).
+
+    Edges between a clustered node and an unclustered node always count as
+    "out" (cross-community).  Edges between two unclustered nodes are ignored
+    for "lfr" and for "abcd"/"abcd+o" unless generator_type == "abcd+o", in
+    which case both endpoints contribute an out-degree count.
+    """
     in_degree = defaultdict(int)
     out_degree = defaultdict(int)
 
@@ -173,17 +228,28 @@ def compute_mixing_parameter(nodes, neighbors, node2com, generator_type):
 
 
 def export_comm_size(out_dir, comm_size_sorted):
+    """Write cluster sizes (aligned with cluster_id.csv order) to cluster_sizes.csv."""
     pd.DataFrame([size for _, size in comm_size_sorted]).to_csv(
         f"{out_dir}/cluster_sizes.csv", index=False, header=False
     )
 
 
 def export_mixing_param(out_dir, mixing_param):
+    """Write the scalar mixing parameter to mixing_parameter.txt."""
     with open(f"{out_dir}/mixing_parameter.txt", "w") as f:
         f.write(str(mixing_param))
 
 
 def setup_generator_inputs(edgelist_path, clustering_path, output_dir, generator):
+    """
+    Profile an empirical network and write all generator-specific input files.
+
+    Outputs written for every generator: node_id.csv, cluster_id.csv,
+    assignment.csv, degree.csv.  Additional outputs by generator:
+      sbm / ecsbm  → edge_counts.csv
+      ecsbm        → mincut.csv
+      lfr / abcd / abcd+o → cluster_sizes.csv, mixing_parameter.txt
+    """
     Path(output_dir).mkdir(parents=True, exist_ok=True)
 
     setup_logging(Path(output_dir) / "run.log")

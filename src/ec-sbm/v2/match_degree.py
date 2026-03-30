@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from utils import setup_logging
+from utils import setup_logging, normalize_edge, run_rewire_attempts
 
 
 def parse_args():
@@ -243,6 +243,28 @@ def match_missing_degrees_true_greedy(out_degs, exist_neighbor):
 
 
 def match_missing_degrees_rewire(out_degs, exist_neighbor, max_retries=10):
+    """
+    Configuration-model degree matcher: build stubs, pair randomly, rewire conflicts.
+
+    Constructs a stub list where each node appears `out_degs[node]` times,
+    shuffles it uniformly, and pairs consecutive stubs into candidate edges.
+    Candidates that are self-loops, duplicates, or already-existing neighbor
+    pairs are queued for rewiring.  Each rewiring attempt picks a random valid
+    edge and tries a 2-opt swap; if the valid pool is exhausted the inner pass
+    ends early.
+
+    Args:
+        out_degs (dict): Maps node iid to the number of edges still required.
+        exist_neighbor (dict): Maps node iid to the set of already-connected
+            neighbors (used to prevent multi-edges with pre-existing topology).
+        max_retries (int): Number of rewiring passes before giving up.
+
+    Returns:
+        Tuple (valid_edges: set of (min, max) tuples,
+               invalid_edges: list of unresolved (min, max) tuples).
+        Callers that need a fallback (e.g. match_missing_degrees_hybrid) use
+        the returned invalid_edges to continue with a deterministic algorithm.
+    """
     logging.info("Starting Rewire (Configuration Model) matching algorithm...")
 
     stubs = []
@@ -263,12 +285,9 @@ def match_missing_degrees_rewire(out_degs, exist_neighbor, max_retries=10):
     valid_edges = set()
     invalid_edges = deque()
 
-    def make_edge(u, v):
-        return (int(min(u, v)), int(max(u, v)))
-
     for i in range(0, len(stubs), 2):
         u, v = stubs[i], stubs[i + 1]
-        e = make_edge(u, v)
+        e = normalize_edge(u, v)
 
         if u == v or e in valid_edges or v in exist_neighbor.get(u, set()):
             invalid_edges.append(e)
@@ -281,68 +300,53 @@ def match_missing_degrees_rewire(out_degs, exist_neighbor, max_retries=10):
 
     valid_pool = list(valid_edges)
 
-    for attempt in range(max_retries):
-        if not invalid_edges:
-            logging.info("All bad edges resolved! Exiting rewiring loop early.")
-            break
+    def is_valid(e):
+        """Return True if e is a non-self-loop, not already placed, and not a pre-existing neighbor pair."""
+        u, v = e
+        return u != v and e not in valid_edges and v not in exist_neighbor.get(u, set())
 
-        last_recycle = len(invalid_edges)
-        recycle_counter = last_recycle
+    def process_one_edge(e1, invalid_edges):
+        """
+        Attempt one 2-opt swap of invalid edge e1 against a random valid edge.
 
-        while invalid_edges:
-            recycle_counter -= 1
-            if recycle_counter < 0:
-                if len(invalid_edges) < last_recycle:
-                    last_recycle = len(invalid_edges)
-                    recycle_counter = last_recycle
-                else:
-                    break
+        Tries both endpoint pairings (50/50) and commits the swap if both
+        new edges pass is_valid.  Re-appends e1 if the swap fails.
+        Returns True to break the inner pass when valid_pool is exhausted,
+        False to continue.
+        """
+        if not valid_pool:
+            invalid_edges.append(e1)
+            return True  # break inner pass
 
-            e1 = invalid_edges.popleft()
+        idx = random.randrange(len(valid_pool))
+        e2 = valid_pool[idx]
 
-            if not valid_pool:
-                invalid_edges.append(e1)
-                break
+        if random.random() < 0.5:
+            new_e1 = normalize_edge(e1[0], e2[0])
+            new_e2 = normalize_edge(e1[1], e2[1])
+        else:
+            new_e1 = normalize_edge(e1[0], e2[1])
+            new_e2 = normalize_edge(e1[1], e2[0])
 
-            idx = random.randrange(len(valid_pool))
-            e2 = valid_pool[idx]
+        if is_valid(new_e1) and is_valid(new_e2) and new_e1 != new_e2:
+            valid_edges.remove(e2)
+            valid_pool[idx] = valid_pool[-1]
+            valid_pool.pop()
 
-            if random.random() < 0.5:
-                new_e1 = make_edge(e1[0], e2[0])
-                new_e2 = make_edge(e1[1], e2[1])
-            else:
-                new_e1 = make_edge(e1[0], e2[1])
-                new_e2 = make_edge(e1[1], e2[0])
+            valid_edges.add(new_e1)
+            valid_edges.add(new_e2)
+            valid_pool.append(new_e1)
+            valid_pool.append(new_e2)
+        else:
+            invalid_edges.append(e1)
 
-            def is_valid(e):
-                u, v = e
-                return (
-                    u != v
-                    and e not in valid_edges
-                    and v not in exist_neighbor.get(u, set())
-                )
+        return False  # continue inner pass
 
-            if is_valid(new_e1) and is_valid(new_e2) and new_e1 != new_e2:
-                valid_edges.remove(e2)
-                valid_pool[idx] = valid_pool[-1]
-                valid_pool.pop()
-
-                valid_edges.add(new_e1)
-                valid_edges.add(new_e2)
-                valid_pool.append(new_e1)
-                valid_pool.append(new_e2)
-            else:
-                invalid_edges.append(e1)
-
-        logging.info(
-            f"After attempt {attempt + 1}: {len(invalid_edges)} bad edges remain."
-        )
-
+    run_rewire_attempts(invalid_edges, process_one_edge, max_retries)
     if invalid_edges:
         logging.warning(
             f"Finished {max_retries} retries. {len(invalid_edges)} bad edges remain unresolved."
         )
-
     return valid_edges, list(invalid_edges)
 
 

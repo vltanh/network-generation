@@ -34,7 +34,20 @@ def remove_singleton_outliers(
     df_edges: pd.DataFrame, df_clusters: pd.DataFrame
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """
-    Removes singleton clusters and filters out edges connected to them.
+    Remove singleton clusters and their incident edges from the network.
+
+    A singleton cluster has exactly one member.  Such nodes are removed from
+    the clustering and any edge with at least one singleton endpoint is dropped.
+    Nodes that appear only in the edgelist (true outliers, not in any cluster)
+    are also removed because they are not in valid_nodes.
+
+    Args:
+        df_edges: DataFrame with columns [source, target].
+        df_clusters: DataFrame with columns [node_id, cluster_id].
+
+    Returns:
+        Tuple (filtered_edges, filtered_clusters) — both as DataFrames with
+        the same column structure as the inputs.
     """
     # 1. Find valid clusters (size > 1) to remove singletons
     cluster_counts = df_clusters["cluster_id"].value_counts()
