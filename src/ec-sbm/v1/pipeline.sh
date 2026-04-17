@@ -1,6 +1,10 @@
 #!/bin/bash
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+SRC_DIR="$( cd "${SCRIPT_DIR}/../.." && pwd )"
+# Expose the shared src/ directory so v1 scripts can `from utils import ...`
+# and the pipeline can invoke ${SRC_DIR}/profile.py.
+export PYTHONPATH="${SRC_DIR}${PYTHONPATH:+:${PYTHONPATH}}"
 
 # Default values
 TIMEOUT="3d"
@@ -119,7 +123,7 @@ if [ "${SKIP_STAGE_1}" -eq 0 ]; then
     OUT_1B="${STG1_SETUP_DIR}/node_id.csv ${STG1_SETUP_DIR}/cluster_id.csv ${STG1_SETUP_DIR}/assignment.csv ${STG1_SETUP_DIR}/degree.csv ${STG1_SETUP_DIR}/mincut.csv ${STG1_SETUP_DIR}/edge_counts.csv"
     
     if ! is_step_done "${STG1_SETUP_DIR}/done" "${IN_1B}" "${OUT_1B}"; then
-        { timeout "${TIMEOUT}" /usr/bin/time -v python "${SCRIPT_DIR}/setup.py" \
+        { timeout "${TIMEOUT}" /usr/bin/time -v python "${SRC_DIR}/profile.py" \
             --edgelist "${STG1_CLEAN_DIR}/edge.csv" \
             --clustering "${STG1_CLEAN_DIR}/com.csv" \
             --output-folder "${STG1_SETUP_DIR}" \
