@@ -1,6 +1,10 @@
 #!/bin/bash
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+SRC_DIR="$( cd "${SCRIPT_DIR}/../.." && pwd )"
+# v2 scripts `from utils import ...` resolves to the local v2/utils.py first;
+# the shared src/ dir is only needed to locate profile.py.
+export PYTHONPATH="${SCRIPT_DIR}:${SRC_DIR}${PYTHONPATH:+:${PYTHONPATH}}"
 
 # Default values
 TIMEOUT="3d"
@@ -151,7 +155,7 @@ if [ "${SKIP_STAGE_1}" -eq 0 ]; then
     OUT_1B="${STG1_SETUP_DIR}/node_id.csv ${STG1_SETUP_DIR}/cluster_id.csv ${STG1_SETUP_DIR}/assignment.csv ${STG1_SETUP_DIR}/degree.csv ${STG1_SETUP_DIR}/mincut.csv ${STG1_SETUP_DIR}/edge_counts.csv"
     
     if ! is_step_done "${STG1_SETUP_DIR}/done" "${IN_1B}" "${OUT_1B}"; then
-        { timeout "${TIMEOUT}" /usr/bin/time -v python "${SCRIPT_DIR}/profile.py" \
+        { timeout "${TIMEOUT}" /usr/bin/time -v python "${SRC_DIR}/profile.py" \
             --edgelist "${STG1_CLEAN_DIR}/edge.csv" \
             --clustering "${STG1_CLEAN_DIR}/com.csv" \
             --output-folder "${STG1_SETUP_DIR}" \

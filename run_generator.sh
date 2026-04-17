@@ -31,6 +31,11 @@ custom_ref_cluster_stats=""
 run_stats_flag=0
 run_comp_flag=0
 
+seed=0
+abcd_dir=""
+lfr_binary=""
+npso_dir=""
+
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         --generator) generator="$2"; shift 2 ;;
@@ -45,6 +50,10 @@ while [[ "$#" -gt 0 ]]; do
         --input-cluster-stats) custom_ref_cluster_stats="$2"; shift 2 ;;
         --run-stats) run_stats_flag=1; shift 1 ;;
         --run-comp) run_comp_flag=1; shift 1 ;;
+        --seed) seed="$2"; shift 2 ;;
+        --abcd-dir) abcd_dir="$2"; shift 2 ;;
+        --lfr-binary) lfr_binary="$2"; shift 2 ;;
+        --npso-dir) npso_dir="$2"; shift 2 ;;
         -*) log "Unknown parameter passed: $1"; exit 1 ;;
         *) log "Unexpected argument: $1"; exit 1 ;;
     esac
@@ -61,7 +70,7 @@ if [ -z "${run_id}" ]; then
     exit 1
 fi
 
-ACCEPTED_GENERATORS=("ec-sbm-v2" "ec-sbm-v2H" "ec-sbm-v1.5")
+ACCEPTED_GENERATORS=("ec-sbm-v2" "ec-sbm-v1" "sbm" "abcd" "abcd+o" "lfr" "npso")
 if [[ ! " ${ACCEPTED_GENERATORS[*]} " =~ " ${generator} " ]]; then
     log "Error: Unsupported generator '${generator}'. Accepted generators are: ${ACCEPTED_GENERATORS[*]}"
     exit 1
@@ -219,32 +228,76 @@ log "Running: ${generator} on ${dataset_name}"
 # ==========================================
 log "Evaluating synthetic network generation state..."
 
-if [[ "${generator}" == ec-sbm-v2* ]]; then
-    OUTLIER_MODE="combined"
-
-    # Generator Configuration Parsing
-    if [[ "${generator}" == "ec-sbm-v2" ]]; then
-        EDGE_CORRECTION="rewire"
-        MATCH_ALGO="true_greedy"
-    elif [[ "${generator}" == "ec-sbm-v2H" ]]; then
-        EDGE_CORRECTION="rewire"
-        MATCH_ALGO="hybrid"
-    fi
-
+if [[ "${generator}" == "ec-sbm-v2" ]]; then
     mkdir -p "${OUT_DIR}"
     "${SCRIPT_DIR}/src/ec-sbm/v2/pipeline.sh" \
         --input-edgelist "${INP_EDGE}" \
         --input-clustering "${INP_COM}" \
         --output-dir "${OUT_DIR}" \
-        --outlier-mode "${OUTLIER_MODE}" \
-        --edge-correction "${EDGE_CORRECTION}" \
-        --algorithm "${MATCH_ALGO}"
-elif [[ "${generator}" == "ec-sbm-v1.5" ]]; then
+        --outlier-mode "combined" \
+        --edge-correction "rewire" \
+        --algorithm "true_greedy"
+elif [[ "${generator}" == "ec-sbm-v1" ]]; then
     mkdir -p "${OUT_DIR}"
-    "${SCRIPT_DIR}/src/ec-sbm/v1.5/pipeline.sh" \
+    "${SCRIPT_DIR}/src/ec-sbm/v1/pipeline.sh" \
         --input-edgelist "${INP_EDGE}" \
         --input-clustering "${INP_COM}" \
         --output-dir "${OUT_DIR}"
+elif [[ "${generator}" == "sbm" ]]; then
+    mkdir -p "${OUT_DIR}"
+    "${SCRIPT_DIR}/src/sbm/pipeline.sh" \
+        --input-edgelist "${INP_EDGE}" \
+        --input-clustering "${INP_COM}" \
+        --output-dir "${OUT_DIR}" \
+        --seed "${seed}"
+elif [[ "${generator}" == "abcd" ]]; then
+    if [ -z "${abcd_dir}" ]; then
+        log "Error: --abcd-dir is required for generator 'abcd'."
+        exit 1
+    fi
+    mkdir -p "${OUT_DIR}"
+    "${SCRIPT_DIR}/src/abcd/pipeline.sh" \
+        --input-edgelist "${INP_EDGE}" \
+        --input-clustering "${INP_COM}" \
+        --output-dir "${OUT_DIR}" \
+        --abcd-dir "${abcd_dir}" \
+        --seed "${seed}"
+elif [[ "${generator}" == "abcd+o" ]]; then
+    if [ -z "${abcd_dir}" ]; then
+        log "Error: --abcd-dir is required for generator 'abcd+o'."
+        exit 1
+    fi
+    mkdir -p "${OUT_DIR}"
+    "${SCRIPT_DIR}/src/abcd+o/pipeline.sh" \
+        --input-edgelist "${INP_EDGE}" \
+        --input-clustering "${INP_COM}" \
+        --output-dir "${OUT_DIR}" \
+        --abcd-dir "${abcd_dir}" \
+        --seed "${seed}"
+elif [[ "${generator}" == "lfr" ]]; then
+    if [ -z "${lfr_binary}" ]; then
+        log "Error: --lfr-binary is required for generator 'lfr'."
+        exit 1
+    fi
+    mkdir -p "${OUT_DIR}"
+    "${SCRIPT_DIR}/src/lfr/pipeline.sh" \
+        --input-edgelist "${INP_EDGE}" \
+        --input-clustering "${INP_COM}" \
+        --output-dir "${OUT_DIR}" \
+        --lfr-binary "${lfr_binary}" \
+        --seed "${seed}"
+elif [[ "${generator}" == "npso" ]]; then
+    if [ -z "${npso_dir}" ]; then
+        log "Error: --npso-dir is required for generator 'npso'."
+        exit 1
+    fi
+    mkdir -p "${OUT_DIR}"
+    "${SCRIPT_DIR}/src/npso/pipeline.sh" \
+        --input-edgelist "${INP_EDGE}" \
+        --input-clustering "${INP_COM}" \
+        --output-dir "${OUT_DIR}" \
+        --npso-dir "${npso_dir}" \
+        --seed "${seed}"
 fi
 
 if [ ! -f "${OUT_DIR}/edge.csv" ]; then
