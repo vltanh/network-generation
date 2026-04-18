@@ -5,6 +5,7 @@ if [[ "${SCRIPT_DIR}" == *"/slurmd/job"* ]]; then
     SCRIPT_DIR="${SLURM_SUBMIT_DIR}"
 fi
 SRC_DIR="$( cd "${SCRIPT_DIR}/../.." && pwd )"
+COMMON_DIR="$( cd "${SCRIPT_DIR}/../common" && pwd )"
 # Expose the shared src/ directory so scripts can `from pipeline_common import ...`
 # and the pipeline can invoke ${SRC_DIR}/profile.py.
 export PYTHONPATH="${SRC_DIR}${PYTHONPATH:+:${PYTHONPATH}}"
@@ -116,7 +117,7 @@ if [ "${SKIP_STAGE_1}" -eq 0 ]; then
     OUT_1A="${STG1_CLEAN_DIR}/edge.csv ${STG1_CLEAN_DIR}/com.csv"
     
     if ! is_step_done "${STG1_CLEAN_DIR}/done" "${IN_1A}" "${OUT_1A}"; then
-        { timeout "${TIMEOUT}" /usr/bin/time -v python "${SCRIPT_DIR}/clean_outlier.py" \
+        { timeout "${TIMEOUT}" /usr/bin/time -v python "${COMMON_DIR}/clean_outlier.py" \
             --edgelist "${INPUT_EDGELIST}" \
             --clustering "${INPUT_CLUSTERING}" \
             --output-folder "${STG1_CLEAN_DIR}"; } 2> "${STG1_CLEAN_DIR}/time_and_err.log"
@@ -193,7 +194,7 @@ if [ "${SKIP_STAGE_2}" -eq 0 ]; then
     OUT_2B="${STG2_DIR}/edge.csv ${STG2_DIR}/sources.json"
     
     if ! is_step_done "${STG2_DIR}/done" "${IN_2B}" "${OUT_2B}"; then
-        { timeout "${TIMEOUT}" /usr/bin/time -v python "${SCRIPT_DIR}/combine_edgelists.py" \
+        { timeout "${TIMEOUT}" /usr/bin/time -v python "${COMMON_DIR}/combine_edgelists.py" \
             --edgelist-1 "${STG1_DIR}/edge.csv" \
             --name-1 "clustered" \
             --edgelist-2 "${STG2_OUTLIER_DIR}/edge_outlier.csv" \
@@ -240,7 +241,7 @@ IN_3B="${STG2_DIR}/edge.csv ${STG2_DIR}/sources.json ${STG3_MATCH_DIR}/degree_ma
 OUT_3B="${STG3_DIR}/edge.csv ${STG3_DIR}/sources.json ${STG3_DIR}/com.csv"
 
 if ! is_step_done "${STG3_DIR}/done" "${IN_3B}" "${OUT_3B}"; then
-    { timeout "${TIMEOUT}" /usr/bin/time -v python "${SCRIPT_DIR}/combine_edgelists.py" \
+    { timeout "${TIMEOUT}" /usr/bin/time -v python "${COMMON_DIR}/combine_edgelists.py" \
         --edgelist-1 "${STG2_DIR}/edge.csv" \
         --json-1 "${STG2_DIR}/sources.json" \
         --edgelist-2 "${STG3_MATCH_DIR}/degree_matching_edge.csv" \
