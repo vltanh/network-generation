@@ -2,6 +2,9 @@
 
 # Constants
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
+if [[ "${SCRIPT_DIR}" == *"/slurmd/job"* ]]; then
+    SCRIPT_DIR="${SLURM_SUBMIT_DIR}"
+fi
 
 # ==========================================
 # Helper Functions: Logging & State
@@ -32,9 +35,9 @@ run_stats_flag=0
 run_comp_flag=0
 
 seed=0
-abcd_dir=""
-lfr_binary=""
-npso_dir=""
+abcd_dir="${SCRIPT_DIR}/externals/abcd"
+lfr_binary="${SCRIPT_DIR}/externals/lfr/unweighted_undirected/benchmark"
+npso_dir="${SCRIPT_DIR}/externals/npso"
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in

@@ -2,19 +2,32 @@
 
 This script generates a synthetic network based on an empirical network and a reference clustering. It also supports computing the corresponding network and cluster statistics and comparing them against the original distributions.
 
-## Supported Generators
+## Installation
 
-| Generator | Source | Notes |
-| --- | --- | --- |
-| `ec-sbm-v2` | `src/ec-sbm/v2/` | True-greedy degree matching. |
-| `ec-sbm-v1` | `src/ec-sbm/v1/` | Legacy pipeline. |
-| `sbm` | `src/sbm/` | Flat SBM from `graph-tool` (micro-canonical, degree-corrected). |
-| `abcd` | `src/abcd/` | ABCD benchmark (no outliers). Requires Julia + `ABCDGraphGenerator.jl`. |
-| `abcd+o` | `src/abcd+o/` | ABCD with native outlier bucket. Requires Julia + `ABCDGraphGenerator.jl`. |
-| `lfr` | `src/lfr/` | LFR benchmark. Requires the compiled `unweighted_undirected/benchmark`. |
-| `npso` | `src/npso/` | nPSO (hyperbolic geometry). Requires MATLAB + `nPSO_model`; performs a bisection search on temperature `T` to match the empirical global clustering coefficient. |
+The `abcd`, `abcd+o`, `lfr`, and `npso` generators depend on external tools vendored as submodules under `externals/`. Run the installer once after cloning:
 
-All generators share the same profiling step at `src/profile.py`, which emits the setup files (`node_id.csv`, `cluster_id.csv`, `assignment.csv`, `degree.csv`, and — depending on the generator — `edge_counts.csv`, `cluster_sizes.csv`, `mincut.csv`, `mixing_parameter.txt`). Common helpers live in `src/utils.py`.
+```bash
+./install.sh
+```
+
+This will:
+
+1. Initialize the submodules (`externals/abcd`, `externals/lfr`, `externals/npso`).
+2. Register ABCD with Julia via `Pkg.develop(path="externals/abcd")` (requires `julia` on `PATH`).
+3. Build the LFR benchmark binary in `externals/lfr/unweighted_undirected/` (requires `make` and a C++ compiler).
+
+Host prerequisites per generator:
+
+| Generator | Needs |
+| --- | --- |
+| `abcd`, `abcd+o` | `julia` |
+| `lfr` | `make` + C++ compiler; Python `powerlaw` |
+| `npso` | `matlab` on PATH at run time (on campus cluster: `module load matlab`); Python `powerlaw` |
+| `sbm`, `ec-sbm-v1`, `ec-sbm-v2` | Python env only (no external tool) |
+
+The nPSO MATLAB wrapper `run_npso.m` lives under `src/npso/matlab/` (tracked in-repo) and is auto-added to MATLAB's path by `src/npso/gen.py`, so it does not need to be copied into the `externals/npso` submodule.
+
+After installation, `run_generator.sh` defaults `--abcd-dir`, `--lfr-binary`, and `--npso-dir` to the submodule paths, so you can omit those flags unless you want to point at a different checkout.
 
 ## 1. Custom Mode (Standard Usage)
 
@@ -47,9 +60,9 @@ Use this mode to provide explicit file paths for your own datasets.
 | `--run-stats` | Enables computation of synthetic network and cluster statistics. |
 | `--run-comp` | Enables statistical comparison. **Requires** `--input-network-stats` and `--input-cluster-stats`. |
 | `--seed <n>` | Seed forwarded to `sbm`, `abcd`, `abcd+o`, `lfr`, `npso` generators (default `0`). |
-| `--abcd-dir <p>` | **Required** for `abcd` / `abcd+o`. Path to an `ABCDGraphGenerator.jl` checkout (exposes `utils/graph_sampler.jl`). |
-| `--lfr-binary <p>` | **Required** for `lfr`. Path to the compiled LFR benchmark executable (`unweighted_undirected/benchmark`). |
-| `--npso-dir <p>` | **Required** for `npso`. Path to the `nPSO_model` checkout (containing `run_npso.m`); requires `matlab` on PATH. |
+| `--abcd-dir <p>` | Override for `abcd` / `abcd+o`. Defaults to `externals/abcd`. Path to an `ABCDGraphGenerator.jl` checkout (exposes `utils/graph_sampler.jl`). |
+| `--lfr-binary <p>` | Override for `lfr`. Defaults to `externals/lfr/unweighted_undirected/benchmark`. Path to the compiled LFR benchmark executable. |
+| `--npso-dir <p>` | Override for `npso`. Defaults to `externals/npso`. Path to the `nPSO_model` checkout; requires `matlab` on PATH. |
 
 ### Directory Structure
 
