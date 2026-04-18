@@ -103,11 +103,11 @@ mark_done() {
 # ==========================================
 # Define cross-stage directories
 STG1_DIR="${OUTPUT_DIR}/clustered"
+STG1_CLEAN_DIR="${OUTPUT_DIR}/clustered/clean"
 STG2_DIR="${OUTPUT_DIR}/outlier"
-    
+
 if [ "${SKIP_STAGE_1}" -eq 0 ]; then
     echo "=== Starting Stage 1: Core Clustered Generation ==="
-    STG1_CLEAN_DIR="${OUTPUT_DIR}/clustered/clean"
     STG1_SETUP_DIR="${OUTPUT_DIR}/clustered/setup"
     mkdir -p "${STG1_CLEAN_DIR}" "${STG1_SETUP_DIR}" "${STG1_DIR}"
 
@@ -236,8 +236,8 @@ else
 fi
 
 # 3b. Final Combination
-IN_3B="${STG2_DIR}/edge.csv ${STG2_DIR}/sources.json ${STG3_MATCH_DIR}/degree_matching_edge.csv"
-OUT_3B="${STG3_DIR}/edge.csv ${STG3_DIR}/sources.json"
+IN_3B="${STG2_DIR}/edge.csv ${STG2_DIR}/sources.json ${STG3_MATCH_DIR}/degree_matching_edge.csv ${STG1_CLEAN_DIR}/com.csv"
+OUT_3B="${STG3_DIR}/edge.csv ${STG3_DIR}/sources.json ${STG3_DIR}/com.csv"
 
 if ! is_step_done "${STG3_DIR}/done" "${IN_3B}" "${OUT_3B}"; then
     { timeout "${TIMEOUT}" /usr/bin/time -v python "${SCRIPT_DIR}/combine_edgelists.py" \
@@ -247,6 +247,7 @@ if ! is_step_done "${STG3_DIR}/done" "${IN_3B}" "${OUT_3B}"; then
         --name-2 "match_degree" \
         --output-folder "${STG3_DIR}" \
         --output-filename "edge.csv"; } 2> "${STG3_DIR}/time_and_err.log"
+    cp "${STG1_CLEAN_DIR}/com.csv" "${STG3_DIR}/com.csv"
     mark_done "${STG3_DIR}/done" "Stage 3b (Final Combine)" "${IN_3B}" "${OUT_3B}"
 else
     echo "Skipping Stage 3b: Valid state found."

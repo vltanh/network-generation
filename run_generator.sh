@@ -132,6 +132,11 @@ fi
 if [ ! -f "${INP_EDGE}" ]; then log "CRITICAL: Input network missing: ${INP_EDGE}"; exit 1; fi
 if [ ! -f "${INP_COM}" ]; then log "CRITICAL: Input clustering missing: ${INP_COM}"; exit 1; fi
 
+singleton_count=$(awk -F',' 'NR>1 {c[$2]++} END {n=0; for (k in c) if (c[k]==1) n++; print n}' "${INP_COM}")
+if [ "${singleton_count}" -gt 0 ]; then
+    log "WARNING: Input clustering contains ${singleton_count} singleton cluster(s). Generators that reuse the reference (sbm, ec-sbm-v1, ec-sbm-v2) will propagate them; strip them beforehand for consistency with the new-clustering generators."
+fi
+
 SYNTH_CLUSTER_STATS_DIR="${STATS_DIR}/cluster"
 SYNTH_NETWORK_STATS_DIR="${STATS_DIR}/network"
 
@@ -319,7 +324,7 @@ fi
 # ==========================================
 # 2. Run Statistics & Comparisons
 # ==========================================
-run_cluster_stats "${OUT_DIR}/edge.csv" "${INP_COM}" "${SYNTH_CLUSTER_STATS_DIR}"
+run_cluster_stats "${OUT_DIR}/edge.csv" "${OUT_DIR}/com.csv" "${SYNTH_CLUSTER_STATS_DIR}"
 
 run_network_stats "${OUT_DIR}/edge.csv" "${SYNTH_NETWORK_STATS_DIR}"
 

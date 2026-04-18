@@ -49,3 +49,12 @@ def write_edge_tuples_csv(path, edges, node_iid2id=None):
     else:
         rows = [(node_iid2id[int(s)], node_iid2id[int(t)]) for s, t in edges]
     pd.DataFrame(rows, columns=["source", "target"]).to_csv(path, index=False)
+
+
+def drop_singleton_clusters(com_df):
+    counts = com_df["cluster_id"].value_counts()
+    kept = counts[counts > 1].index
+    n_dropped = len(counts) - len(kept)
+    if n_dropped:
+        logging.info(f"Dropping {n_dropped} singleton cluster(s) from com.csv")
+    return com_df[com_df["cluster_id"].isin(kept)]

@@ -46,6 +46,7 @@ mkdir -p "${SETUP_DIR}" "${OUTPUT_DIR}"
     --assignment "${SETUP_DIR}/assignment.csv" \
     --degree "${SETUP_DIR}/degree.csv" \
     --edge-counts "${SETUP_DIR}/edge_counts.csv" \
+    --input-clustering "${INPUT_CLUSTERING}" \
     --output-folder "${OUTPUT_DIR}" \
     --seed "${SEED}" \
     --n-threads "${N_THREADS}"; } 2> "${OUTPUT_DIR}/time_and_err.log"
