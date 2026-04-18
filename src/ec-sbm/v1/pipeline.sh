@@ -41,63 +41,7 @@ fi
 # ==========================================
 # Helper Functions: State Management
 # ==========================================
-
-# Usage: is_step_done "done_file" "input1 input2..." "output1 output2..."
-is_step_done() {
-    local done_file="$1"
-    read -r -a inputs <<< "$2"
-    read -r -a outputs <<< "$3"
-
-    if [ ! -f "${done_file}" ]; then
-        return 1 # False: No state ledger exists
-    fi
-
-    # 1. Verify outputs physically exist and have data
-    for target_file in "${outputs[@]}"; do
-        if [ ! -f "${target_file}" ] || [ ! -s "${target_file}" ]; then
-            return 1 # False
-        fi
-    done
-
-    # 2. Cryptographically verify inputs and outputs haven't mutated
-    if ! sha256sum --status -c "${done_file}" 2>/dev/null; then
-        echo "State change detected. Recomputing..."
-        return 1 # False: Hashes mismatch
-    fi
-
-    return 0 # True: State is identical
-}
-
-# Usage: mark_done "done_file" "stage_name" "input1 input2..." "output1 output2..."
-mark_done() {
-    local done_file="$1"
-    local stage_name="$2"
-    read -r -a inputs <<< "$3"
-    read -r -a outputs <<< "$4"
-
-    for target_file in "${outputs[@]}"; do
-        if [ ! -f "${target_file}" ]; then
-            echo "Error [${stage_name}]: Output file ${target_file} was not created."
-            exit 1
-        fi
-        if [ ! -s "${target_file}" ]; then
-            echo "Error [${stage_name}]: Output file ${target_file} is completely empty (0 bytes)."
-            exit 1
-        fi
-        
-        local line_count=$(wc -l < "${target_file}")
-        echo "Success [${stage_name}]: Verified ${target_file} ($((line_count - 1)) lines)."
-    done
-    
-    local out_dir=$(dirname "${outputs[0]}")
-    local tmp_done="${done_file}.tmp.$$"
-
-    sha256sum "${inputs[@]}" > "${tmp_done}"
-    find "${out_dir}" -maxdepth 1 -type f ! -name "$(basename "${done_file}")" ! -name "$(basename "${tmp_done}")" -exec sha256sum {} + >> "${tmp_done}"
-    
-    mv "${tmp_done}" "${done_file}"
-    echo "Success [${stage_name}]: I/O hashes recorded atomically. Marked as done."
-}
+source "${COMMON_DIR}/state.sh"
 
 # ==========================================
 # STAGE 1: Clustered Generation
