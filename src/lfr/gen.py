@@ -1,6 +1,7 @@
-import os
 import logging
 import argparse
+import subprocess
+import shlex
 from pathlib import Path
 
 import numpy as np
@@ -46,20 +47,19 @@ def run_lfr_generation(
         if not lfr_exec.exists():
             logging.error(f"LFR binary not found at {lfr_exec}")
             raise FileNotFoundError(lfr_exec)
-        cmd = (
-            f"{lfr_exec} "
-            f"-N {N} -k {k} -maxk {maxk} "
-            f"-minc {minc} -maxc {maxc} "
-            f"-mu {mu} -t1 {t1} -t2 {t2}"
-        )
+        cmd = [
+            str(lfr_exec),
+            "-N", str(N), "-k", str(k), "-maxk", str(maxk),
+            "-minc", str(minc), "-maxc", str(maxc),
+            "-mu", str(mu), "-t1", str(t1), "-t2", str(t2),
+        ]
         # LFR reads its seed from ./time_seed.dat (and increments it on exit).
         (output_dir / "time_seed.dat").write_text(f"{seed}\n")
-        prev_cwd = os.getcwd()
-        os.chdir(output_dir)
-        rc = os.system(cmd)
-        os.chdir(prev_cwd)
-        if rc != 0:
-            logging.error(f"LFR binary exited with code {rc}")
+        proc = subprocess.run(cmd, cwd=output_dir)
+        if proc.returncode != 0:
+            logging.error(
+                f"LFR binary exited with code {proc.returncode}: {shlex.join(cmd)}"
+            )
             raise RuntimeError("LFR binary failed")
 
     with timed("Export"):
