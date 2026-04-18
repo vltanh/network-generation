@@ -1,5 +1,9 @@
+import time
 import logging
+from contextlib import contextmanager
 from pathlib import Path
+
+import pandas as pd
 
 
 def setup_logging(log_filepath: Path):
@@ -10,21 +14,38 @@ def setup_logging(log_filepath: Path):
     """
     log_filepath.parent.mkdir(parents=True, exist_ok=True)
 
-    # 1. Get the root logger
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
 
-    # 2. Strip out ALL existing handlers (this prevents the stderr leakage)
     for handler in logger.handlers[:]:
         logger.removeHandler(handler)
 
-    # 3. Create a dedicated FileHandler
     file_handler = logging.FileHandler(log_filepath, mode="w")
     file_handler.setLevel(logging.INFO)
 
-    # 4. Enforce the timestamp format
     formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
     file_handler.setFormatter(formatter)
 
-    # 5. Attach our strict file handler to the root logger
     logger.addHandler(file_handler)
+
+
+def standard_setup(output_dir):
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    setup_logging(output_dir / "run.log")
+    return output_dir
+
+
+@contextmanager
+def timed(label):
+    start = time.perf_counter()
+    yield
+    logging.info(f"{label} elapsed: {time.perf_counter() - start:.4f} seconds")
+
+
+def write_edge_tuples_csv(path, edges, node_iid2id=None):
+    if node_iid2id is None:
+        rows = [(int(s), int(t)) for s, t in edges]
+    else:
+        rows = [(node_iid2id[int(s)], node_iid2id[int(t)]) for s, t in edges]
+    pd.DataFrame(rows, columns=["source", "target"]).to_csv(path, index=False)
