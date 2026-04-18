@@ -1,14 +1,12 @@
-import time
 import logging
 import argparse
-from pathlib import Path
 from collections import defaultdict
 
 import numpy as np
 import pandas as pd
 from pymincut.pygraph import PyGraph
 
-from utils import setup_logging
+from pipeline_common import standard_setup, timed
 
 
 def read_clustering(clustering_path):
@@ -178,17 +176,23 @@ def export_mincut(out_dir, mcs):
 
 def compute_mixing_parameter(nodes, neighbors, node2com, generator_type):
     """
-    Compute the network mixing parameter µ (fraction of inter-community edges).
+    Compute the empirical mixing parameter that matches each generator's model
+    of how outliers relate to clusters:
 
-    Two conventions depending on generator_type:
-      "lfr"    — per-node µ_i = out_i / (in_i + out_i), then average over nodes.
-      others   — global µ = sum(out) / sum(in + out).
+      "lfr"    — outliers become singleton clusters in the synthetic output, so
+                 each outlier is in its own cluster: every incident edge is
+                 cross-cluster (out).  Reduction: mean of per-node µ_i.
+      "abcd"   — same singleton-cluster model as LFR; reduction is global
+                 ξ = Σ_out / Σ_total.
+      "abcd+o" — outliers cannot connect to each other in the model, so
+                 outlier-outlier edges are dropped entirely (not counted as in
+                 or out); clustered↔outlier counts as out.  Reduction is
+                 global ξ over the remaining edges.
 
-    Edges between a clustered node and an unclustered node always count as
-    "out" (cross-community).  Edges between two unclustered nodes are ignored
-    for "lfr" and for "abcd"/"abcd+o" unless generator_type == "abcd+o", in
-    which case both endpoints contribute an out-degree count.
+    In LFR/ABCD/ABCD+o, clustered↔outlier edges count as out on both endpoints.
     """
+    treat_outliers_as_singletons = generator_type in ("lfr", "abcd")
+
     in_degree = defaultdict(int)
     out_degree = defaultdict(int)
 
@@ -198,33 +202,28 @@ def compute_mixing_parameter(nodes, neighbors, node2com, generator_type):
             v_clustered = v in node2com
 
             if not u_clustered and not v_clustered:
-                if generator_type == "abcd+o":
+                # Two outliers: singletons (lfr/abcd) → different clusters (out);
+                # abcd+o → edge forbidden by the model, skip entirely.
+                if treat_outliers_as_singletons:
                     out_degree[u] += 1
-                continue
-
+                # else: abcd+o drops outlier-outlier edges
             elif not u_clustered or not v_clustered:
                 out_degree[u] += 1
-                continue
-
-            if node2com[u] == node2com[v]:
+            elif node2com[u] == node2com[v]:
                 in_degree[u] += 1
             else:
                 out_degree[u] += 1
 
     if generator_type == "lfr":
         mus = [
-            (
-                out_degree[i] / (in_degree[i] + out_degree[i])
-                if (in_degree[i] + out_degree[i]) > 0
-                else 0
-            )
-            for i in nodes
+            out_degree[u] / (in_degree[u] + out_degree[u])
+            for u in nodes
         ]
-        return np.mean(mus)
+        return float(np.mean(mus))
     else:
-        outs_sum = sum(out_degree[i] for i in nodes)
-        total_sum = sum(in_degree[i] + out_degree[i] for i in nodes)
-        return outs_sum / total_sum if total_sum > 0 else 0
+        outs_sum = sum(out_degree.values())
+        total_sum = outs_sum + sum(in_degree.values())
+        return outs_sum / total_sum
 
 
 def export_comm_size(out_dir, comm_size_sorted):
@@ -240,64 +239,109 @@ def export_mixing_param(out_dir, mixing_param):
         f.write(str(mixing_param))
 
 
+def export_n_outliers(out_dir, n_outliers):
+    """Write the scalar outlier count to n_outliers.txt."""
+    with open(f"{out_dir}/n_outliers.txt", "w") as f:
+        f.write(str(n_outliers))
+
+
+SBM_OUTLIER_CLUSTER_ID = "__outliers__"
+
+
 def setup_generator_inputs(edgelist_path, clustering_path, output_dir, generator):
     """
-    Profile an empirical network and write all generator-specific input files.
+    Profile an empirical network and write only the files each generator needs.
 
-    Outputs written for every generator: node_id.csv, cluster_id.csv,
-    assignment.csv, degree.csv.  Additional outputs by generator:
-      sbm / ecsbm  → edge_counts.csv
-      ecsbm        → mincut.csv
-      lfr / abcd / abcd+o → cluster_sizes.csv, mixing_parameter.txt
+    Per-generator outputs:
+      sbm    → node_id, cluster_id, assignment, degree, edge_counts
+               (outliers are folded into a single mega-cluster)
+      ecsbm  → node_id, cluster_id, assignment, degree, edge_counts, mincut
+      abcd   → degree, cluster_sizes, mixing_parameter
+               (outliers are folded into cluster_sizes as singletons)
+      abcd+o → degree, cluster_sizes, mixing_parameter, n_outliers
+               (outlier degrees are the count of *clustered* neighbors only —
+               the model forbids outlier-outlier edges)
+      lfr    → degree, cluster_sizes, mixing_parameter
+      npso   → degree, cluster_sizes
     """
-    Path(output_dir).mkdir(parents=True, exist_ok=True)
+    output_dir = standard_setup(output_dir)
 
-    setup_logging(Path(output_dir) / "run.log")
+    with timed("Input reading"):
+        nodes, node2com, cluster_counts = read_clustering(clustering_path)
+        nodes, neighbors = read_edgelist(edgelist_path, nodes)
 
-    # 1. Read Inputs
-    start = time.perf_counter()
-    nodes, node2com, cluster_counts = read_clustering(clustering_path)
-    nodes, neighbors = read_edgelist(edgelist_path, nodes)
-    logging.info(f"Input reading elapsed: {time.perf_counter() - start:.4f} seconds")
+    # SBM treats true outliers as one mega-cluster so gen_sbm can route outlier
+    # edges through the same block structure as the rest of the network.
+    if generator == "sbm":
+        outliers = [u for u in nodes if u not in node2com]
+        if outliers:
+            for u in outliers:
+                node2com[u] = SBM_OUTLIER_CLUSTER_ID
+            cluster_counts[SBM_OUTLIER_CLUSTER_ID] = len(outliers)
 
-    # 2. Compute Mappings
-    start = time.perf_counter()
-    node_deg_sorted, node_id2iid = compute_node_degree(nodes, neighbors)
-    comm_size_sorted, cluster_id2iid = compute_comm_size(cluster_counts)
-    logging.info(
-        f"Mappings computation elapsed: {time.perf_counter() - start:.4f} seconds"
-    )
+    with timed("Mappings computation"):
+        node_deg_sorted, node_id2iid = compute_node_degree(nodes, neighbors)
+        comm_size_sorted, cluster_id2iid = compute_comm_size(cluster_counts)
 
-    # 3. Export Core Outputs
-    start = time.perf_counter()
-    export_node_id(output_dir, node_deg_sorted)
-    export_cluster_id(output_dir, comm_size_sorted)
-    export_assignment(output_dir, node_deg_sorted, node2com, cluster_id2iid)
-    export_degree(output_dir, node_deg_sorted)
-    logging.info(
-        f"Core outputs export elapsed: {time.perf_counter() - start:.4f} seconds"
-    )
+    n_outliers = sum(1 for u in nodes if u not in node2com)
 
-    # 4. Generator-Specific Flows
-    start = time.perf_counter()
-    if generator in ["sbm", "ecsbm"]:
-        edge_counts = compute_edge_count(nodes, neighbors, node2com, cluster_id2iid)
-        export_edge_count(output_dir, edge_counts)
+    with timed("Outputs export"):
+        if generator in ("sbm", "ecsbm"):
+            export_node_id(output_dir, node_deg_sorted)
+            export_cluster_id(output_dir, comm_size_sorted)
+            export_assignment(output_dir, node_deg_sorted, node2com, cluster_id2iid)
+            export_degree(output_dir, node_deg_sorted)
+            edge_counts = compute_edge_count(nodes, neighbors, node2com, cluster_id2iid)
+            export_edge_count(output_dir, edge_counts)
 
-    if generator == "ecsbm":
-        mcs = compute_mincut(nodes, neighbors, node2com, comm_size_sorted, node_id2iid)
-        export_mincut(output_dir, mcs)
+        if generator == "ecsbm":
+            mcs = compute_mincut(
+                nodes, neighbors, node2com, comm_size_sorted, node_id2iid
+            )
+            export_mincut(output_dir, mcs)
 
-    if generator in ["lfr", "abcd", "abcd+o", "npso"]:
-        export_comm_size(output_dir, comm_size_sorted)
+        if generator == "abcd":
+            # ABCD treats outliers as singleton clusters — fold them into
+            # cluster_sizes so gen.py doesn't need a separate count.
+            export_degree(output_dir, node_deg_sorted)
+            cs_with_outliers = list(comm_size_sorted) + [
+                (f"outlier_{i}", 1) for i in range(n_outliers)
+            ]
+            export_comm_size(output_dir, cs_with_outliers)
 
-    if generator in ["lfr", "abcd", "abcd+o"]:
-        mixing_param = compute_mixing_parameter(nodes, neighbors, node2com, generator)
-        export_mixing_param(output_dir, mixing_param)
+        if generator == "abcd+o":
+            # ABCD+o forbids outlier-outlier edges, so each outlier's reported
+            # degree is its count of clustered neighbors only.
+            outlier_degrees = {
+                u: sum(1 for v in neighbors[u] if v in node2com)
+                for u in nodes if u not in node2com
+            }
+            adjusted_deg = sorted(
+                (
+                    (u, outlier_degrees[u] if u in outlier_degrees else d)
+                    for u, d in node_deg_sorted
+                ),
+                key=lambda x: x[1], reverse=True,
+            )
+            export_degree(output_dir, adjusted_deg)
+            export_comm_size(output_dir, comm_size_sorted)
+            export_n_outliers(output_dir, n_outliers)
 
-    logging.info(
-        f"Generator-specific outputs export elapsed: {time.perf_counter() - start:.4f} seconds"
-    )
+        if generator in ("lfr", "npso"):
+            # LFR/nPSO treat outliers implicitly as singletons; fold them
+            # into cluster_sizes so gen.py doesn't need a separate count.
+            export_degree(output_dir, node_deg_sorted)
+            cs_with_outliers = list(comm_size_sorted) + [
+                (f"outlier_{i}", 1) for i in range(n_outliers)
+            ]
+            export_comm_size(output_dir, cs_with_outliers)
+
+        if generator in ("abcd", "abcd+o", "lfr"):
+            mixing_param = compute_mixing_parameter(
+                nodes, neighbors, node2com, generator
+            )
+            export_mixing_param(output_dir, mixing_param)
+
     logging.info("Setup complete.")
 
 
