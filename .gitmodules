@@ -1,3 +1,12 @@
 [submodule "network_evaluation"]
 	path = network_evaluation
 	url = git@github.com:illinois-or-research-analytics/network_evaluation.git
+[submodule "externals/abcd"]
+	path = externals/abcd
+	url = https://github.com/bkamins/ABCDGraphGenerator.jl.git
+[submodule "externals/lfr"]
+	path = externals/lfr
+	url = https://github.com/andrealancichinetti/LFRbenchmarks.git
+[submodule "externals/npso"]
+	path = externals/npso
+	url = https://github.com/biomedical-cybernetics/nPSO_model.git
