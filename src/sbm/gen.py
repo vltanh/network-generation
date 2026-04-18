@@ -7,16 +7,14 @@ import graph_tool.all as gt
 from scipy.sparse import dok_matrix
 
 from pipeline_common import standard_setup, timed
-from profile import SBM_OUTLIER_CLUSTER_ID
 
 
-def load_inputs(node_id_path, cluster_id_path, assignment_path, degree_path, edge_counts_path):
+def load_inputs(node_id_path, num_clusters_path, assignment_path, degree_path, edge_counts_path):
     node_ids = pd.read_csv(node_id_path, header=None, dtype=str)[0].tolist()
-    cluster_ids = pd.read_csv(cluster_id_path, header=None, dtype=str)[0].tolist()
+    num_clusters = sum(1 for _ in open(num_clusters_path))
     assignments = pd.read_csv(assignment_path, header=None)[0].to_numpy()
     degrees = pd.read_csv(degree_path, header=None)[0].to_numpy()
 
-    num_clusters = len(cluster_ids)
     probs = dok_matrix((num_clusters, num_clusters), dtype=int)
     try:
         ec = pd.read_csv(edge_counts_path, header=None, names=["r", "c", "w"])
@@ -25,22 +23,23 @@ def load_inputs(node_id_path, cluster_id_path, assignment_path, degree_path, edg
     except pd.errors.EmptyDataError:
         logging.warning(f"{edge_counts_path} is empty. Generating a disconnected graph.")
 
-    return node_ids, cluster_ids, assignments, degrees, probs.tocsr()
+    return node_ids, assignments, degrees, probs.tocsr()
 
 
-def run_sbm_generation(node_id_path, cluster_id_path, assignment_path, degree_path, edge_counts_path, output_dir, seed):
+def run_sbm_generation(node_id_path, cluster_id_path, assignment_path, degree_path, edge_counts_path, output_dir, seed, n_threads):
     output_dir = standard_setup(output_dir)
 
     logging.info("Starting SBM Generation...")
-    logging.info(f"Seed: {seed}")
+    logging.info(f"Seed: {seed} n_threads: {n_threads}")
     np.random.seed(seed)
     gt.seed_rng(seed)
+    gt.openmp_set_num_threads(n_threads)
 
     with timed("Input loading"):
-        node_ids, cluster_ids, assignments, degrees, probs = load_inputs(
+        node_ids, assignments, degrees, probs = load_inputs(
             node_id_path, cluster_id_path, assignment_path, degree_path, edge_counts_path
         )
-        logging.info(f"N={len(node_ids)} clusters={len(cluster_ids)}")
+        logging.info(f"N={len(node_ids)} clusters={probs.shape[0]}")
 
     with timed("Generation"):
         if degrees.sum() > 0:
@@ -61,15 +60,6 @@ def run_sbm_generation(node_id_path, cluster_id_path, assignment_path, degree_pa
             output_dir / "edge.csv", index=False
         )
 
-        com_rows = [
-            (node_ids[i], cluster_ids[int(assignments[i])])
-            for i in range(len(node_ids))
-            if cluster_ids[int(assignments[i])] != SBM_OUTLIER_CLUSTER_ID
-        ]
-        pd.DataFrame(com_rows, columns=["node_id", "cluster_id"]).to_csv(
-            output_dir / "com.csv", index=False
-        )
-
     logging.info("SBM generation complete.")
 
 
@@ -82,6 +72,7 @@ def parse_args():
     parser.add_argument("--edge-counts", type=str, required=True)
     parser.add_argument("--output-folder", type=str, required=True)
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--n-threads", type=int, default=1)
     return parser.parse_args()
 
 
@@ -95,6 +86,7 @@ def main():
         args.edge_counts,
         args.output_folder,
         args.seed,
+        args.n_threads,
     )
 
 

@@ -27,11 +27,12 @@ def run_npso_generation(
     npso_dir,
     output_dir,
     seed,
+    n_threads,
 ):
     output_dir = standard_setup(output_dir)
 
     logging.info("Starting nPSO Generation...")
-    logging.info(f"Seed: {seed}")
+    logging.info(f"Seed: {seed} n_threads: {n_threads}")
 
     with timed("Input loading + parameter computation"):
         degrees = pd.read_csv(degree_path, header=None)[0].to_numpy()
@@ -66,17 +67,19 @@ def run_npso_generation(
         with timed("Generation"):
             prefix = output_dir / f"{T:.5f}_"
             matlab_inner = (
-                f"try, addpath(genpath('{npso_dir_abs}')), "
+                f"try, maxNumCompThreads({n_threads}), "
+                f"addpath(genpath('{npso_dir_abs}')), "
                 f"addpath('{matlab_wrapper_dir}'), "
                 f"run_npso({N}, {m}, {T}, {gamma}, {c}, '{prefix}', {seed}), "
                 f"catch e, fprintf(1, e.message), end, quit"
             )
+            single_flag = "-singleCompThread " if n_threads == 1 else ""
             bash_script = (
                 "if ! command -v matlab >/dev/null 2>&1; then "
                 "for f in /etc/profile.d/z00_lmod.sh /usr/share/lmod/lmod/init/bash; do "
                 '[ -r "$f" ] && . "$f" && break; done; '
                 "command -v module >/dev/null 2>&1 && module load matlab 2>/dev/null; fi; "
-                'exec matlab -nodisplay -nosplash -nodesktop -r "$1"'
+                f'exec matlab {single_flag}-nodisplay -nosplash -nodesktop -r "$1"'
             )
             subprocess.run(
                 ["bash", "-c", bash_script, "bash", matlab_inner],
@@ -165,6 +168,7 @@ def parse_args():
                         help="Path to the nPSO_model checkout (containing nPSO_model.m)")
     parser.add_argument("--output-folder", type=str, required=True)
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--n-threads", type=int, default=1)
     return parser.parse_args()
 
 
@@ -177,6 +181,7 @@ def main():
         args.npso_dir,
         args.output_folder,
         args.seed,
+        args.n_threads,
     )
 
 
