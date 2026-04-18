@@ -1,14 +1,12 @@
-import time
 import logging
 import argparse
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
 from scipy.sparse import dok_matrix
 import graph_tool.all as gt
 
-from utils import setup_logging
+from pipeline_common import standard_setup, timed, write_edge_tuples_csv
 
 
 def create_edge(u, v):
@@ -164,12 +162,7 @@ def synthesize_sbm_network(node_id2id, node2cluster, deg, probs, edges):
 
 
 def export_outputs(output_dir, g, node_id2id):
-    edge_out_df = pd.DataFrame(
-        [(node_id2id[src], node_id2id[tgt]) for src, tgt in g.iter_edges()]
-    )
-    edge_out_df.to_csv(
-        Path(output_dir) / "edge.csv", index=False, header=["source", "target"]
-    )
+    write_edge_tuples_csv(output_dir / "edge.csv", g.iter_edges(), node_id2id)
 
 
 def run_ecsbm_generation(
@@ -181,40 +174,28 @@ def run_ecsbm_generation(
     edge_counts_path,
     output_dir,
 ):
-    Path(output_dir).mkdir(parents=True, exist_ok=True)
-
-    setup_logging(Path(output_dir) / "run.log")
+    output_dir = standard_setup(output_dir)
 
     logging.info("Starting EC-SBM Generation Pipeline...")
 
-    start = time.perf_counter()
-    node_id2id, node2cluster, clustering, deg, mcs, probs = load_inputs(
-        node_id_path,
-        cluster_id_path,
-        assignment_path,
-        degree_path,
-        mincut_path,
-        edge_counts_path,
-    )
-    logging.info(f"Input loading elapsed: {time.perf_counter() - start:.4f} seconds")
+    with timed("Input loading"):
+        node_id2id, node2cluster, clustering, deg, mcs, probs = load_inputs(
+            node_id_path,
+            cluster_id_path,
+            assignment_path,
+            degree_path,
+            mincut_path,
+            edge_counts_path,
+        )
 
-    start = time.perf_counter()
-    edges = generate_internal_edges(clustering, mcs, deg, probs, node2cluster)
-    logging.info(
-        f"Generation of k-edge-connected graphs elapsed: {time.perf_counter() - start:.4f} seconds"
-    )
+    with timed("Generation of k-edge-connected graphs"):
+        edges = generate_internal_edges(clustering, mcs, deg, probs, node2cluster)
 
-    start = time.perf_counter()
-    g = synthesize_sbm_network(node_id2id, node2cluster, deg, probs, edges)
-    logging.info(
-        f"SBM network synthesis elapsed: {time.perf_counter() - start:.4f} seconds"
-    )
+    with timed("SBM network synthesis"):
+        g = synthesize_sbm_network(node_id2id, node2cluster, deg, probs, edges)
 
-    start = time.perf_counter()
-    export_outputs(output_dir, g, node_id2id)
-    logging.info(
-        f"Post-processing and file writing elapsed: {time.perf_counter() - start:.4f} seconds"
-    )
+    with timed("Post-processing and file writing"):
+        export_outputs(output_dir, g, node_id2id)
     logging.info("EC-SBM Generation complete.")
 
 

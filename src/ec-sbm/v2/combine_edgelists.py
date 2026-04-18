@@ -1,13 +1,12 @@
 import argparse
 import logging
-import time
 import json
 from pathlib import Path
 
 import pandas as pd
 import numpy as np
 
-from utils import setup_logging
+from pipeline_common import standard_setup, timed
 
 
 def parse_args():
@@ -90,75 +89,62 @@ def load_annotated_edgelist(edgelist_fp, name, json_fp):
 
 def main():
     args = parse_args()
-    out_dir = Path(args.output_folder)
-    out_dir.mkdir(parents=True, exist_ok=True)
-    setup_logging(out_dir / "run.log")
+    out_dir = standard_setup(args.output_folder)
 
     logging.info("--- Starting Edgelist Combination & Provenance Tracking ---")
-    start = time.perf_counter()
 
-    # 1. Load and annotate dataframes
-    df1 = load_annotated_edgelist(args.edgelist_1, args.name_1, args.json_1)
-    df2 = load_annotated_edgelist(args.edgelist_2, args.name_2, args.json_2)
+    with timed("Combination"):
+        df1 = load_annotated_edgelist(args.edgelist_1, args.name_1, args.json_1)
+        df2 = load_annotated_edgelist(args.edgelist_2, args.name_2, args.json_2)
 
-    # 2. Combine into a single dataframe
-    df_combined = pd.concat([df1, df2], ignore_index=True)
-    logging.info(f"Loaded {len(df_combined)} total edges prior to deduplication.")
+        df_combined = pd.concat([df1, df2], ignore_index=True)
+        logging.info(f"Loaded {len(df_combined)} total edges prior to deduplication.")
 
-    # 3. Strict Undirected Deduplication
-    # We logically align (A,B) and (B,A) using numpy to identify undirected duplicates
-    # without permanently mutating the original order of the pairs in the final output.
-    u = np.where(
-        df_combined["source"] < df_combined["target"],
-        df_combined["source"],
-        df_combined["target"],
-    )
-    v = np.where(
-        df_combined["source"] > df_combined["target"],
-        df_combined["source"],
-        df_combined["target"],
-    )
+        u = np.where(
+            df_combined["source"] < df_combined["target"],
+            df_combined["source"],
+            df_combined["target"],
+        )
+        v = np.where(
+            df_combined["source"] > df_combined["target"],
+            df_combined["source"],
+            df_combined["target"],
+        )
 
-    df_combined["u"] = u
-    df_combined["v"] = v
-    df_combined = df_combined.drop_duplicates(subset=["u", "v"], keep="first").drop(
-        columns=["u", "v"]
-    )
+        df_combined["u"] = u
+        df_combined["v"] = v
+        df_combined = df_combined.drop_duplicates(subset=["u", "v"], keep="first").drop(
+            columns=["u", "v"]
+        )
 
-    logging.info(f"Retained {len(df_combined)} unique undirected edges.")
+        logging.info(f"Retained {len(df_combined)} unique undirected edges.")
 
-    # 4. Sort into contiguous blocks by provenance
-    # We use a Categorical type to maintain the exact chronological order of the stages
-    source_order = df_combined["prov"].unique()
-    df_combined["prov"] = pd.Categorical(
-        df_combined["prov"], categories=source_order, ordered=True
-    )
-    df_combined = df_combined.sort_values("prov").reset_index(drop=True)
+        source_order = df_combined["prov"].unique()
+        df_combined["prov"] = pd.Categorical(
+            df_combined["prov"], categories=source_order, ordered=True
+        )
+        df_combined = df_combined.sort_values("prov").reset_index(drop=True)
 
-    # 5. Calculate new start and end lines for the JSON
-    sources_out = {}
-    current_start = 1
+        sources_out = {}
+        current_start = 1
 
-    for prov_name in source_order:
-        count = (df_combined["prov"] == prov_name).sum()
-        if count > 0:
-            # Note: Lines are 1-indexed, relative to the data rows (ignoring header)
-            sources_out[prov_name] = [
-                int(current_start),
-                int(current_start + count - 1),
-            ]
-            current_start += count
+        for prov_name in source_order:
+            count = (df_combined["prov"] == prov_name).sum()
+            if count > 0:
+                sources_out[prov_name] = [
+                    int(current_start),
+                    int(current_start + count - 1),
+                ]
+                current_start += count
 
-    # 6. Export Edge CSV and Sources JSON
-    output_fp = out_dir / args.output_filename
-    df_combined[["source", "target"]].to_csv(output_fp, index=False)
+        output_fp = out_dir / args.output_filename
+        df_combined[["source", "target"]].to_csv(output_fp, index=False)
 
-    with open(out_dir / "sources.json", "w") as f:
-        json.dump(sources_out, f, indent=4)
+        with open(out_dir / "sources.json", "w") as f:
+            json.dump(sources_out, f, indent=4)
 
-    logging.info(f"Exported combined edgelist to {output_fp.name}")
-    logging.info(f"Exported provenance map to sources.json")
-    logging.info(f"Process completed in {time.perf_counter() - start:.4f}s")
+        logging.info(f"Exported combined edgelist to {output_fp.name}")
+        logging.info(f"Exported provenance map to sources.json")
     logging.info("--- Combination Complete ---")
 
 

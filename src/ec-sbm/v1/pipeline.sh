@@ -1,8 +1,11 @@
 #!/bin/bash
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+if [[ "${SCRIPT_DIR}" == *"/slurmd/job"* ]]; then
+    SCRIPT_DIR="${SLURM_SUBMIT_DIR}"
+fi
 SRC_DIR="$( cd "${SCRIPT_DIR}/../.." && pwd )"
-# Expose the shared src/ directory so v1 scripts can `from utils import ...`
+# Expose the shared src/ directory so scripts can `from pipeline_common import ...`
 # and the pipeline can invoke ${SRC_DIR}/profile.py.
 export PYTHONPATH="${SRC_DIR}${PYTHONPATH:+:${PYTHONPATH}}"
 

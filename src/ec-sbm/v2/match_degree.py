@@ -1,14 +1,13 @@
 import argparse
 import logging
 import heapq
-import time
 import random
 from collections import deque
-from pathlib import Path
 
 import pandas as pd
 
-from utils import setup_logging, normalize_edge, run_rewire_attempts
+from pipeline_common import standard_setup, timed
+from utils import normalize_edge, run_rewire_attempts
 
 
 def parse_args():
@@ -395,53 +394,46 @@ def export_degree_matched_edgelist(degree_edges, node_iid2id, output_dir):
 
 def main():
     args = parse_args()
-    setup_logging(Path(args.output_folder) / "run.log")
+    out_dir = standard_setup(args.output_folder)
     logging.info(
         f"--- Starting Stage 6: Degree Matching ({args.algorithm.upper()} mode) ---"
     )
 
-    start = time.perf_counter()
-    node_id2iid, node_iid2id, out_degs = load_reference_topologies(
-        args.ref_edgelist, args.ref_clustering
-    )
-    logging.info(f"Loaded reference topologies: {time.perf_counter() - start:.4f}s")
-
-    start = time.perf_counter()
-    exist_neighbor, updated_out_degs = subtract_existing_edges(
-        args.input_edgelist, node_id2iid, out_degs
-    )
-    logging.info(f"Subtracted existing edges: {time.perf_counter() - start:.4f}s")
-
-    start = time.perf_counter()
-
-    # Route to the appropriate algorithm based on CLI argument
-    if args.algorithm == "greedy":
-        degree_edges = match_missing_degrees_greedy(updated_out_degs, exist_neighbor)
-    elif args.algorithm == "true_greedy":
-        degree_edges = match_missing_degrees_true_greedy(
-            updated_out_degs, exist_neighbor
+    with timed("Loaded reference topologies"):
+        node_id2iid, node_iid2id, out_degs = load_reference_topologies(
+            args.ref_edgelist, args.ref_clustering
         )
-    elif args.algorithm == "random_greedy":
-        degree_edges = match_missing_degrees_random_greedy(
-            updated_out_degs, exist_neighbor
-        )
-    elif args.algorithm == "rewire":
-        degree_edges, _ = match_missing_degrees_rewire(
-            updated_out_degs, exist_neighbor, max_retries=10
-        )
-    elif args.algorithm == "hybrid":
-        degree_edges = match_missing_degrees_hybrid(updated_out_degs, exist_neighbor)
-    else:
-        logging.error(f"Unknown algorithm choice: {args.algorithm}")
-        return
 
-    logging.info(
-        f"Degree matching complete. Added {len(degree_edges)} edges: {time.perf_counter() - start:.4f}s"
-    )
+    with timed("Subtracted existing edges"):
+        exist_neighbor, updated_out_degs = subtract_existing_edges(
+            args.input_edgelist, node_id2iid, out_degs
+        )
 
-    start = time.perf_counter()
-    export_degree_matched_edgelist(degree_edges, node_iid2id, Path(args.output_folder))
-    logging.info(f"Exported edgelist: {time.perf_counter() - start:.4f}s")
+    with timed("Degree matching"):
+        if args.algorithm == "greedy":
+            degree_edges = match_missing_degrees_greedy(updated_out_degs, exist_neighbor)
+        elif args.algorithm == "true_greedy":
+            degree_edges = match_missing_degrees_true_greedy(
+                updated_out_degs, exist_neighbor
+            )
+        elif args.algorithm == "random_greedy":
+            degree_edges = match_missing_degrees_random_greedy(
+                updated_out_degs, exist_neighbor
+            )
+        elif args.algorithm == "rewire":
+            degree_edges, _ = match_missing_degrees_rewire(
+                updated_out_degs, exist_neighbor, max_retries=10
+            )
+        elif args.algorithm == "hybrid":
+            degree_edges = match_missing_degrees_hybrid(updated_out_degs, exist_neighbor)
+        else:
+            logging.error(f"Unknown algorithm choice: {args.algorithm}")
+            return
+
+        logging.info(f"Added {len(degree_edges)} edges")
+
+    with timed("Exported edgelist"):
+        export_degree_matched_edgelist(degree_edges, node_iid2id, out_dir)
 
 
 if __name__ == "__main__":
