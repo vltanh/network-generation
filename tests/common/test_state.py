@@ -123,3 +123,48 @@ def test_mark_done_fails_on_empty_output(tmp_path: Path):
     )
     assert result.returncode != 0
     assert "empty" in result.stdout + result.stderr
+
+
+# ---------------------------------------------------------------------------
+# append_stage_log
+# ---------------------------------------------------------------------------
+
+def test_append_stage_log_prefixes_each_line(tmp_path: Path):
+    (tmp_path / "source.log").write_text("line one\nline two\n")
+    result = run_bash(
+        'append_stage_log "dest.log" "Stage 1a" "source.log"', cwd=tmp_path
+    )
+    assert result.returncode == 0, result.stderr
+    dest = (tmp_path / "dest.log").read_text()
+    assert "[Stage 1a] line one" in dest
+    assert "[Stage 1a] line two" in dest
+    assert "=== [Stage 1a] source.log ===" in dest
+
+
+def test_append_stage_log_appends_rather_than_overwrites(tmp_path: Path):
+    (tmp_path / "a.log").write_text("first\n")
+    (tmp_path / "b.log").write_text("second\n")
+    run_bash('append_stage_log "dest.log" "A" "a.log"', cwd=tmp_path)
+    run_bash('append_stage_log "dest.log" "B" "b.log"', cwd=tmp_path)
+    dest = (tmp_path / "dest.log").read_text()
+    assert "[A] first" in dest
+    assert "[B] second" in dest
+    # A must come before B.
+    assert dest.index("[A] first") < dest.index("[B] second")
+
+
+def test_append_stage_log_silently_skips_missing_source(tmp_path: Path):
+    result = run_bash(
+        'append_stage_log "dest.log" "Stage X" "nonexistent.log"', cwd=tmp_path
+    )
+    assert result.returncode == 0, result.stderr
+    assert not (tmp_path / "dest.log").exists()
+
+
+def test_append_stage_log_creates_dest_parent_dir(tmp_path: Path):
+    (tmp_path / "src.log").write_text("x\n")
+    result = run_bash(
+        'append_stage_log "out/subdir/dest.log" "S" "src.log"', cwd=tmp_path
+    )
+    assert result.returncode == 0, result.stderr
+    assert (tmp_path / "out" / "subdir" / "dest.log").is_file()
