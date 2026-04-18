@@ -1,9 +1,12 @@
 #!/bin/bash
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+if [[ "${SCRIPT_DIR}" == *"/slurmd/job"* ]]; then
+    SCRIPT_DIR="${SLURM_SUBMIT_DIR}"
+fi
 SRC_DIR="$( cd "${SCRIPT_DIR}/../.." && pwd )"
-# v2 scripts `from utils import ...` resolves to the local v2/utils.py first;
-# the shared src/ dir is only needed to locate profile.py.
+# v2 scripts import helpers from the local v2/utils.py; the shared src/
+# dir is needed for pipeline_common.py and profile.py.
 export PYTHONPATH="${SCRIPT_DIR}:${SRC_DIR}${PYTHONPATH:+:${PYTHONPATH}}"
 
 # Default values

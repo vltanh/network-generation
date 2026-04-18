@@ -1,10 +1,9 @@
 import logging
 import argparse
-from pathlib import Path
 
 import pandas as pd
 
-from utils import setup_logging
+from pipeline_common import standard_setup
 
 
 def parse_args():
@@ -56,9 +55,7 @@ def remove_singleton_outliers(
 
 def main():
     args = parse_args()
-    out_dir = Path(args.output_folder)
-    out_dir.mkdir(parents=True, exist_ok=True)
-    setup_logging(out_dir / "run.log")
+    out_dir = standard_setup(args.output_folder)
 
     # Load data
     df_edges = pd.read_csv(args.edgelist)

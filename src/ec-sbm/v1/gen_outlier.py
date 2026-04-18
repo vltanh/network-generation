@@ -1,4 +1,3 @@
-import time
 import logging
 import argparse
 from pathlib import Path
@@ -8,7 +7,7 @@ import pandas as pd
 import graph_tool.all as gt
 from scipy.sparse import dok_matrix
 
-from utils import setup_logging
+from pipeline_common import standard_setup, timed, write_edge_tuples_csv
 
 
 def load_network_data(edgelist_fp: Path, clustering_fp: Path):
@@ -89,45 +88,32 @@ def generate_outlier_subnetwork(b, probs, out_degs):
 
 
 def export_generated_edges(g, node_iid2id, output_dir: Path):
-    df_out = pd.DataFrame(
-        [(node_iid2id[src], node_iid2id[tgt]) for src, tgt in g.iter_edges()],
-        columns=["source", "target"],
-    )
-    df_out.to_csv(output_dir / "edge_outlier.csv", index=False)
+    write_edge_tuples_csv(output_dir / "edge_outlier.csv", g.iter_edges(), node_iid2id)
 
 
 def run_outlier_generation(orig_edgelist_fp, orig_clustering_fp, output_folder):
     orig_edgelist_fp = Path(orig_edgelist_fp)
     orig_clustering_fp = Path(orig_clustering_fp)
-    output_dir = Path(output_folder)
-
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    setup_logging(output_dir / "run.log")
+    output_dir = standard_setup(output_folder)
 
     logging.info("Generation of Outlier Subnetwork")
     logging.info(f"Network: {orig_edgelist_fp}")
     logging.info(f"Clustering: {orig_clustering_fp}")
     logging.info(f"Output folder: {output_dir}")
 
-    start = time.perf_counter()
-    df_edges, node2cluster_str, all_nodes, outliers = load_network_data(
-        orig_edgelist_fp, orig_clustering_fp
-    )
-    b, probs, out_degs, node_iid2id = prepare_sbm_inputs(
-        df_edges, node2cluster_str, all_nodes, outliers
-    )
-    logging.info(f"Setup: {time.perf_counter() - start:.4f} seconds")
+    with timed("Setup"):
+        df_edges, node2cluster_str, all_nodes, outliers = load_network_data(
+            orig_edgelist_fp, orig_clustering_fp
+        )
+        b, probs, out_degs, node_iid2id = prepare_sbm_inputs(
+            df_edges, node2cluster_str, all_nodes, outliers
+        )
 
-    start = time.perf_counter()
-    g = generate_outlier_subnetwork(b, probs, out_degs)
-    logging.info(
-        f"Generation of outlier subgraph: {time.perf_counter() - start:.4f} seconds"
-    )
+    with timed("Generation of outlier subgraph"):
+        g = generate_outlier_subnetwork(b, probs, out_degs)
 
-    start = time.perf_counter()
-    export_generated_edges(g, node_iid2id, output_dir)
-    logging.info(f"Post-process: {time.perf_counter() - start:.4f} seconds")
+    with timed("Post-process"):
+        export_generated_edges(g, node_iid2id, output_dir)
     logging.info("Complete.")
 
 

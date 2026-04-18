@@ -1,8 +1,6 @@
-import time
 import random
 import logging
 import argparse
-from pathlib import Path
 from collections import defaultdict, deque
 
 import numpy as np
@@ -10,7 +8,8 @@ import pandas as pd
 import graph_tool.all as gt
 from scipy.sparse import dok_matrix
 
-from utils import setup_logging, normalize_edge, run_rewire_attempts
+from pipeline_common import standard_setup, timed, write_edge_tuples_csv
+from utils import normalize_edge, run_rewire_attempts
 
 
 def load_network_data(orig_edgelist_fp, orig_clustering_fp, exist_edgelist_fp):
@@ -253,12 +252,8 @@ def generate_residual_subnetwork(b, probs, out_degs, edge_correction_mode):
     return [(int(src), int(tgt)) for src, tgt in g.iter_edges()]
 
 
-def export_generated_edges(edges, node_iid2id, output_dir: Path):
-    df_out = pd.DataFrame(
-        [(node_iid2id[src], node_iid2id[tgt]) for src, tgt in edges],
-        columns=["source", "target"],
-    )
-    df_out.to_csv(output_dir / "edge_outlier.csv", index=False)
+def export_generated_edges(edges, node_iid2id, output_dir):
+    write_edge_tuples_csv(output_dir / "edge_outlier.csv", edges, node_iid2id)
 
 
 def run_outlier_generation(
@@ -269,31 +264,27 @@ def run_outlier_generation(
     edge_correction_mode,
     output_folder,
 ):
-    output_dir = Path(output_folder)
-    output_dir.mkdir(parents=True, exist_ok=True)
-    setup_logging(output_dir / "run.log")
+    output_dir = standard_setup(output_folder)
 
     logging.info("Starting Residual SBM Generation...")
     logging.info(
         f"Correction Mode: {edge_correction_mode} | Outlier Mode: {outlier_mode}"
     )
 
-    start = time.perf_counter()
-    df_orig, df_exist, node2cluster_str, all_nodes, outliers = load_network_data(
-        orig_edgelist_fp, orig_clustering_fp, exist_edgelist_fp
-    )
-    b, probs, out_degs, node_iid2id = prepare_residual_sbm_inputs(
-        df_orig, df_exist, node2cluster_str, all_nodes, outliers, outlier_mode
-    )
-    logging.info(f"Setup complete: {time.perf_counter() - start:.4f} seconds")
+    with timed("Setup"):
+        df_orig, df_exist, node2cluster_str, all_nodes, outliers = load_network_data(
+            orig_edgelist_fp, orig_clustering_fp, exist_edgelist_fp
+        )
+        b, probs, out_degs, node_iid2id = prepare_residual_sbm_inputs(
+            df_orig, df_exist, node2cluster_str, all_nodes, outliers, outlier_mode
+        )
 
-    start = time.perf_counter()
-    edges = generate_residual_subnetwork(b, probs, out_degs, edge_correction_mode)
-    logging.info(
-        f"Generation ({len(edges)} edges): {time.perf_counter() - start:.4f} seconds"
-    )
+    with timed("Generation of residual subgraph"):
+        edges = generate_residual_subnetwork(b, probs, out_degs, edge_correction_mode)
 
-    export_generated_edges(edges, node_iid2id, output_dir)
+    with timed("Export"):
+        export_generated_edges(edges, node_iid2id, output_dir)
+
     logging.info("Complete.")
 
 
