@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import powerlaw
 
-from pipeline_common import standard_setup, timed
+from pipeline_common import standard_setup, timed, drop_singleton_clusters
 
 
 def run_lfr_generation(
@@ -77,6 +77,7 @@ def run_lfr_generation(
         v = edge_df[["source", "target"]].max(axis=1)
         edge_df = pd.DataFrame({"source": u, "target": v}).drop_duplicates().reset_index(drop=True)
 
+        com_df = drop_singleton_clusters(com_df)
         edge_df.to_csv(output_dir / "edge.csv", index=False)
         com_df.to_csv(output_dir / "com.csv", index=False)
 

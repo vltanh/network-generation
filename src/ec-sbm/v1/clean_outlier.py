@@ -3,7 +3,7 @@ import argparse
 
 import pandas as pd
 
-from pipeline_common import standard_setup
+from pipeline_common import standard_setup, drop_singleton_clusters
 
 
 def parse_args():
@@ -35,21 +35,11 @@ def remove_singleton_outliers(
     """
     Removes singleton clusters and filters out edges connected to them.
     """
-    # 1. Find valid clusters (size > 1) to remove singletons
-    cluster_counts = df_clusters["cluster_id"].value_counts()
-    valid_clusters = cluster_counts[cluster_counts > 1].index
-
-    # 2. Filter clustering dataframe to keep only nodes in valid clusters
-    df_filtered_clusters = df_clusters[df_clusters["cluster_id"].isin(valid_clusters)]
-
-    # Create a fast lookup set of the valid node IDs
+    df_filtered_clusters = drop_singleton_clusters(df_clusters)
     valid_nodes = set(df_filtered_clusters["node_id"])
-
-    # 3. Filter edges: keep only if BOTH source and target are valid
     df_filtered_edges = df_edges[
         df_edges["source"].isin(valid_nodes) & df_edges["target"].isin(valid_nodes)
     ]
-
     return df_filtered_edges, df_filtered_clusters
 
 

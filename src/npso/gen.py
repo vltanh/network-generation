@@ -8,7 +8,7 @@ import pandas as pd
 import powerlaw
 import networkit as nk
 
-from pipeline_common import standard_setup, timed
+from pipeline_common import standard_setup, timed, drop_singleton_clusters
 
 
 def compute_global_ccoeff_from_edgelist(edgelist_path):
@@ -136,8 +136,8 @@ def run_npso_generation(
 
     edge_df = pd.read_csv(best_edge, sep="\t", header=None, names=["source", "target"])
     com_df = pd.read_csv(best_com, sep="\t", header=None, names=["node_id", "cluster_id"])
-    # Drop outlier bucket (cluster_id == 1 matches synnet convention).
-    com_df = com_df[com_df["cluster_id"] > 1]
+    # Drop outlier bucket (cluster_id == 1 matches synnet convention), then singletons.
+    com_df = drop_singleton_clusters(com_df[com_df["cluster_id"] > 1])
 
     edge_df.to_csv(output_dir / "edge.csv", index=False)
     com_df.to_csv(output_dir / "com.csv", index=False)
