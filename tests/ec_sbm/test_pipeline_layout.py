@@ -52,17 +52,17 @@ def tmp_output_dir(tmp_path: Path) -> Path:
 # Layout
 # ---------------------------------------------------------------------------
 
-USER_FACING_FILES = {"edge.csv", "com.csv", "sources.json", "done"}
+USER_FACING_FILES = {"edge.csv", "com.csv", "sources.json", "done", "run.log"}
 
 
 @pytest.mark.parametrize("generator", ["ec-sbm-v1", "ec-sbm-v2"])
-def test_user_facing_tree_holds_only_four_files(
+def test_user_facing_tree_holds_only_expected_files(
     tmp_output_dir: Path, generator: str
 ):
     """After a successful run, the top-level output directory must contain
-    only the four user-facing files (edge.csv, com.csv, sources.json, done).
-    No scratch subdirectories like clustered/, outlier/, match_degree/, or
-    setup/ should survive."""
+    only the five user-facing files (edge.csv, com.csv, sources.json, done,
+    run.log).  No scratch subdirectories like clustered/, outlier/,
+    match_degree/, or setup/ should survive."""
     assert run_generator(generator, tmp_output_dir).returncode == 0
     out = run_dir(tmp_output_dir, generator)
 
@@ -200,7 +200,7 @@ def test_partial_resume_via_scratch_dir(
     # We approximate by deleting the final done-file and the final
     # edge.csv, then rerunning.  The pipeline should repopulate .state/
     # (running all stages) and finish successfully.
-    for name in ("done", "edge.csv", "sources.json", "com.csv"):
+    for name in USER_FACING_FILES:
         if (out / name).exists():
             (out / name).unlink()
 

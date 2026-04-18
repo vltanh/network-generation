@@ -1,6 +1,6 @@
-# State-tracking helpers for ec-sbm pipelines.
+# State-tracking helpers for network-generation pipelines.
 #
-# Sourced by src/ec-sbm/{v1,v2}/pipeline.sh to provide cache-aware stage
+# Sourced by per-generator pipeline scripts to provide cache-aware stage
 # execution: a stage is skipped if its recorded input/output hashes still
 # match what is on disk.
 
@@ -82,4 +82,26 @@ mark_done() {
     sha256sum "${inputs[@]}" "${outputs[@]}" > "${tmp_done}"
     mv "${tmp_done}" "${done_file}"
     echo "Success [${stage_name}]: I/O hashes recorded atomically. Marked as done."
+}
+
+# Append a per-stage log file to a consolidated run.log with a prefix.
+#
+# If the source log exists, each line is written to ${dest_log} prefixed
+# with "[<stage_label>] ".  Missing source logs are silently skipped so
+# callers can idempotently consolidate without pre-checking existence.
+#
+# Usage: append_stage_log "dest_log" "stage_label" "source_log"
+append_stage_log() {
+    local dest_log="$1"
+    local stage_label="$2"
+    local source_log="$3"
+
+    [ -f "${source_log}" ] || return 0
+
+    mkdir -p "$(dirname "${dest_log}")"
+    {
+        echo "=== [${stage_label}] ${source_log} ==="
+        sed -e "s/^/[${stage_label}] /" "${source_log}"
+        echo ""
+    } >> "${dest_log}"
 }

@@ -209,6 +209,29 @@ else
 fi
 
 # ==========================================
+# Consolidate per-stage logs into one top-level run.log
+# ==========================================
+# Assemble a persistent debugging trail before .state/ is wiped.  Each
+# stage contributes its time_and_err.log (pipeline-side stderr + timing)
+# and its Python run.log (if the stage script called standard_setup).
+FINAL_LOG="${OUTPUT_DIR}/run.log"
+rm -f "${FINAL_LOG}"
+append_stage_log "${FINAL_LOG}" "Stage 1a" "${STG1_CLEAN_DIR}/time_and_err.log"
+append_stage_log "${FINAL_LOG}" "Stage 1a" "${STG1_CLEAN_DIR}/run.log"
+append_stage_log "${FINAL_LOG}" "Stage 1b" "${STG1_SETUP_DIR}/time_and_err.log"
+append_stage_log "${FINAL_LOG}" "Stage 1b" "${STG1_SETUP_DIR}/run.log"
+append_stage_log "${FINAL_LOG}" "Stage 1c" "${STG1_DIR}/time_and_err.log"
+append_stage_log "${FINAL_LOG}" "Stage 1c" "${STG1_DIR}/run.log"
+append_stage_log "${FINAL_LOG}" "Stage 2a" "${STG2_OUTLIER_DIR}/time_and_err.log"
+append_stage_log "${FINAL_LOG}" "Stage 2a" "${STG2_OUTLIER_DIR}/run.log"
+append_stage_log "${FINAL_LOG}" "Stage 2b" "${STG2_DIR}/time_and_err.log"
+append_stage_log "${FINAL_LOG}" "Stage 2b" "${STG2_DIR}/run.log"
+append_stage_log "${FINAL_LOG}" "Stage 3a" "${STG3_MATCH_DIR}/time_and_err.log"
+append_stage_log "${FINAL_LOG}" "Stage 3a" "${STG3_MATCH_DIR}/run.log"
+append_stage_log "${FINAL_LOG}" "Stage 3b" "${STG3_FINAL_DIR}/time_and_err.log"
+append_stage_log "${FINAL_LOG}" "Stage 3b" "${STG3_FINAL_DIR}/run.log"
+
+# ==========================================
 # Record top-level done (original inputs -> final outputs) and clean up
 # ==========================================
 # The top-level done-file hashes the *original* inputs and the final
