@@ -1,11 +1,11 @@
 #!/bin/bash
+# nPSO pipeline — thin wrapper that delegates to src/_common/simple_pipeline.sh.
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 if [[ "${SCRIPT_DIR}" == *"/slurmd/job"* ]]; then
-    SCRIPT_DIR="${SLURM_SUBMIT_DIR}"
+    SCRIPT_DIR="${SLURM_SUBMIT_DIR}/src/npso"
 fi
-SRC_DIR="$( cd "${SCRIPT_DIR}/.." && pwd )"
-export PYTHONPATH="${SRC_DIR}${PYTHONPATH:+:${PYTHONPATH}}"
+SHARED_DIR="$( cd "${SCRIPT_DIR}/../_common" && pwd )"
 
 TIMEOUT="3d"
 SEED=0
@@ -26,37 +26,27 @@ while [[ "$#" -gt 0 ]]; do
     shift
 done
 
-if [ ! -f "${INPUT_EDGELIST}" ] || [ ! -f "${INPUT_CLUSTERING}" ]; then
-    echo "Error: The input network or clustering file does not exist."
-    exit 1
-fi
-
 if [ -z "${NPSO_DIR}" ]; then
     echo "Error: --npso-dir is required (path to nPSO_model checkout)."
     exit 1
 fi
 
-SETUP_DIR="${OUTPUT_DIR}/setup"
-mkdir -p "${SETUP_DIR}" "${OUTPUT_DIR}"
+SETUP="${OUTPUT_DIR}/.state/setup"
 
-{ timeout "${TIMEOUT}" /usr/bin/time -v python "${SRC_DIR}/profile.py" \
-    --edgelist "${INPUT_EDGELIST}" \
-    --clustering "${INPUT_CLUSTERING}" \
-    --output-folder "${SETUP_DIR}" \
-    --generator npso; } 2> "${SETUP_DIR}/time_and_err.log"
+GEN_NAME="npso"
+GEN_SCRIPT_DIR="${SCRIPT_DIR}"
+GEN_PROFILE_OUTPUTS=(degree.csv cluster_sizes.csv)
+# npso also reads the original edgelist at stage 2 (for the clustering-coeff
+# computation); declare it so stage-2 cache tracks that input.
+GEN_EXTRA_STAGE2_INPUTS="${INPUT_EDGELIST}"
+# shellcheck disable=SC2034
+GEN_CLI_ARGS=(
+    --input-edgelist   "${INPUT_EDGELIST}"
+    --degree           "${SETUP}/degree.csv"
+    --cluster-sizes    "${SETUP}/cluster_sizes.csv"
+    --npso-dir         "${NPSO_DIR}"
+    --n-threads        "${N_THREADS}"
+)
 
-{ timeout "${TIMEOUT}" /usr/bin/time -v python "${SCRIPT_DIR}/gen.py" \
-    --input-edgelist "${INPUT_EDGELIST}" \
-    --degree "${SETUP_DIR}/degree.csv" \
-    --cluster-sizes "${SETUP_DIR}/cluster_sizes.csv" \
-    --npso-dir "${NPSO_DIR}" \
-    --output-folder "${OUTPUT_DIR}" \
-    --seed "${SEED}" \
-    --n-threads "${N_THREADS}"; } 2> "${OUTPUT_DIR}/time_and_err.log"
-
-if [ ! -f "${OUTPUT_DIR}/edge.csv" ]; then
-    echo "Error: nPSO generation failed — no edge.csv produced."
-    exit 1
-fi
-
-echo "=== nPSO pipeline completed successfully ==="
+# shellcheck disable=SC1091
+source "${SHARED_DIR}/simple_pipeline.sh"

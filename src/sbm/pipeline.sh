@@ -1,11 +1,11 @@
 #!/bin/bash
+# SBM pipeline — thin wrapper that delegates to src/_common/simple_pipeline.sh.
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 if [[ "${SCRIPT_DIR}" == *"/slurmd/job"* ]]; then
-    SCRIPT_DIR="${SLURM_SUBMIT_DIR}"
+    SCRIPT_DIR="${SLURM_SUBMIT_DIR}/src/sbm"
 fi
-SRC_DIR="$( cd "${SCRIPT_DIR}/.." && pwd )"
-export PYTHONPATH="${SRC_DIR}${PYTHONPATH:+:${PYTHONPATH}}"
+SHARED_DIR="$( cd "${SCRIPT_DIR}/../_common" && pwd )"
 
 TIMEOUT="3d"
 SEED=0
@@ -26,34 +26,22 @@ done
 
 export OMP_NUM_THREADS="${N_THREADS}"
 
-if [ ! -f "${INPUT_EDGELIST}" ] || [ ! -f "${INPUT_CLUSTERING}" ]; then
-    echo "Error: The input network or clustering file does not exist."
-    exit 1
-fi
+# Must match STG1_SETUP_DIR in _common/simple_pipeline.sh.
+SETUP="${OUTPUT_DIR}/.state/setup"
 
-SETUP_DIR="${OUTPUT_DIR}/setup"
-mkdir -p "${SETUP_DIR}" "${OUTPUT_DIR}"
+GEN_NAME="sbm"
+GEN_SCRIPT_DIR="${SCRIPT_DIR}"
+GEN_PROFILE_OUTPUTS=(node_id.csv cluster_id.csv assignment.csv degree.csv edge_counts.csv)
+# shellcheck disable=SC2034
+GEN_CLI_ARGS=(
+    --node-id          "${SETUP}/node_id.csv"
+    --cluster-id       "${SETUP}/cluster_id.csv"
+    --assignment       "${SETUP}/assignment.csv"
+    --degree           "${SETUP}/degree.csv"
+    --edge-counts      "${SETUP}/edge_counts.csv"
+    --input-clustering "${INPUT_CLUSTERING}"
+    --n-threads        "${N_THREADS}"
+)
 
-{ timeout "${TIMEOUT}" /usr/bin/time -v python "${SRC_DIR}/profile.py" \
-    --edgelist "${INPUT_EDGELIST}" \
-    --clustering "${INPUT_CLUSTERING}" \
-    --output-folder "${SETUP_DIR}" \
-    --generator sbm; } 2> "${SETUP_DIR}/time_and_err.log"
-
-{ timeout "${TIMEOUT}" /usr/bin/time -v python "${SCRIPT_DIR}/gen.py" \
-    --node-id "${SETUP_DIR}/node_id.csv" \
-    --cluster-id "${SETUP_DIR}/cluster_id.csv" \
-    --assignment "${SETUP_DIR}/assignment.csv" \
-    --degree "${SETUP_DIR}/degree.csv" \
-    --edge-counts "${SETUP_DIR}/edge_counts.csv" \
-    --input-clustering "${INPUT_CLUSTERING}" \
-    --output-folder "${OUTPUT_DIR}" \
-    --seed "${SEED}" \
-    --n-threads "${N_THREADS}"; } 2> "${OUTPUT_DIR}/time_and_err.log"
-
-if [ ! -f "${OUTPUT_DIR}/edge.csv" ]; then
-    echo "Error: SBM generation failed — no edge.csv produced."
-    exit 1
-fi
-
-echo "=== SBM pipeline completed successfully ==="
+# shellcheck disable=SC1091
+source "${SHARED_DIR}/simple_pipeline.sh"
