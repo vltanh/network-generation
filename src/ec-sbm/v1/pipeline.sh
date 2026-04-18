@@ -13,6 +13,7 @@ export PYTHONPATH="${SRC_DIR}${PYTHONPATH:+:${PYTHONPATH}}"
 TIMEOUT="3d"
 SKIP_STAGE_1=0
 SKIP_STAGE_2=0
+N_THREADS=1
 
 # Parse named arguments
 while [[ "$#" -gt 0 ]]; do
@@ -23,10 +24,13 @@ while [[ "$#" -gt 0 ]]; do
         --timeout) TIMEOUT="$2"; shift ;;
         --existing-clustered) SKIP_STAGE_1=1 ;;
         --existing-outlier) SKIP_STAGE_1=1; SKIP_STAGE_2=1 ;;
+        --n-threads) N_THREADS="$2"; shift ;;
         *) echo "Unknown parameter passed: $1"; exit 1 ;;
     esac
     shift
 done
+
+export OMP_NUM_THREADS="${N_THREADS}"
 
 if [ ! -f "${INPUT_EDGELIST}" ] || [ ! -f "${INPUT_CLUSTERING}" ]; then
     echo "Error: The input network or clustering file does not exist."

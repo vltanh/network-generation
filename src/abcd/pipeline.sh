@@ -9,6 +9,7 @@ export PYTHONPATH="${SRC_DIR}${PYTHONPATH:+:${PYTHONPATH}}"
 
 TIMEOUT="3d"
 SEED=0
+N_THREADS=1
 ABCD_DIR=""
 
 while [[ "$#" -gt 0 ]]; do
@@ -19,10 +20,13 @@ while [[ "$#" -gt 0 ]]; do
         --abcd-dir) ABCD_DIR="$2"; shift ;;
         --timeout) TIMEOUT="$2"; shift ;;
         --seed) SEED="$2"; shift ;;
+        --n-threads) N_THREADS="$2"; shift ;;
         *) echo "Unknown parameter passed: $1"; exit 1 ;;
     esac
     shift
 done
+
+export JULIA_NUM_THREADS="${N_THREADS}"
 
 if [ ! -f "${INPUT_EDGELIST}" ] || [ ! -f "${INPUT_CLUSTERING}" ]; then
     echo "Error: The input network or clustering file does not exist."

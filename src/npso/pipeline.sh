@@ -9,6 +9,7 @@ export PYTHONPATH="${SRC_DIR}${PYTHONPATH:+:${PYTHONPATH}}"
 
 TIMEOUT="3d"
 SEED=0
+N_THREADS=1
 NPSO_DIR=""
 
 while [[ "$#" -gt 0 ]]; do
@@ -19,6 +20,7 @@ while [[ "$#" -gt 0 ]]; do
         --npso-dir) NPSO_DIR="$2"; shift ;;
         --timeout) TIMEOUT="$2"; shift ;;
         --seed) SEED="$2"; shift ;;
+        --n-threads) N_THREADS="$2"; shift ;;
         *) echo "Unknown parameter passed: $1"; exit 1 ;;
     esac
     shift
@@ -49,7 +51,8 @@ mkdir -p "${SETUP_DIR}" "${OUTPUT_DIR}"
     --cluster-sizes "${SETUP_DIR}/cluster_sizes.csv" \
     --npso-dir "${NPSO_DIR}" \
     --output-folder "${OUTPUT_DIR}" \
-    --seed "${SEED}"; } 2> "${OUTPUT_DIR}/time_and_err.log"
+    --seed "${SEED}" \
+    --n-threads "${N_THREADS}"; } 2> "${OUTPUT_DIR}/time_and_err.log"
 
 if [ ! -f "${OUTPUT_DIR}/edge.csv" ]; then
     echo "Error: nPSO generation failed — no edge.csv produced."

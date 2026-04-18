@@ -60,6 +60,7 @@ Use this mode to provide explicit file paths for your own datasets.
 | `--run-stats` | Enables computation of synthetic network and cluster statistics. |
 | `--run-comp` | Enables statistical comparison. **Requires** `--input-network-stats` and `--input-cluster-stats`. |
 | `--seed <n>` | Seed forwarded to `sbm`, `abcd`, `abcd+o`, `lfr`, `npso` generators (default `0`). |
+| `--n-threads <n>` | Thread count for parallelizable backends (default `1`). Applies to `sbm`/`ec-sbm-*` (via `OMP_NUM_THREADS` for graph-tool), `abcd`/`abcd+o` (via `JULIA_NUM_THREADS`), and `npso` (via MATLAB `maxNumCompThreads`). `lfr` is single-threaded and ignores this flag. **Warning:** values greater than `1` are untested and may break determinism or produce unknown behavior — leave at `1` unless you have a reason to change it. |
 | `--abcd-dir <p>` | Override for `abcd` / `abcd+o`. Defaults to `externals/abcd`. Path to an `ABCDGraphGenerator.jl` checkout (exposes `utils/graph_sampler.jl`). |
 | `--lfr-binary <p>` | Override for `lfr`. Defaults to `externals/lfr/unweighted_undirected/benchmark`. Path to the compiled LFR benchmark executable. |
 | `--npso-dir <p>` | Override for `npso`. Defaults to `externals/npso`. Path to the `nPSO_model` checkout; requires `matlab` on PATH. |

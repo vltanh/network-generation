@@ -35,6 +35,7 @@ run_stats_flag=0
 run_comp_flag=0
 
 seed=0
+n_threads=1
 abcd_dir="${SCRIPT_DIR}/externals/abcd"
 lfr_binary="${SCRIPT_DIR}/externals/lfr/unweighted_undirected/benchmark"
 npso_dir="${SCRIPT_DIR}/externals/npso"
@@ -54,6 +55,7 @@ while [[ "$#" -gt 0 ]]; do
         --run-stats) run_stats_flag=1; shift 1 ;;
         --run-comp) run_comp_flag=1; shift 1 ;;
         --seed) seed="$2"; shift 2 ;;
+        --n-threads) n_threads="$2"; shift 2 ;;
         --abcd-dir) abcd_dir="$2"; shift 2 ;;
         --lfr-binary) lfr_binary="$2"; shift 2 ;;
         --npso-dir) npso_dir="$2"; shift 2 ;;
@@ -239,20 +241,23 @@ if [[ "${generator}" == "ec-sbm-v2" ]]; then
         --output-dir "${OUT_DIR}" \
         --outlier-mode "combined" \
         --edge-correction "rewire" \
-        --algorithm "true_greedy"
+        --algorithm "true_greedy" \
+        --n-threads "${n_threads}"
 elif [[ "${generator}" == "ec-sbm-v1" ]]; then
     mkdir -p "${OUT_DIR}"
     "${SCRIPT_DIR}/src/ec-sbm/v1/pipeline.sh" \
         --input-edgelist "${INP_EDGE}" \
         --input-clustering "${INP_COM}" \
-        --output-dir "${OUT_DIR}"
+        --output-dir "${OUT_DIR}" \
+        --n-threads "${n_threads}"
 elif [[ "${generator}" == "sbm" ]]; then
     mkdir -p "${OUT_DIR}"
     "${SCRIPT_DIR}/src/sbm/pipeline.sh" \
         --input-edgelist "${INP_EDGE}" \
         --input-clustering "${INP_COM}" \
         --output-dir "${OUT_DIR}" \
-        --seed "${seed}"
+        --seed "${seed}" \
+        --n-threads "${n_threads}"
 elif [[ "${generator}" == "abcd" ]]; then
     if [ -z "${abcd_dir}" ]; then
         log "Error: --abcd-dir is required for generator 'abcd'."
@@ -264,7 +269,8 @@ elif [[ "${generator}" == "abcd" ]]; then
         --input-clustering "${INP_COM}" \
         --output-dir "${OUT_DIR}" \
         --abcd-dir "${abcd_dir}" \
-        --seed "${seed}"
+        --seed "${seed}" \
+        --n-threads "${n_threads}"
 elif [[ "${generator}" == "abcd+o" ]]; then
     if [ -z "${abcd_dir}" ]; then
         log "Error: --abcd-dir is required for generator 'abcd+o'."
@@ -276,7 +282,8 @@ elif [[ "${generator}" == "abcd+o" ]]; then
         --input-clustering "${INP_COM}" \
         --output-dir "${OUT_DIR}" \
         --abcd-dir "${abcd_dir}" \
-        --seed "${seed}"
+        --seed "${seed}" \
+        --n-threads "${n_threads}"
 elif [[ "${generator}" == "lfr" ]]; then
     if [ -z "${lfr_binary}" ]; then
         log "Error: --lfr-binary is required for generator 'lfr'."
@@ -300,7 +307,8 @@ elif [[ "${generator}" == "npso" ]]; then
         --input-clustering "${INP_COM}" \
         --output-dir "${OUT_DIR}" \
         --npso-dir "${npso_dir}" \
-        --seed "${seed}"
+        --seed "${seed}" \
+        --n-threads "${n_threads}"
 fi
 
 if [ ! -f "${OUT_DIR}/edge.csv" ]; then

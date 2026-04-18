@@ -9,6 +9,7 @@ export PYTHONPATH="${SRC_DIR}${PYTHONPATH:+:${PYTHONPATH}}"
 
 TIMEOUT="3d"
 SEED=0
+N_THREADS=1
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -17,10 +18,13 @@ while [[ "$#" -gt 0 ]]; do
         --output-dir) OUTPUT_DIR="$2"; shift ;;
         --timeout) TIMEOUT="$2"; shift ;;
         --seed) SEED="$2"; shift ;;
+        --n-threads) N_THREADS="$2"; shift ;;
         *) echo "Unknown parameter passed: $1"; exit 1 ;;
     esac
     shift
 done
+
+export OMP_NUM_THREADS="${N_THREADS}"
 
 if [ ! -f "${INPUT_EDGELIST}" ] || [ ! -f "${INPUT_CLUSTERING}" ]; then
     echo "Error: The input network or clustering file does not exist."
@@ -43,7 +47,8 @@ mkdir -p "${SETUP_DIR}" "${OUTPUT_DIR}"
     --degree "${SETUP_DIR}/degree.csv" \
     --edge-counts "${SETUP_DIR}/edge_counts.csv" \
     --output-folder "${OUTPUT_DIR}" \
-    --seed "${SEED}"; } 2> "${OUTPUT_DIR}/time_and_err.log"
+    --seed "${SEED}" \
+    --n-threads "${N_THREADS}"; } 2> "${OUTPUT_DIR}/time_and_err.log"
 
 if [ ! -f "${OUTPUT_DIR}/edge.csv" ]; then
     echo "Error: SBM generation failed — no edge.csv produced."
