@@ -1,2 +1,5 @@
 # Python artifacts
 __pycache__
+
+# Runtime artifacts
+complete.log
