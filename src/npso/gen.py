@@ -1,7 +1,6 @@
-import os
-import time
 import logging
 import argparse
+import subprocess
 from pathlib import Path
 
 import numpy as np
@@ -9,7 +8,7 @@ import pandas as pd
 import powerlaw
 import networkit as nk
 
-from utils import setup_logging
+from pipeline_common import standard_setup, timed
 
 
 def compute_global_ccoeff_from_edgelist(edgelist_path):
@@ -23,38 +22,31 @@ def compute_global_ccoeff_from_edgelist(edgelist_path):
 
 def run_npso_generation(
     input_edgelist,
-    node_id_path,
-    cluster_id_path,
-    assignment_path,
     degree_path,
     cluster_sizes_path,
     npso_dir,
     output_dir,
     seed,
 ):
-    Path(output_dir).mkdir(parents=True, exist_ok=True)
-    setup_logging(Path(output_dir) / "run.log")
+    output_dir = standard_setup(output_dir)
 
     logging.info("Starting nPSO Generation...")
     logging.info(f"Seed: {seed}")
 
-    start = time.perf_counter()
-    degrees = pd.read_csv(degree_path, header=None)[0].to_numpy()
-    cluster_sizes = pd.read_csv(cluster_sizes_path, header=None)[0].to_numpy()
-    assignments = pd.read_csv(assignment_path, header=None)[0].to_numpy()
-    n_outliers = int((assignments == -1).sum())
+    with timed("Input loading + parameter computation"):
+        degrees = pd.read_csv(degree_path, header=None)[0].to_numpy()
+        cluster_sizes = pd.read_csv(cluster_sizes_path, header=None)[0].to_numpy()
 
-    N = len(degrees)
-    m = int(np.round(np.mean(degrees) / 2))
-    gamma = float(np.max([
-        powerlaw.Fit(degrees, discrete=True, verbose=False).power_law.alpha,
-        2.0,
-    ]))
-    c = int(len(cluster_sizes) + n_outliers)
+        N = len(degrees)
+        m = int(np.round(np.mean(degrees) / 2))
+        gamma = float(np.max([
+            powerlaw.Fit(degrees, discrete=True, verbose=False).power_law.alpha,
+            2.0,
+        ]))
+        c = int(len(cluster_sizes))
 
-    target_global_ccoeff = compute_global_ccoeff_from_edgelist(input_edgelist)
-    logging.info(f"N={N} m={m} gamma={gamma} c={c} target_ccoeff={target_global_ccoeff}")
-    logging.info(f"Input loading + parameter computation elapsed: {time.perf_counter() - start:.4f} seconds")
+        target_global_ccoeff = compute_global_ccoeff_from_edgelist(input_edgelist)
+        logging.info(f"N={N} m={m} gamma={gamma} c={c} target_ccoeff={target_global_ccoeff}")
 
     min_T, max_T = 0.0, 1.0
     best_T = None
@@ -63,6 +55,7 @@ def run_npso_generation(
     prev_global_ccoeff, global_ccoeff = None, None
     max_iters = 100
     npso_dir_abs = Path(npso_dir).resolve()
+    matlab_wrapper_dir = (Path(__file__).resolve().parent / "matlab")
 
     for it in range(max_iters):
         T = min_T + (max_T - min_T) / 2
@@ -70,20 +63,28 @@ def run_npso_generation(
             break
         logging.info(f"[iter {it}] T={T}")
 
-        gen_start = time.perf_counter()
-        prefix = Path(output_dir) / f"{T:.5f}_"
-        cmd = (
-            f"matlab -nodisplay -nosplash -nodesktop -r "
-            f"\"try, addpath(genpath('{npso_dir_abs}')), "
-            f"run_npso({N}, {m}, {T}, {gamma}, {c}, '{prefix}'), "
-            f"catch e, fprintf(1, e.message), end, quit\""
-        )
-        logging.info(cmd)
-        os.system(cmd)
-        logging.info(f"Generation elapsed: {time.perf_counter() - gen_start:.4f} seconds")
+        with timed("Generation"):
+            prefix = output_dir / f"{T:.5f}_"
+            matlab_inner = (
+                f"try, addpath(genpath('{npso_dir_abs}')), "
+                f"addpath('{matlab_wrapper_dir}'), "
+                f"run_npso({N}, {m}, {T}, {gamma}, {c}, '{prefix}', {seed}), "
+                f"catch e, fprintf(1, e.message), end, quit"
+            )
+            bash_script = (
+                "if ! command -v matlab >/dev/null 2>&1; then "
+                "for f in /etc/profile.d/z00_lmod.sh /usr/share/lmod/lmod/init/bash; do "
+                '[ -r "$f" ] && . "$f" && break; done; '
+                "command -v module >/dev/null 2>&1 && module load matlab 2>/dev/null; fi; "
+                'exec matlab -nodisplay -nosplash -nodesktop -r "$1"'
+            )
+            subprocess.run(
+                ["bash", "-c", bash_script, "bash", matlab_inner],
+                check=False,
+            )
 
-        edge_path = Path(output_dir) / f"{T:.5f}_edge.tsv"
-        com_path = Path(output_dir) / f"{T:.5f}_com.tsv"
+        edge_path = output_dir / f"{T:.5f}_edge.tsv"
+        com_path = output_dir / f"{T:.5f}_com.tsv"
         if not edge_path.exists() or not com_path.exists():
             logging.error(f"Missing MATLAB outputs at T={T}")
             global_ccoeff = None
@@ -101,15 +102,15 @@ def run_npso_generation(
 
         if best_global_ccoeff is None or diff < best_diff:
             if best_T is not None and best_T != T:
-                _safe_remove(Path(output_dir) / f"{best_T:.5f}_edge.tsv")
-                _safe_remove(Path(output_dir) / f"{best_T:.5f}_com.tsv")
+                _safe_remove(output_dir / f"{best_T:.5f}_edge.tsv")
+                _safe_remove(output_dir / f"{best_T:.5f}_com.tsv")
             best_T = T
             best_global_ccoeff = global_ccoeff
             best_diff = diff
         else:
             if best_T is not None and best_T != T:
-                _safe_remove(Path(output_dir) / f"{T:.5f}_edge.tsv")
-                _safe_remove(Path(output_dir) / f"{T:.5f}_com.tsv")
+                _safe_remove(output_dir / f"{T:.5f}_edge.tsv")
+                _safe_remove(output_dir / f"{T:.5f}_com.tsv")
 
         logging.info(f"Step: {step}  Best T: {best_T}  Best ccoeff: {best_global_ccoeff}  Best diff: {best_diff}")
         if best_diff is not None and best_diff < 0.005:
@@ -125,8 +126,8 @@ def run_npso_generation(
     if best_T is None:
         raise RuntimeError("nPSO produced no viable output.")
 
-    best_edge = Path(output_dir) / f"{best_T:.5f}_edge.tsv"
-    best_com = Path(output_dir) / f"{best_T:.5f}_com.tsv"
+    best_edge = output_dir / f"{best_T:.5f}_edge.tsv"
+    best_com = output_dir / f"{best_T:.5f}_com.tsv"
     if not best_edge.exists() or not best_com.exists():
         raise RuntimeError(f"Best nPSO output missing at T={best_T}")
 
@@ -135,13 +136,13 @@ def run_npso_generation(
     # Drop outlier bucket (cluster_id == 1 matches synnet convention).
     com_df = com_df[com_df["cluster_id"] > 1]
 
-    edge_df.to_csv(Path(output_dir) / "edge.csv", index=False)
-    com_df.to_csv(Path(output_dir) / "com.csv", index=False)
+    edge_df.to_csv(output_dir / "edge.csv", index=False)
+    com_df.to_csv(output_dir / "com.csv", index=False)
 
     # Cleanup the per-T files.
-    for p in Path(output_dir).glob("*_edge.tsv"):
+    for p in output_dir.glob("*_edge.tsv"):
         _safe_remove(p)
-    for p in Path(output_dir).glob("*_com.tsv"):
+    for p in output_dir.glob("*_com.tsv"):
         _safe_remove(p)
 
     logging.info("nPSO generation complete.")
@@ -158,13 +159,10 @@ def parse_args():
     parser = argparse.ArgumentParser(description="nPSO Graph Generator")
     parser.add_argument("--input-edgelist", type=str, required=True,
                         help="Original empirical edgelist (used to measure target global clustering coefficient)")
-    parser.add_argument("--node-id", type=str, required=True)
-    parser.add_argument("--cluster-id", type=str, required=True)
-    parser.add_argument("--assignment", type=str, required=True)
     parser.add_argument("--degree", type=str, required=True)
     parser.add_argument("--cluster-sizes", type=str, required=True)
     parser.add_argument("--npso-dir", type=str, required=True,
-                        help="Path to the nPSO_model checkout (containing run_npso.m)")
+                        help="Path to the nPSO_model checkout (containing nPSO_model.m)")
     parser.add_argument("--output-folder", type=str, required=True)
     parser.add_argument("--seed", type=int, default=0)
     return parser.parse_args()
@@ -174,9 +172,6 @@ def main():
     args = parse_args()
     run_npso_generation(
         args.input_edgelist,
-        args.node_id,
-        args.cluster_id,
-        args.assignment,
         args.degree,
         args.cluster_sizes,
         args.npso_dir,

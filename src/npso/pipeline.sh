@@ -1,6 +1,9 @@
 #!/bin/bash
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+if [[ "${SCRIPT_DIR}" == *"/slurmd/job"* ]]; then
+    SCRIPT_DIR="${SLURM_SUBMIT_DIR}"
+fi
 SRC_DIR="$( cd "${SCRIPT_DIR}/.." && pwd )"
 export PYTHONPATH="${SRC_DIR}${PYTHONPATH:+:${PYTHONPATH}}"
 
@@ -42,9 +45,6 @@ mkdir -p "${SETUP_DIR}" "${OUTPUT_DIR}"
 
 { timeout "${TIMEOUT}" /usr/bin/time -v python "${SCRIPT_DIR}/gen.py" \
     --input-edgelist "${INPUT_EDGELIST}" \
-    --node-id "${SETUP_DIR}/node_id.csv" \
-    --cluster-id "${SETUP_DIR}/cluster_id.csv" \
-    --assignment "${SETUP_DIR}/assignment.csv" \
     --degree "${SETUP_DIR}/degree.csv" \
     --cluster-sizes "${SETUP_DIR}/cluster_sizes.csv" \
     --npso-dir "${NPSO_DIR}" \
