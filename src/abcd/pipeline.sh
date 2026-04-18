@@ -1,11 +1,11 @@
 #!/bin/bash
+# ABCD pipeline — thin wrapper that delegates to src/_common/simple_pipeline.sh.
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 if [[ "${SCRIPT_DIR}" == *"/slurmd/job"* ]]; then
-    SCRIPT_DIR="${SLURM_SUBMIT_DIR}"
+    SCRIPT_DIR="${SLURM_SUBMIT_DIR}/src/abcd"
 fi
-SRC_DIR="$( cd "${SCRIPT_DIR}/.." && pwd )"
-export PYTHONPATH="${SRC_DIR}${PYTHONPATH:+:${PYTHONPATH}}"
+SHARED_DIR="$( cd "${SCRIPT_DIR}/../_common" && pwd )"
 
 TIMEOUT="3d"
 SEED=0
@@ -26,38 +26,25 @@ while [[ "$#" -gt 0 ]]; do
     shift
 done
 
-export JULIA_NUM_THREADS="${N_THREADS}"
-
-if [ ! -f "${INPUT_EDGELIST}" ] || [ ! -f "${INPUT_CLUSTERING}" ]; then
-    echo "Error: The input network or clustering file does not exist."
-    exit 1
-fi
-
 if [ -z "${ABCD_DIR}" ]; then
     echo "Error: --abcd-dir is required (path to ABCDGraphGenerator.jl checkout)."
     exit 1
 fi
 
-SETUP_DIR="${OUTPUT_DIR}/setup"
-mkdir -p "${SETUP_DIR}" "${OUTPUT_DIR}"
+export JULIA_NUM_THREADS="${N_THREADS}"
 
-{ timeout "${TIMEOUT}" /usr/bin/time -v python "${SRC_DIR}/profile.py" \
-    --edgelist "${INPUT_EDGELIST}" \
-    --clustering "${INPUT_CLUSTERING}" \
-    --output-folder "${SETUP_DIR}" \
-    --generator abcd; } 2> "${SETUP_DIR}/time_and_err.log"
+SETUP="${OUTPUT_DIR}/.state/setup"
 
-{ timeout "${TIMEOUT}" /usr/bin/time -v python "${SCRIPT_DIR}/gen.py" \
-    --degree "${SETUP_DIR}/degree.csv" \
-    --cluster-sizes "${SETUP_DIR}/cluster_sizes.csv" \
-    --mixing-parameter "${SETUP_DIR}/mixing_parameter.txt" \
-    --abcd-dir "${ABCD_DIR}" \
-    --output-folder "${OUTPUT_DIR}" \
-    --seed "${SEED}"; } 2> "${OUTPUT_DIR}/time_and_err.log"
+GEN_NAME="abcd"
+GEN_SCRIPT_DIR="${SCRIPT_DIR}"
+GEN_PROFILE_OUTPUTS=(degree.csv cluster_sizes.csv mixing_parameter.txt)
+# shellcheck disable=SC2034
+GEN_CLI_ARGS=(
+    --degree            "${SETUP}/degree.csv"
+    --cluster-sizes     "${SETUP}/cluster_sizes.csv"
+    --mixing-parameter  "${SETUP}/mixing_parameter.txt"
+    --abcd-dir          "${ABCD_DIR}"
+)
 
-if [ ! -f "${OUTPUT_DIR}/edge.csv" ]; then
-    echo "Error: ABCD generation failed — no edge.csv produced."
-    exit 1
-fi
-
-echo "=== ABCD pipeline completed successfully ==="
+# shellcheck disable=SC1091
+source "${SHARED_DIR}/simple_pipeline.sh"

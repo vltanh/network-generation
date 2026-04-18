@@ -1,11 +1,11 @@
 #!/bin/bash
+# LFR pipeline — thin wrapper that delegates to src/_common/simple_pipeline.sh.
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 if [[ "${SCRIPT_DIR}" == *"/slurmd/job"* ]]; then
-    SCRIPT_DIR="${SLURM_SUBMIT_DIR}"
+    SCRIPT_DIR="${SLURM_SUBMIT_DIR}/src/lfr"
 fi
-SRC_DIR="$( cd "${SCRIPT_DIR}/.." && pwd )"
-export PYTHONPATH="${SRC_DIR}${PYTHONPATH:+:${PYTHONPATH}}"
+SHARED_DIR="$( cd "${SCRIPT_DIR}/../_common" && pwd )"
 
 TIMEOUT="3d"
 SEED=0
@@ -24,36 +24,25 @@ while [[ "$#" -gt 0 ]]; do
     shift
 done
 
-if [ ! -f "${INPUT_EDGELIST}" ] || [ ! -f "${INPUT_CLUSTERING}" ]; then
-    echo "Error: The input network or clustering file does not exist."
-    exit 1
-fi
-
 if [ -z "${LFR_BINARY}" ]; then
     echo "Error: --lfr-binary is required (path to LFR benchmark executable)."
     exit 1
 fi
 
-SETUP_DIR="${OUTPUT_DIR}/setup"
-mkdir -p "${SETUP_DIR}" "${OUTPUT_DIR}"
+N_THREADS=1
 
-{ timeout "${TIMEOUT}" /usr/bin/time -v python "${SRC_DIR}/profile.py" \
-    --edgelist "${INPUT_EDGELIST}" \
-    --clustering "${INPUT_CLUSTERING}" \
-    --output-folder "${SETUP_DIR}" \
-    --generator lfr; } 2> "${SETUP_DIR}/time_and_err.log"
+SETUP="${OUTPUT_DIR}/.state/setup"
 
-{ timeout "${TIMEOUT}" /usr/bin/time -v python "${SCRIPT_DIR}/gen.py" \
-    --degree "${SETUP_DIR}/degree.csv" \
-    --cluster-sizes "${SETUP_DIR}/cluster_sizes.csv" \
-    --mixing-parameter "${SETUP_DIR}/mixing_parameter.txt" \
-    --lfr-binary "${LFR_BINARY}" \
-    --output-folder "${OUTPUT_DIR}" \
-    --seed "${SEED}"; } 2> "${OUTPUT_DIR}/time_and_err.log"
+GEN_NAME="lfr"
+GEN_SCRIPT_DIR="${SCRIPT_DIR}"
+GEN_PROFILE_OUTPUTS=(degree.csv cluster_sizes.csv mixing_parameter.txt)
+# shellcheck disable=SC2034
+GEN_CLI_ARGS=(
+    --degree            "${SETUP}/degree.csv"
+    --cluster-sizes     "${SETUP}/cluster_sizes.csv"
+    --mixing-parameter  "${SETUP}/mixing_parameter.txt"
+    --lfr-binary        "${LFR_BINARY}"
+)
 
-if [ ! -f "${OUTPUT_DIR}/edge.csv" ]; then
-    echo "Error: LFR generation failed — no edge.csv produced."
-    exit 1
-fi
-
-echo "=== LFR pipeline completed successfully ==="
+# shellcheck disable=SC1091
+source "${SHARED_DIR}/simple_pipeline.sh"
