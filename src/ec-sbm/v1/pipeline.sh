@@ -6,6 +6,7 @@ if [[ "${SCRIPT_DIR}" == *"/slurmd/job"* ]]; then
 fi
 SRC_DIR="$( cd "${SCRIPT_DIR}/../.." && pwd )"
 COMMON_DIR="$( cd "${SCRIPT_DIR}/../common" && pwd )"
+SHARED_DIR="$( cd "${SRC_DIR}/_common" && pwd )"
 # Expose the shared src/ directory so scripts can `from pipeline_common import ...`
 # and the pipeline can invoke ${SRC_DIR}/profile.py.
 export PYTHONPATH="${SRC_DIR}${PYTHONPATH:+:${PYTHONPATH}}"
@@ -41,7 +42,7 @@ fi
 # ==========================================
 # Helper Functions: State Management
 # ==========================================
-source "${COMMON_DIR}/state.sh"
+source "${SHARED_DIR}/state.sh"
 
 # ==========================================
 # STAGE 1: Clustered Generation

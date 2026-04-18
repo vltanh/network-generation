@@ -10,12 +10,13 @@
 # Returns 0 (true) if:
 #   - the done-file exists,
 #   - every output file exists and is non-empty, and
-#   - sha256sum verifies every hash recorded in the done-file.
+#   - sha256sum verifies every hash recorded in the done-file (the declared
+#     inputs and declared outputs; logs and other side-files are not hashed).
 #
 # Note: the $2 "inputs" argument is parsed but not used directly.  Input
-# integrity is verified implicitly because mark_done hashed both the input
-# files and the full output directory into the done-file; sha256sum -c
-# validates all of them together.
+# integrity is verified implicitly because mark_done recorded the input
+# hashes into the done-file; sha256sum -c validates them together with the
+# outputs.
 #
 # Usage: is_step_done "done_file" "input1 input2..." "output1 output2..."
 is_step_done() {
@@ -46,13 +47,10 @@ is_step_done() {
 # Record that a pipeline stage has completed successfully.
 #
 # Verifies every output file exists and is non-empty, then writes a done-file
-# containing SHA-256 hashes of:
-#   1. All explicit input files (the $3 argument).
-#   2. Every file in the same directory as outputs[0] (via find -maxdepth 1),
-#      excluding the done-file itself.
-#      NOTE: this includes run.log and time_and_err.log.  Any change in log
-#      content (e.g. different timestamps) will invalidate the done-file and
-#      cause the stage to re-run.  This is intentional conservatism.
+# containing SHA-256 hashes of the declared input files and the declared
+# output files only.  Side-files in the output directory (logs, scratch,
+# etc.) are deliberately *not* hashed, so incidental churn in those files
+# does not invalidate the cache on the next run.
 #
 # The write is atomic: hashes are collected into a .tmp.$$ file first, then
 # renamed into place so is_step_done never reads a partial done-file.
@@ -80,12 +78,8 @@ mark_done() {
         echo "Success [${stage_name}]: Verified ${target_file} ($((line_count - 1)) lines)."
     done
 
-    local out_dir=$(dirname "${outputs[0]}")
     local tmp_done="${done_file}.tmp.$$"
-
-    sha256sum "${inputs[@]}" > "${tmp_done}"
-    find "${out_dir}" -maxdepth 1 -type f ! -name "$(basename "${done_file}")" ! -name "$(basename "${tmp_done}")" -exec sha256sum {} + >> "${tmp_done}"
-
+    sha256sum "${inputs[@]}" "${outputs[@]}" > "${tmp_done}"
     mv "${tmp_done}" "${done_file}"
     echo "Success [${stage_name}]: I/O hashes recorded atomically. Marked as done."
 }

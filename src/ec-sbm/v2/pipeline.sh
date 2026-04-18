@@ -6,6 +6,7 @@ if [[ "${SCRIPT_DIR}" == *"/slurmd/job"* ]]; then
 fi
 SRC_DIR="$( cd "${SCRIPT_DIR}/../.." && pwd )"
 COMMON_DIR="$( cd "${SCRIPT_DIR}/../common" && pwd )"
+SHARED_DIR="$( cd "${SRC_DIR}/_common" && pwd )"
 # v2 scripts import helpers from the local v2/utils.py; the shared src/
 # dir is needed for pipeline_common.py and profile.py.
 export PYTHONPATH="${SCRIPT_DIR}:${SRC_DIR}${PYTHONPATH:+:${PYTHONPATH}}"
@@ -44,7 +45,7 @@ fi
 # ==========================================
 # Helper Functions: State Management
 # ==========================================
-source "${COMMON_DIR}/state.sh"
+source "${SHARED_DIR}/state.sh"
 
 # Define cross-stage directories
 STG1_DIR="${OUTPUT_DIR}/clustered"
