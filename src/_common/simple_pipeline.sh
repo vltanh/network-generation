@@ -77,7 +77,7 @@ FINAL_OUT="${OUTPUT_DIR}/edge.csv ${OUTPUT_DIR}/com.csv"
 
 mkdir -p "${OUTPUT_DIR}"
 
-if is_step_done "${FINAL_DONE}" "${FINAL_IN}" "${FINAL_OUT}"; then
+if is_step_done "${FINAL_DONE}" "${FINAL_OUT}"; then
     echo "Skipping entire pipeline: valid top-level done-file found."
     # The top-level done is authoritative; any surviving .state/ is unneeded
     # (and, if inherited from an earlier run with inconsistent stage dones,
@@ -109,7 +109,7 @@ for name in "${GEN_PROFILE_OUTPUTS[@]}"; do
 done
 OUT_1="${OUT_1_PATHS[*]}"
 
-if ! is_step_done "${STG1_SETUP_DIR}/done" "${IN_1}" "${OUT_1}"; then
+if ! is_step_done "${STG1_SETUP_DIR}/done" "${OUT_1}"; then
     { timeout "${TIMEOUT}" /usr/bin/time -v python "${SRC_DIR}/profile.py" \
         --edgelist "${INPUT_EDGELIST}" \
         --clustering "${INPUT_CLUSTERING}" \
@@ -128,7 +128,7 @@ echo "=== Starting Stage 2: Gen (${GEN_NAME}) ==="
 IN_2="${OUT_1} ${GEN_EXTRA_STAGE2_INPUTS}"
 OUT_2="${STG2_DIR}/edge.csv ${STG2_DIR}/com.csv"
 
-if ! is_step_done "${STG2_DIR}/done" "${IN_2}" "${OUT_2}"; then
+if ! is_step_done "${STG2_DIR}/done" "${OUT_2}"; then
     { timeout "${TIMEOUT}" /usr/bin/time -v python "${GEN_SCRIPT_DIR}/gen.py" \
         "${GEN_CLI_ARGS[@]}" \
         --output-folder "${STG2_DIR}" \

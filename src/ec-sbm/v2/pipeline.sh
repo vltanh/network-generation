@@ -55,7 +55,7 @@ FINAL_DONE="${OUTPUT_DIR}/done"
 FINAL_IN="${INPUT_EDGELIST} ${INPUT_CLUSTERING}"
 FINAL_OUT="${OUTPUT_DIR}/edge.csv ${OUTPUT_DIR}/com.csv ${OUTPUT_DIR}/sources.json"
 
-if is_step_done "${FINAL_DONE}" "${FINAL_IN}" "${FINAL_OUT}"; then
+if is_step_done "${FINAL_DONE}" "${FINAL_OUT}"; then
     echo "Skipping entire pipeline: valid top-level done-file found."
     # The top-level done is authoritative; any surviving .state/ is unneeded
     # (and, if inherited from an earlier run with inconsistent stage dones,
@@ -88,7 +88,7 @@ echo "=== Starting Stage 1: Core Clustered Generation ==="
 IN_1A="${INPUT_EDGELIST} ${INPUT_CLUSTERING}"
 OUT_1A="${STG1_CLEAN_DIR}/edge.csv ${STG1_CLEAN_DIR}/com.csv"
 
-if ! is_step_done "${STG1_CLEAN_DIR}/done" "${IN_1A}" "${OUT_1A}"; then
+if ! is_step_done "${STG1_CLEAN_DIR}/done" "${OUT_1A}"; then
     { timeout "${TIMEOUT}" /usr/bin/time -v python "${COMMON_DIR}/clean_outlier.py" \
         --edgelist "${INPUT_EDGELIST}" \
         --clustering "${INPUT_CLUSTERING}" \
@@ -102,7 +102,7 @@ fi
 IN_1B="${OUT_1A}"
 OUT_1B="${STG1_SETUP_DIR}/node_id.csv ${STG1_SETUP_DIR}/cluster_id.csv ${STG1_SETUP_DIR}/assignment.csv ${STG1_SETUP_DIR}/degree.csv ${STG1_SETUP_DIR}/mincut.csv ${STG1_SETUP_DIR}/edge_counts.csv"
 
-if ! is_step_done "${STG1_SETUP_DIR}/done" "${IN_1B}" "${OUT_1B}"; then
+if ! is_step_done "${STG1_SETUP_DIR}/done" "${OUT_1B}"; then
     { timeout "${TIMEOUT}" /usr/bin/time -v python "${SRC_DIR}/profile.py" \
         --edgelist "${STG1_CLEAN_DIR}/edge.csv" \
         --clustering "${STG1_CLEAN_DIR}/com.csv" \
@@ -117,7 +117,7 @@ fi
 IN_1C="${OUT_1B}"
 OUT_1C="${STG1_DIR}/edge.csv"
 
-if ! is_step_done "${STG1_DIR}/done" "${IN_1C}" "${OUT_1C}"; then
+if ! is_step_done "${STG1_DIR}/done" "${OUT_1C}"; then
     { timeout "${TIMEOUT}" /usr/bin/time -v python "${SCRIPT_DIR}/gen_clustered.py" \
         --node-id "${STG1_SETUP_DIR}/node_id.csv" \
         --cluster-id "${STG1_SETUP_DIR}/cluster_id.csv" \
@@ -140,7 +140,7 @@ echo "=== Starting Stage 2: Outlier Generation & Merge ==="
 IN_2A="${INPUT_EDGELIST} ${INPUT_CLUSTERING} ${STG1_DIR}/edge.csv"
 OUT_2A="${STG2_OUTLIER_DIR}/edge_outlier.csv"
 
-if ! is_step_done "${STG2_OUTLIER_DIR}/done" "${IN_2A}" "${OUT_2A}"; then
+if ! is_step_done "${STG2_OUTLIER_DIR}/done" "${OUT_2A}"; then
     { timeout "${TIMEOUT}" /usr/bin/time -v python "${SCRIPT_DIR}/gen_outlier.py" \
         --orig-edgelist "${INPUT_EDGELIST}" \
         --orig-clustering "${INPUT_CLUSTERING}" \
@@ -157,7 +157,7 @@ fi
 IN_2B="${STG1_DIR}/edge.csv ${STG2_OUTLIER_DIR}/edge_outlier.csv"
 OUT_2B="${STG2_DIR}/edge.csv ${STG2_DIR}/sources.json"
 
-if ! is_step_done "${STG2_DIR}/done" "${IN_2B}" "${OUT_2B}"; then
+if ! is_step_done "${STG2_DIR}/done" "${OUT_2B}"; then
     { timeout "${TIMEOUT}" /usr/bin/time -v python "${COMMON_DIR}/combine_edgelists.py" \
         --edgelist-1 "${STG1_DIR}/edge.csv" \
         --name-1 "clustered" \
@@ -179,7 +179,7 @@ echo "=== Starting Stage 3: Degree Matching & Final Merge ==="
 IN_3A="${STG2_DIR}/edge.csv ${INPUT_EDGELIST} ${INPUT_CLUSTERING}"
 OUT_3A="${STG3_MATCH_DIR}/degree_matching_edge.csv"
 
-if ! is_step_done "${STG3_MATCH_DIR}/done" "${IN_3A}" "${OUT_3A}"; then
+if ! is_step_done "${STG3_MATCH_DIR}/done" "${OUT_3A}"; then
     { timeout "${TIMEOUT}" /usr/bin/time -v python "${SCRIPT_DIR}/match_degree.py" \
         --input-edgelist "${STG2_DIR}/edge.csv" \
         --ref-edgelist "${INPUT_EDGELIST}" \
@@ -202,7 +202,7 @@ OUT_3B="${OUTPUT_DIR}/edge.csv ${OUTPUT_DIR}/sources.json"
 STG3_FINAL_DIR="${STATE_DIR}/final"
 mkdir -p "${STG3_FINAL_DIR}"
 
-if ! is_step_done "${STATE_DIR}/final.done" "${IN_3B}" "${OUT_3B}"; then
+if ! is_step_done "${STATE_DIR}/final.done" "${OUT_3B}"; then
     { timeout "${TIMEOUT}" /usr/bin/time -v python "${COMMON_DIR}/combine_edgelists.py" \
         --edgelist-1 "${STG2_DIR}/edge.csv" \
         --json-1 "${STG2_DIR}/sources.json" \

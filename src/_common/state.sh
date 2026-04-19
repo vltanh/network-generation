@@ -13,16 +13,14 @@
 #   - sha256sum verifies every hash recorded in the done-file (the declared
 #     inputs and declared outputs; logs and other side-files are not hashed).
 #
-# Note: the $2 "inputs" argument is parsed but not used directly.  Input
-# integrity is verified implicitly because mark_done recorded the input
-# hashes into the done-file; sha256sum -c validates them together with the
-# outputs.
+# The declared inputs aren't passed because input integrity is verified
+# implicitly: mark_done recorded the input hashes into the done-file, and
+# `sha256sum -c` validates them together with the outputs.
 #
-# Usage: is_step_done "done_file" "input1 input2..." "output1 output2..."
+# Usage: is_step_done "done_file" "output1 output2..."
 is_step_done() {
     local done_file="$1"
-    read -r -a inputs <<< "$2"
-    read -r -a outputs <<< "$3"
+    read -r -a outputs <<< "$2"
 
     if [ ! -f "${done_file}" ]; then
         return 1 # False: No state ledger exists
