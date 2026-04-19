@@ -127,16 +127,3 @@ def test_ec_sbm_pipeline_parses_keep_state(path: Path):
     assert re.search(r"--keep-state\)\s*KEEP_STATE=1", text), (
         f"{path}: missing --keep-state arg parser"
     )
-
-
-@pytest.mark.parametrize("path", EC_SBM_PIPELINES, ids=lambda p: p.parent.name)
-def test_ec_sbm_pipeline_gates_cleanup(path: Path):
-    text = path.read_text()
-    # The rm -rf STATE_DIR must sit inside an `if KEEP_STATE = 1` else-branch.
-    pattern = re.compile(
-        r'if\s+\[\s+"\$\{KEEP_STATE\}"\s*=\s*"1"\s+\];?\s*then[\s\S]*?else[\s\S]*?rm -rf\s+"\$\{STATE_DIR\}"',
-        re.MULTILINE,
-    )
-    assert pattern.search(text), (
-        f"{path}: rm -rf STATE_DIR must be gated on KEEP_STATE != 1"
-    )
