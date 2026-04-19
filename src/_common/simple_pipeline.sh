@@ -137,8 +137,13 @@ fi
 # ==========================================
 # Promote final outputs into the user-facing tree.
 # ==========================================
-mv "${STG2_DIR}/edge.csv" "${OUTPUT_DIR}/edge.csv"
-mv "${STG2_DIR}/com.csv"  "${OUTPUT_DIR}/com.csv"
+# Copy rather than move so the stage-2 done-file (which hashes the paths
+# under ${STG2_DIR}/) stays valid on rerun.  In default mode .state/ is
+# wiped immediately below, so the duplicate is short-lived; under
+# --keep-state the copy lets stage 2 short-circuit even if the final
+# edge.csv is later mutated.
+cp "${STG2_DIR}/edge.csv" "${OUTPUT_DIR}/edge.csv"
+cp "${STG2_DIR}/com.csv"  "${OUTPUT_DIR}/com.csv"
 
 # ==========================================
 # Consolidate per-stage logs into one top-level run.log
