@@ -79,7 +79,11 @@ mark_done() {
     done
 
     local tmp_done="${done_file}.tmp.$$"
-    sha256sum "${inputs[@]}" "${outputs[@]}" > "${tmp_done}"
+    if ! sha256sum "${inputs[@]}" "${outputs[@]}" > "${tmp_done}"; then
+        echo "Error [${stage_name}]: sha256sum failed while recording I/O hashes."
+        rm -f "${tmp_done}"
+        exit 1
+    fi
     mv "${tmp_done}" "${done_file}"
     echo "Success [${stage_name}]: I/O hashes recorded atomically. Marked as done."
 }
