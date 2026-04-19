@@ -87,7 +87,7 @@ if ! is_step_done "${STG1_CLEAN_DIR}/done" "${OUT_1A}"; then
         --edgelist "${INPUT_EDGELIST}" \
         --clustering "${INPUT_CLUSTERING}" \
         --output-folder "${STG1_CLEAN_DIR}"; } 2> "${STG1_CLEAN_DIR}/time_and_err.log"
-    mark_done "${STG1_CLEAN_DIR}/done" "Stage 1a (Clean)" "${IN_1A}" "${OUT_1A}"
+    mark_done "${STG1_CLEAN_DIR}/done" "Stage 1a (clean)" "${IN_1A}" "${OUT_1A}"
 else
     echo "Skipping Stage 1a: Valid state found."
 fi
@@ -102,7 +102,7 @@ if ! is_step_done "${STG1_SETUP_DIR}/done" "${OUT_1B}"; then
         --clustering "${STG1_CLEAN_DIR}/com.csv" \
         --output-folder "${STG1_SETUP_DIR}" \
         --generator ecsbm; } 2> "${STG1_SETUP_DIR}/time_and_err.log"
-    mark_done "${STG1_SETUP_DIR}/done" "Stage 1b (Setup)" "${IN_1B}" "${OUT_1B}"
+    mark_done "${STG1_SETUP_DIR}/done" "Stage 1b (setup)" "${IN_1B}" "${OUT_1B}"
 else
     echo "Skipping Stage 1b: Valid state found."
 fi
@@ -120,7 +120,7 @@ if ! is_step_done "${STG1_DIR}/done" "${OUT_1C}"; then
         --mincut "${STG1_SETUP_DIR}/mincut.csv" \
         --edge-counts "${STG1_SETUP_DIR}/edge_counts.csv" \
         --output-folder "${STG1_DIR}"; } 2> "${STG1_DIR}/time_and_err.log"
-    mark_done "${STG1_DIR}/done" "Stage 1c (Gen Clustered)" "${IN_1C}" "${OUT_1C}"
+    mark_done "${STG1_DIR}/done" "Stage 1c (gen_clustered)" "${IN_1C}" "${OUT_1C}"
 else
     echo "Skipping Stage 1c: Valid state found."
 fi
@@ -140,7 +140,7 @@ if ! is_step_done "${STG2_OUTLIER_DIR}/done" "${OUT_2A}"; then
         --edgelist "${INPUT_EDGELIST}" \
         --clustering "${INPUT_CLUSTERING}" \
         --output-folder "${STG2_OUTLIER_DIR}"; } 2> "${STG2_OUTLIER_DIR}/time_and_err.log"
-    mark_done "${STG2_OUTLIER_DIR}/done" "Stage 2a (Outlier Gen)" "${IN_2A}" "${OUT_2A}"
+    mark_done "${STG2_OUTLIER_DIR}/done" "Stage 2a (gen_outlier)" "${IN_2A}" "${OUT_2A}"
 else
     echo "Skipping Stage 2a: Valid state found."
 fi
@@ -157,7 +157,7 @@ if ! is_step_done "${STG2_DIR}/done" "${OUT_2B}"; then
         --name-2 "outlier" \
         --output-folder "${STG2_DIR}" \
         --output-filename "edge.csv"; } 2> "${STG2_DIR}/time_and_err.log"
-    mark_done "${STG2_DIR}/done" "Stage 2b (First Combine)" "${IN_2B}" "${OUT_2B}"
+    mark_done "${STG2_DIR}/done" "Stage 2b (combine_clustered_outlier)" "${IN_2B}" "${OUT_2B}"
 else
     echo "Skipping Stage 2b: Valid state found."
 fi
@@ -177,7 +177,7 @@ if ! is_step_done "${STG3_MATCH_DIR}/done" "${OUT_3A}"; then
         --ref-edgelist "${INPUT_EDGELIST}" \
         --ref-clustering "${INPUT_CLUSTERING}" \
         --output-folder "${STG3_MATCH_DIR}"; } 2> "${STG3_MATCH_DIR}/time_and_err.log"
-    mark_done "${STG3_MATCH_DIR}/done" "Stage 3a (Degree Match)" "${IN_3A}" "${OUT_3A}"
+    mark_done "${STG3_MATCH_DIR}/done" "Stage 3a (match_degree)" "${IN_3A}" "${OUT_3A}"
 else
     echo "Skipping Stage 3a: Valid state found."
 fi
@@ -206,7 +206,7 @@ if ! is_step_done "${STATE_DIR}/final.done" "${OUT_3B}"; then
     # that mutates the final outputs.
     cp "${STG3_FINAL_DIR}/edge.csv" "${OUTPUT_DIR}/edge.csv"
     cp "${STG3_FINAL_DIR}/sources.json" "${OUTPUT_DIR}/sources.json"
-    mark_done "${STATE_DIR}/final.done" "Stage 3b (Final Combine)" "${IN_3B}" "${OUT_3B}"
+    mark_done "${STATE_DIR}/final.done" "Stage 3b (combine_final)" "${IN_3B}" "${OUT_3B}"
 else
     echo "Skipping Stage 3b: Valid state found."
 fi
