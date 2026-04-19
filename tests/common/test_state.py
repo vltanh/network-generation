@@ -125,6 +125,38 @@ def test_mark_done_fails_on_empty_output(tmp_path: Path):
     assert "empty" in result.stdout + result.stderr
 
 
+def test_mark_done_leaves_no_tmp_files_on_success(tmp_path: Path):
+    """The `done.tmp.$$` stage file used for atomic write must not linger."""
+    (tmp_path / "in.txt").write_text("in")
+    (tmp_path / "out.txt").write_text("out")
+    mark_done(tmp_path, "done", "t", "in.txt", "out.txt")
+    stragglers = sorted(p.name for p in tmp_path.iterdir() if ".tmp." in p.name)
+    assert not stragglers, f"unexpected tmp files left behind: {stragglers}"
+
+
+def test_mark_done_fails_atomically_when_sha256sum_fails(tmp_path: Path):
+    """If `sha256sum` exits non-zero mid-write (e.g. one of the declared
+    inputs is missing), `mark_done` must fail loudly: no partial done-file,
+    no leftover .tmp.$$, and a non-zero exit.
+
+    Regression: previous implementation ignored sha256sum's exit code,
+    leaving a partial `done` that claimed the stage passed.
+    """
+    (tmp_path / "out.txt").write_text("out")
+    # "nonexistent_input" is declared as an input but doesn't exist.
+    result = run_bash(
+        'mark_done "done" "t" "nonexistent_input" "out.txt"',
+        cwd=tmp_path,
+    )
+    assert result.returncode != 0, (
+        f"mark_done must fail when sha256sum fails.\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+    assert not (tmp_path / "done").exists(), "partial done-file must not remain"
+    stragglers = [p.name for p in tmp_path.iterdir() if ".tmp." in p.name]
+    assert not stragglers, f"leftover tmp files: {stragglers}"
+
+
 # ---------------------------------------------------------------------------
 # append_stage_log
 # ---------------------------------------------------------------------------
