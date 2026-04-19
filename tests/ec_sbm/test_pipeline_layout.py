@@ -231,3 +231,64 @@ def test_existing_flags_removed(pipeline_rel: str):
     assert "--existing-outlier" not in content, (
         f"--existing-outlier flag should be removed from {pipeline_rel}"
     )
+
+
+@pytest.mark.parametrize("pipeline_rel", [
+    "src/ec-sbm/v1/pipeline.sh",
+    "src/ec-sbm/v2/pipeline.sh",
+])
+def test_com_csv_moved_not_copied(pipeline_rel: str):
+    """Stage 3b should `mv` com.csv out of `.state/`, not `cp` it.  The
+    clean-outlier stage's com.csv has no downstream consumer after 3b
+    finishes, and `.state/` is wiped on success anyway — so a copy
+    just doubles the on-disk footprint during the final stage."""
+    content = (REPO_ROOT / pipeline_rel).read_text()
+    assert 'cp "${STG1_CLEAN_DIR}/com.csv"' not in content, (
+        f"{pipeline_rel}: com.csv should be moved, not copied"
+    )
+    assert 'mv "${STG1_CLEAN_DIR}/com.csv" "${OUTPUT_DIR}/com.csv"' in content, (
+        f"{pipeline_rel}: expected `mv` of com.csv from .state/ to OUTPUT_DIR"
+    )
+
+
+@pytest.mark.parametrize("generator", ["ec-sbm-v1", "ec-sbm-v2"])
+def test_com_csv_identical_to_stage1_clean_output(
+    tmp_output_dir: Path, generator: str
+):
+    """The final com.csv must be byte-identical to what Stage 1a (Clean)
+    produced — P9's `mv` must not alter contents."""
+    # Run once to produce the final com.csv.
+    assert run_generator(generator, tmp_output_dir).returncode == 0
+    out = run_dir(tmp_output_dir, generator)
+    final_com = (out / "com.csv").read_bytes()
+
+    # Re-run Stage 1a in isolation on the same inputs to get a reference
+    # com.csv.  clean_outlier.py is deterministic.
+    import tempfile
+    with tempfile.TemporaryDirectory() as td:
+        ref_out = Path(td)
+        env = os.environ.copy()
+        env["PATH"] = f"/u/vltanh/miniconda3/envs/nw/bin:{env.get('PATH', '')}"
+        env["OMP_NUM_THREADS"] = "1"
+        env["PYTHONPATH"] = (
+            f"{REPO_ROOT / 'src'}:{env.get('PYTHONPATH', '')}"
+        )
+        result = subprocess.run(
+            [
+                "python",
+                str(REPO_ROOT / "src" / "ec-sbm" / "common" / "clean_outlier.py"),
+                "--edgelist",
+                str(EXAMPLES_IN / "empirical_networks" / "networks" / "dnc" / "dnc.csv"),
+                "--clustering",
+                str(EXAMPLES_IN / "reference_clusterings" / "clusterings"
+                    / "sbm-flat-best+cc" / "dnc" / "com.csv"),
+                "--output-folder", str(ref_out),
+            ],
+            cwd=REPO_ROOT, env=env, capture_output=True, text=True,
+        )
+        assert result.returncode == 0, result.stderr
+        ref_com = (ref_out / "com.csv").read_bytes()
+
+    assert final_com == ref_com, (
+        f"{generator}: final com.csv differs from Stage 1a output"
+    )
