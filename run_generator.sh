@@ -75,7 +75,13 @@ if [ -z "${run_id}" ]; then
     exit 1
 fi
 
-ACCEPTED_GENERATORS=("ec-sbm-v2" "ec-sbm-v1" "sbm" "abcd" "abcd+o" "lfr" "npso")
+GENERATORS_DIR="${SCRIPT_DIR}/generators"
+ACCEPTED_GENERATORS=()
+for cfg in "${GENERATORS_DIR}"/*.sh; do
+    [ -e "${cfg}" ] || continue
+    ACCEPTED_GENERATORS+=("$(basename "${cfg}" .sh)")
+done
+
 if [[ ! " ${ACCEPTED_GENERATORS[*]} " =~ " ${generator} " ]]; then
     log "Error: Unsupported generator '${generator}'. Accepted generators are: ${ACCEPTED_GENERATORS[*]}"
     exit 1
@@ -238,83 +244,28 @@ log "Running: ${generator} on ${dataset_name}"
 # ==========================================
 log "Evaluating synthetic network generation state..."
 
-if [[ "${generator}" == "ec-sbm-v2" ]]; then
-    mkdir -p "${OUT_DIR}"
-    "${SCRIPT_DIR}/src/ec-sbm/v2/pipeline.sh" \
-        --input-edgelist "${INP_EDGE}" \
-        --input-clustering "${INP_COM}" \
-        --output-dir "${OUT_DIR}" \
-        --outlier-mode "combined" \
-        --edge-correction "rewire" \
-        --algorithm "true_greedy" \
-        --n-threads "${n_threads}"
-elif [[ "${generator}" == "ec-sbm-v1" ]]; then
-    mkdir -p "${OUT_DIR}"
-    "${SCRIPT_DIR}/src/ec-sbm/v1/pipeline.sh" \
-        --input-edgelist "${INP_EDGE}" \
-        --input-clustering "${INP_COM}" \
-        --output-dir "${OUT_DIR}" \
-        --n-threads "${n_threads}"
-elif [[ "${generator}" == "sbm" ]]; then
-    mkdir -p "${OUT_DIR}"
-    "${SCRIPT_DIR}/src/sbm/pipeline.sh" \
-        --input-edgelist "${INP_EDGE}" \
-        --input-clustering "${INP_COM}" \
-        --output-dir "${OUT_DIR}" \
-        --seed "${seed}" \
-        --n-threads "${n_threads}"
-elif [[ "${generator}" == "abcd" ]]; then
-    if [ -z "${abcd_dir}" ]; then
-        log "Error: --abcd-dir is required for generator 'abcd'."
-        exit 1
-    fi
-    mkdir -p "${OUT_DIR}"
-    "${SCRIPT_DIR}/src/abcd/pipeline.sh" \
-        --input-edgelist "${INP_EDGE}" \
-        --input-clustering "${INP_COM}" \
-        --output-dir "${OUT_DIR}" \
-        --abcd-dir "${abcd_dir}" \
-        --seed "${seed}" \
-        --n-threads "${n_threads}"
-elif [[ "${generator}" == "abcd+o" ]]; then
-    if [ -z "${abcd_dir}" ]; then
-        log "Error: --abcd-dir is required for generator 'abcd+o'."
-        exit 1
-    fi
-    mkdir -p "${OUT_DIR}"
-    "${SCRIPT_DIR}/src/abcd+o/pipeline.sh" \
-        --input-edgelist "${INP_EDGE}" \
-        --input-clustering "${INP_COM}" \
-        --output-dir "${OUT_DIR}" \
-        --abcd-dir "${abcd_dir}" \
-        --seed "${seed}" \
-        --n-threads "${n_threads}"
-elif [[ "${generator}" == "lfr" ]]; then
-    if [ -z "${lfr_binary}" ]; then
-        log "Error: --lfr-binary is required for generator 'lfr'."
-        exit 1
-    fi
-    mkdir -p "${OUT_DIR}"
-    "${SCRIPT_DIR}/src/lfr/pipeline.sh" \
-        --input-edgelist "${INP_EDGE}" \
-        --input-clustering "${INP_COM}" \
-        --output-dir "${OUT_DIR}" \
-        --lfr-binary "${lfr_binary}" \
-        --seed "${seed}"
-elif [[ "${generator}" == "npso" ]]; then
-    if [ -z "${npso_dir}" ]; then
-        log "Error: --npso-dir is required for generator 'npso'."
-        exit 1
-    fi
-    mkdir -p "${OUT_DIR}"
-    "${SCRIPT_DIR}/src/npso/pipeline.sh" \
-        --input-edgelist "${INP_EDGE}" \
-        --input-clustering "${INP_COM}" \
-        --output-dir "${OUT_DIR}" \
-        --npso-dir "${npso_dir}" \
-        --seed "${seed}" \
-        --n-threads "${n_threads}"
+# Source the per-generator config (see generators/README.md). Each config
+# declares: GEN_PIPELINE, GEN_REQUIRED_DIR_VAR, GEN_REQUIRED_DIR_FLAG,
+# GEN_EXTRA_ARGS. GEN_EXTRA_ARGS is evaluated here, so it can reference
+# parsed CLI vars like ${seed}, ${n_threads}, ${abcd_dir}.
+GEN_PIPELINE=""
+GEN_REQUIRED_DIR_VAR=""
+GEN_REQUIRED_DIR_FLAG=""
+GEN_EXTRA_ARGS=()
+# shellcheck source=/dev/null
+source "${GENERATORS_DIR}/${generator}.sh"
+
+if [ -n "${GEN_REQUIRED_DIR_VAR}" ] && [ -z "${!GEN_REQUIRED_DIR_VAR}" ]; then
+    log "Error: ${GEN_REQUIRED_DIR_FLAG} is required for generator '${generator}'."
+    exit 1
 fi
+
+mkdir -p "${OUT_DIR}"
+"${SCRIPT_DIR}/${GEN_PIPELINE}" \
+    --input-edgelist "${INP_EDGE}" \
+    --input-clustering "${INP_COM}" \
+    --output-dir "${OUT_DIR}" \
+    "${GEN_EXTRA_ARGS[@]}"
 
 if [ ! -f "${OUT_DIR}/edge.csv" ]; then
     log "CRITICAL: Generation failed or timed out."
