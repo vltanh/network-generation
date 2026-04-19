@@ -177,8 +177,12 @@ else
 fi
 
 # 3b. Final Combination — writes to top-level OUTPUT_DIR.
-IN_3B="${STG2_DIR}/edge.csv ${STG2_DIR}/sources.json ${STG3_MATCH_DIR}/degree_matching_edge.csv ${STG1_CLEAN_DIR}/com.csv"
-OUT_3B="${OUTPUT_DIR}/edge.csv ${OUTPUT_DIR}/com.csv ${OUTPUT_DIR}/sources.json"
+# com.csv is a passthrough from Stage 1a (not read by combine_edgelists), so
+# it's moved directly rather than consumed here.  It's excluded from IN_3B/
+# OUT_3B and handled just below so stage 3b's hashes stay tied to what the
+# combine step actually reads and writes.
+IN_3B="${STG2_DIR}/edge.csv ${STG2_DIR}/sources.json ${STG3_MATCH_DIR}/degree_matching_edge.csv"
+OUT_3B="${OUTPUT_DIR}/edge.csv ${OUTPUT_DIR}/sources.json"
 
 STG3_FINAL_DIR="${STATE_DIR}/final"
 mkdir -p "${STG3_FINAL_DIR}"
@@ -193,10 +197,15 @@ if ! is_step_done "${STATE_DIR}/final.done" "${IN_3B}" "${OUT_3B}"; then
         --output-filename "edge.csv"; } 2> "${STG3_FINAL_DIR}/time_and_err.log"
     mv "${STG3_FINAL_DIR}/edge.csv" "${OUTPUT_DIR}/edge.csv"
     mv "${STG3_FINAL_DIR}/sources.json" "${OUTPUT_DIR}/sources.json"
-    cp "${STG1_CLEAN_DIR}/com.csv" "${OUTPUT_DIR}/com.csv"
     mark_done "${STATE_DIR}/final.done" "Stage 3b (Final Combine)" "${IN_3B}" "${OUT_3B}"
 else
     echo "Skipping Stage 3b: Valid state found."
+fi
+
+# Promote com.csv from .state/ to OUTPUT_DIR if not already there (idempotent
+# on rerun; source is cleaned up by the final `rm -rf .state/` anyway).
+if [[ ! -f "${OUTPUT_DIR}/com.csv" ]]; then
+    mv "${STG1_CLEAN_DIR}/com.csv" "${OUTPUT_DIR}/com.csv"
 fi
 
 # ==========================================
