@@ -31,9 +31,9 @@ def mark_done(tmp_path: Path, done: str, stage: str, inputs: str, outputs: str) 
     assert result.returncode == 0, result.stderr
 
 
-def is_step_done(tmp_path: Path, done: str, inputs: str, outputs: str) -> bool:
+def is_step_done(tmp_path: Path, done: str, outputs: str) -> bool:
     result = run_bash(
-        f'if is_step_done "{done}" "{inputs}" "{outputs}"; then exit 0; else exit 1; fi',
+        f'if is_step_done "{done}" "{outputs}"; then exit 0; else exit 1; fi',
         cwd=tmp_path,
     )
     return result.returncode == 0
@@ -42,14 +42,14 @@ def is_step_done(tmp_path: Path, done: str, inputs: str, outputs: str) -> bool:
 def test_is_step_done_false_when_done_file_missing(tmp_path: Path):
     (tmp_path / "in.txt").write_text("in")
     (tmp_path / "out.txt").write_text("out")
-    assert not is_step_done(tmp_path, "done", "in.txt", "out.txt")
+    assert not is_step_done(tmp_path, "done", "out.txt")
 
 
 def test_mark_done_roundtrip(tmp_path: Path):
     (tmp_path / "in.txt").write_text("in")
     (tmp_path / "out.txt").write_text("out")
     mark_done(tmp_path, "done", "t", "in.txt", "out.txt")
-    assert is_step_done(tmp_path, "done", "in.txt", "out.txt")
+    assert is_step_done(tmp_path, "done", "out.txt")
 
 
 def test_mutating_output_invalidates_cache(tmp_path: Path):
@@ -57,7 +57,7 @@ def test_mutating_output_invalidates_cache(tmp_path: Path):
     (tmp_path / "out.txt").write_text("out")
     mark_done(tmp_path, "done", "t", "in.txt", "out.txt")
     (tmp_path / "out.txt").write_text("mutated")
-    assert not is_step_done(tmp_path, "done", "in.txt", "out.txt")
+    assert not is_step_done(tmp_path, "done", "out.txt")
 
 
 def test_mutating_input_invalidates_cache(tmp_path: Path):
@@ -65,7 +65,7 @@ def test_mutating_input_invalidates_cache(tmp_path: Path):
     (tmp_path / "out.txt").write_text("out")
     mark_done(tmp_path, "done", "t", "in.txt", "out.txt")
     (tmp_path / "in.txt").write_text("mutated")
-    assert not is_step_done(tmp_path, "done", "in.txt", "out.txt")
+    assert not is_step_done(tmp_path, "done", "out.txt")
 
 
 def test_deleting_output_invalidates_cache(tmp_path: Path):
@@ -73,7 +73,7 @@ def test_deleting_output_invalidates_cache(tmp_path: Path):
     (tmp_path / "out.txt").write_text("out")
     mark_done(tmp_path, "done", "t", "in.txt", "out.txt")
     (tmp_path / "out.txt").unlink()
-    assert not is_step_done(tmp_path, "done", "in.txt", "out.txt")
+    assert not is_step_done(tmp_path, "done", "out.txt")
 
 
 def test_side_files_do_not_invalidate_cache(tmp_path: Path):
@@ -84,16 +84,16 @@ def test_side_files_do_not_invalidate_cache(tmp_path: Path):
     mark_done(tmp_path, "done", "t", "in.txt", "out.txt")
     (tmp_path / "time_and_err.log").write_text("log after")
     (tmp_path / "scratch.tmp").write_text("unrelated")
-    assert is_step_done(tmp_path, "done", "in.txt", "out.txt")
+    assert is_step_done(tmp_path, "done", "out.txt")
 
 
 def test_multi_file_roundtrip_and_partial_mutation(tmp_path: Path):
     for name in ("in1", "in2", "out1", "out2"):
         (tmp_path / name).write_text(name)
     mark_done(tmp_path, "done", "t", "in1 in2", "out1 out2")
-    assert is_step_done(tmp_path, "done", "in1 in2", "out1 out2")
+    assert is_step_done(tmp_path, "done", "out1 out2")
     (tmp_path / "in2").write_text("mutated")
-    assert not is_step_done(tmp_path, "done", "in1 in2", "out1 out2")
+    assert not is_step_done(tmp_path, "done", "out1 out2")
 
 
 def test_zero_byte_output_invalidates_cache(tmp_path: Path):
@@ -101,7 +101,7 @@ def test_zero_byte_output_invalidates_cache(tmp_path: Path):
     (tmp_path / "out.txt").write_text("out")
     mark_done(tmp_path, "done", "t", "in.txt", "out.txt")
     (tmp_path / "out.txt").write_text("")
-    assert not is_step_done(tmp_path, "done", "in.txt", "out.txt")
+    assert not is_step_done(tmp_path, "done", "out.txt")
 
 
 def test_mark_done_fails_on_missing_output(tmp_path: Path):
