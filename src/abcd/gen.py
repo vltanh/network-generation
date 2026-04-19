@@ -1,4 +1,4 @@
-import os
+import subprocess
 import logging
 import argparse
 from pathlib import Path
@@ -41,15 +41,19 @@ def run_abcd_generation(
         if not sampler.exists():
             logging.error(f"ABCD sampler not found at {sampler}")
             raise FileNotFoundError(sampler)
-        cmd = (
-            f"julia {sampler} "
-            f"{edge_tsv} {com_tsv} "
-            f"{deg_tsv} {cs_tsv} "
-            f"xi {xi} false false {seed} 0"
-        )
-        rc = os.system(cmd)
-        if rc != 0:
-            logging.error(f"ABCD sampler exited with code {rc}")
+        cmd = [
+            "julia", str(sampler),
+            str(edge_tsv), str(com_tsv),
+            str(deg_tsv), str(cs_tsv),
+            "xi", str(xi), "false", "false", str(seed), "0",
+        ]
+        proc = subprocess.run(cmd, capture_output=True, text=True)
+        if proc.stderr:
+            print(proc.stderr, end="", flush=True)
+        if proc.stdout:
+            print(proc.stdout, end="", flush=True)
+        if proc.returncode != 0:
+            logging.error(f"ABCD sampler exited with code {proc.returncode}")
             raise RuntimeError("ABCD sampler failed")
 
     with timed("Export"):
