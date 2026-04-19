@@ -9,6 +9,7 @@ SHARED_DIR="$( cd "${SCRIPT_DIR}/../_common" && pwd )"
 
 TIMEOUT="3d"
 SEED=0
+KEEP_STATE=0
 LFR_BINARY=""
 
 while [[ "$#" -gt 0 ]]; do
@@ -19,6 +20,7 @@ while [[ "$#" -gt 0 ]]; do
         --lfr-binary) LFR_BINARY="$2"; shift ;;
         --timeout) TIMEOUT="$2"; shift ;;
         --seed) SEED="$2"; shift ;;
+        --keep-state) KEEP_STATE=1 ;;
         *) echo "Unknown parameter passed: $1"; exit 1 ;;
     esac
     shift

@@ -189,6 +189,28 @@ FLAG_MATRIX = [
 ]
 
 
+# ---------------------------------------------------------------------------
+# --keep-state forwarding
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("generator", GENS)
+def test_keep_state_absent_by_default(stub_repo: Path, generator: str):
+    invoke(stub_repo, generator)
+    argv = stub_argv(stub_repo, generator)
+    assert "--keep-state" not in argv, (
+        f"{generator}: --keep-state must default to off but argv={argv}"
+    )
+
+
+@pytest.mark.parametrize("generator", GENS)
+def test_keep_state_forwarded_when_set(stub_repo: Path, generator: str):
+    invoke(stub_repo, generator, extra=["--keep-state"])
+    argv = stub_argv(stub_repo, generator)
+    assert "--keep-state" in argv, (
+        f"{generator}: --keep-state must reach the per-gen pipeline.sh but argv={argv}"
+    )
+
+
 @pytest.mark.parametrize("generator,flag,expected,should_be_present", FLAG_MATRIX)
 def test_flag_forwarding(stub_repo: Path, generator: str, flag: str, expected: str | None, should_be_present: bool):
     invoke(stub_repo, generator)

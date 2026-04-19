@@ -20,7 +20,9 @@ EXAMPLES_IN = REPO_ROOT / "examples" / "input"
 pytestmark = pytest.mark.slow
 
 
-def run_generator(generator: str, output_dir: Path) -> subprocess.CompletedProcess:
+def run_generator(
+    generator: str, output_dir: Path, extra: list[str] | None = None
+) -> subprocess.CompletedProcess:
     cmd = [
         str(RUN_GENERATOR),
         "--generator", generator,
@@ -31,6 +33,8 @@ def run_generator(generator: str, output_dir: Path) -> subprocess.CompletedProce
         "--network", "dnc",
         "--clustering-id", "sbm-flat-best+cc",
     ]
+    if extra:
+        cmd.extend(extra)
     env = os.environ.copy()
     env["PATH"] = f"/u/vltanh/miniconda3/envs/nw/bin:{env.get('PATH', '')}"
     env["OMP_NUM_THREADS"] = "1"
@@ -89,6 +93,29 @@ def test_scratch_directory_cleaned_up_on_success(
         f".state/ directory should be removed after successful completion; "
         f"found: {sorted(p.name for p in (out / '.state').iterdir()) if (out / '.state').exists() else 'n/a'}"
     )
+
+
+@pytest.mark.parametrize("generator", ["ec-sbm-v1", "ec-sbm-v2"])
+def test_keep_state_retains_scratch_directory(
+    tmp_output_dir: Path, generator: str
+):
+    """`--keep-state` opts out of the final `rm -rf .state/`, so users can
+    inspect intermediates after a successful run."""
+    result = run_generator(generator, tmp_output_dir, extra=["--keep-state"])
+    assert result.returncode == 0, result.stderr
+    out = run_dir(tmp_output_dir, generator)
+
+    state = out / ".state"
+    assert state.is_dir(), (
+        f"{generator}: --keep-state should preserve .state/ but it was removed"
+    )
+    # Stage subdirectories produced during the run should still be present.
+    assert (state / "clustered").is_dir(), (
+        f"{generator}: .state/clustered/ missing after --keep-state run"
+    )
+    # Final outputs are still produced — flag only affects cleanup.
+    assert (out / "edge.csv").is_file()
+    assert (out / "done").is_file()
 
 
 # ---------------------------------------------------------------------------

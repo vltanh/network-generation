@@ -5,4 +5,5 @@ GEN_EXTRA_ARGS=(
     --abcd-dir "${abcd_dir}"
     --seed "${seed}"
     --n-threads "${n_threads}"
+    "${KEEP_STATE_ARG[@]}"
 )

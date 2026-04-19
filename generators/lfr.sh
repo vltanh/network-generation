@@ -4,4 +4,5 @@ GEN_REQUIRED_DIR_FLAG="--lfr-binary"
 GEN_EXTRA_ARGS=(
     --lfr-binary "${lfr_binary}"
     --seed "${seed}"
+    "${KEEP_STATE_ARG[@]}"
 )

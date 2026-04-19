@@ -33,6 +33,7 @@ custom_ref_cluster_stats=""
 
 run_stats_flag=0
 run_comp_flag=0
+keep_state=0
 
 seed=0
 n_threads=1
@@ -54,6 +55,7 @@ while [[ "$#" -gt 0 ]]; do
         --input-cluster-stats) custom_ref_cluster_stats="$2"; shift 2 ;;
         --run-stats) run_stats_flag=1; shift 1 ;;
         --run-comp) run_comp_flag=1; shift 1 ;;
+        --keep-state) keep_state=1; shift 1 ;;
         --seed) seed="$2"; shift 2 ;;
         --n-threads) n_threads="$2"; shift 2 ;;
         --abcd-dir) abcd_dir="$2"; shift 2 ;;
@@ -252,6 +254,12 @@ GEN_PIPELINE=""
 GEN_REQUIRED_DIR_VAR=""
 GEN_REQUIRED_DIR_FLAG=""
 GEN_EXTRA_ARGS=()
+# Available to gen configs as `"${KEEP_STATE_ARG[@]}"` — expands to
+# `--keep-state` when the user passed it, otherwise to nothing.
+KEEP_STATE_ARG=()
+if [ "${keep_state}" -eq 1 ]; then
+    KEEP_STATE_ARG=(--keep-state)
+fi
 # shellcheck source=/dev/null
 source "${GENERATORS_DIR}/${generator}.sh"
 
