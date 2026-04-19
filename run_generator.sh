@@ -142,7 +142,14 @@ fi
 if [ ! -f "${INP_EDGE}" ]; then log "CRITICAL: Input network missing: ${INP_EDGE}"; exit 1; fi
 if [ ! -f "${INP_COM}" ]; then log "CRITICAL: Input clustering missing: ${INP_COM}"; exit 1; fi
 
-singleton_count=$(awk -F',' 'NR>1 {c[$2]++} END {n=0; for (k in c) if (c[k]==1) n++; print n}' "${INP_COM}")
+# Sniff delimiter from the header: tab if present, else comma.  An awk -F','
+# on a TSV silently reports 0 singletons because `$2` captures the whole line.
+if head -1 "${INP_COM}" | grep -q $'\t'; then
+    _com_fs=$'\t'
+else
+    _com_fs=','
+fi
+singleton_count=$(awk -F"${_com_fs}" 'NR>1 {c[$2]++} END {n=0; for (k in c) if (c[k]==1) n++; print n}' "${INP_COM}")
 if [ "${singleton_count}" -gt 0 ]; then
     log "WARNING: Input clustering contains ${singleton_count} singleton cluster(s). Generators that reuse the reference (sbm, ec-sbm-v1, ec-sbm-v2) will propagate them; strip them beforehand for consistency with the new-clustering generators."
 fi

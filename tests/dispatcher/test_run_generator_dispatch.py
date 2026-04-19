@@ -255,6 +255,35 @@ def test_generators_glob_ignores_non_regular_files(stub_repo: Path):
     assert "Unsupported generator" in result.stdout + result.stderr
 
 
+def test_singleton_warning_appears_for_csv_with_singletons(stub_repo: Path):
+    """Reference check: a CSV clustering with a singleton cluster triggers
+    the `WARNING: Input clustering contains N singleton cluster(s).` log line.
+    """
+    # Overwrite the fixture's com.csv with one that has exactly one
+    # singleton (cluster 2 has only node 2).
+    (stub_repo / "com.csv").write_text(
+        "node_id,cluster_id\n0,0\n1,0\n2,2\n"
+    )
+    result = invoke(stub_repo, "sbm")
+    assert "WARNING: Input clustering contains 1 singleton cluster" in result.stdout, (
+        f"expected singleton warning; stdout={result.stdout!r}"
+    )
+
+
+def test_singleton_warning_works_with_tsv_clustering(stub_repo: Path):
+    """The delimiter sniffer must detect TAB so a TSV clustering still
+    triggers the singleton warning.  Prior behavior: awk -F',' treated the
+    whole line as one field and under-reported to 0."""
+    (stub_repo / "com.csv").write_text(
+        "node_id\tcluster_id\n0\t0\n1\t0\n2\t2\n"
+    )
+    result = invoke(stub_repo, "sbm")
+    assert "WARNING: Input clustering contains 1 singleton cluster" in result.stdout, (
+        f"TSV clustering should still trigger singleton warning; "
+        f"stdout={result.stdout!r}"
+    )
+
+
 def test_missing_required_external_dir_rejected(tmp_path: Path):
     # Build a stub repo, then *remove* the abcd dir before invoking.
     root = tmp_path / "repo"
