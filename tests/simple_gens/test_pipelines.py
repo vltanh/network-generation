@@ -133,6 +133,36 @@ def test_keep_state_retains_scratch_directory(
     assert (out / "done").is_file()
 
 
+def test_keep_state_stage2_cache_survives_final_output_corruption(
+    gen_spec, tmp_output_dir, subprocess_env
+):
+    """After a --keep-state run, mutating the final edge.csv must invalidate
+    the top-level done but not the stage-2 cache: stage 2's recorded outputs
+    still live under .state/gen/, so stage 2 should short-circuit on rerun.
+
+    Regression: the stage-2 done file used to record paths under .state/gen/
+    that were then moved out of .state/ into OUTPUT_DIR, leaving the stage-2
+    cache pointing at missing files.  Rerun re-executed stage 2 unnecessarily.
+    """
+    first = run_generator(
+        gen_spec, tmp_output_dir, subprocess_env, extra=["--keep-state"]
+    )
+    assert first.returncode == 0, first.stderr
+    out = run_dir(tmp_output_dir, gen_spec.name)
+
+    (out / "edge.csv").write_text("source,target\n0,1\n")
+
+    second = run_generator(
+        gen_spec, tmp_output_dir, subprocess_env, extra=["--keep-state"]
+    )
+    assert second.returncode == 0, second.stderr
+    assert "State change detected" in second.stdout, second.stdout
+    assert "Skipping Stage 2" in second.stdout, (
+        f"{gen_spec.name}: stage-2 cache should survive final-output corruption "
+        f"under --keep-state.\nstdout:\n{second.stdout}"
+    )
+
+
 # ---------------------------------------------------------------------------
 # Cache / rerun
 # ---------------------------------------------------------------------------
