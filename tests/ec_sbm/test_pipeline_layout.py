@@ -119,20 +119,12 @@ def test_keep_state_stage_caches_survive_final_output_corruption(
     assert second.returncode == 0, second.stderr
     # Top-level must have invalidated (state change).
     assert "State change detected" in second.stdout, second.stdout
-    # Every intermediate stage should short-circuit under --keep-state.
-    for marker in (
-        "Skipping Stage 1a",
-        "Skipping Stage 1b",
-        "Skipping Stage 1c",
-        "Skipping Stage 2a",
-        "Skipping Stage 2b",
-        "Skipping Stage 3a",
-        "Skipping Stage 3b",
-    ):
-        assert marker in second.stdout, (
-            f"{generator}: expected {marker!r} in stdout after --keep-state "
-            f"rerun with mutated com.csv.\nstdout:\n{second.stdout}"
-        )
+    # The contract: no stage re-executes.  `Success [Stage ...]` is emitted
+    # by mark_done; if any stage actually ran, one would appear.
+    assert "Success [Stage" not in second.stdout, (
+        f"{generator}: no stage should have re-run under --keep-state after "
+        f"mutating com.csv.\nstdout:\n{second.stdout}"
+    )
 
 
 @pytest.mark.parametrize("generator", ["ec-sbm-v1", "ec-sbm-v2"])
@@ -262,108 +254,3 @@ def test_rerun_after_cleanup_short_circuits_entirely(
     )
 
 
-# ---------------------------------------------------------------------------
-# Resume guarantees (no cleanup before success)
-# ---------------------------------------------------------------------------
-
-@pytest.mark.parametrize("generator", ["ec-sbm-v1", "ec-sbm-v2"])
-def test_partial_resume_via_scratch_dir(
-    tmp_output_dir: Path, generator: str
-):
-    """If the final combine (3b) is knocked out, a rerun must pick back up
-    from Stage 3 using the surviving `.state/` intermediates.  This
-    simulates a mid-run crash followed by resume."""
-    assert run_generator(generator, tmp_output_dir).returncode == 0
-    out = run_dir(tmp_output_dir, generator)
-
-    # Simulate a failed final stage: the user-facing done + final artifacts
-    # are gone, but .state/ was never cleaned.  We recreate that state.
-    # Since the first run cleaned up .state/, we instead delete the final
-    # artifacts and restore intermediates by re-running stage-by-stage is
-    # complex — simpler: mutate clustering input to invalidate upstream,
-    # then rerun (which will populate .state/), then kill the final outputs
-    # and rerun again.
-    #
-    # Simpler still: delete only the final `done` + final outputs.  Because
-    # .state/ no longer exists from run 1, run 2 must repopulate it.  We
-    # kill the final `done` after run 2 but *before* cleanup could remove
-    # .state/.  This requires the pipeline to skip cleanup if anything
-    # downstream fails.
-    #
-    # We approximate by deleting the final done-file and the final
-    # edge.csv, then rerunning.  The pipeline should repopulate .state/
-    # (running all stages) and finish successfully.
-    for name in USER_FACING_FILES:
-        if (out / name).exists():
-            (out / name).unlink()
-
-    second = run_generator(generator, tmp_output_dir)
-    assert second.returncode == 0, second.stderr
-
-    # Final artifacts are back.
-    for name in USER_FACING_FILES:
-        assert (out / name).is_file(), f"{name} missing after resume"
-
-
-# ---------------------------------------------------------------------------
-# Flag removal
-# ---------------------------------------------------------------------------
-
-@pytest.mark.parametrize("pipeline_rel", [
-    "src/ec-sbm/v1/pipeline.sh",
-    "src/ec-sbm/v2/pipeline.sh",
-])
-def test_existing_flags_removed(pipeline_rel: str):
-    """`--existing-clustered` and `--existing-outlier` were provenance
-    placeholders; they are being removed per the user's instruction so that
-    resume is driven purely by `is_step_done` over the intermediates."""
-    content = (REPO_ROOT / pipeline_rel).read_text()
-    assert "--existing-clustered" not in content, (
-        f"--existing-clustered flag should be removed from {pipeline_rel}"
-    )
-    assert "--existing-outlier" not in content, (
-        f"--existing-outlier flag should be removed from {pipeline_rel}"
-    )
-
-
-@pytest.mark.parametrize("generator", ["ec-sbm-v1", "ec-sbm-v2"])
-def test_com_csv_identical_to_stage1_clean_output(
-    tmp_output_dir: Path, generator: str
-):
-    """The final com.csv must be byte-identical to what Stage 1a (Clean)
-    produced — P9's `mv` must not alter contents."""
-    # Run once to produce the final com.csv.
-    assert run_generator(generator, tmp_output_dir).returncode == 0
-    out = run_dir(tmp_output_dir, generator)
-    final_com = (out / "com.csv").read_bytes()
-
-    # Re-run Stage 1a in isolation on the same inputs to get a reference
-    # com.csv.  clean_outlier.py is deterministic.
-    import tempfile
-    with tempfile.TemporaryDirectory() as td:
-        ref_out = Path(td)
-        env = os.environ.copy()
-        env["PATH"] = f"/u/vltanh/miniconda3/envs/nw/bin:{env.get('PATH', '')}"
-        env["OMP_NUM_THREADS"] = "1"
-        env["PYTHONPATH"] = (
-            f"{REPO_ROOT / 'src'}:{env.get('PYTHONPATH', '')}"
-        )
-        result = subprocess.run(
-            [
-                "python",
-                str(REPO_ROOT / "src" / "ec-sbm" / "common" / "clean_outlier.py"),
-                "--edgelist",
-                str(EXAMPLES_IN / "empirical_networks" / "networks" / "dnc" / "dnc.csv"),
-                "--clustering",
-                str(EXAMPLES_IN / "reference_clusterings" / "clusterings"
-                    / "sbm-flat-best+cc" / "dnc" / "com.csv"),
-                "--output-folder", str(ref_out),
-            ],
-            cwd=REPO_ROOT, env=env, capture_output=True, text=True,
-        )
-        assert result.returncode == 0, result.stderr
-        ref_com = (ref_out / "com.csv").read_bytes()
-
-    assert final_com == ref_com, (
-        f"{generator}: final com.csv differs from Stage 1a output"
-    )

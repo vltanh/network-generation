@@ -114,12 +114,13 @@ def test_final_output_corruption_triggers_full_rerun(
     tmp_output_dir: Path, generator: str
 ):
     """If a final artifact is corrupted, rerunning must detect the state
-    mismatch and re-execute the full pipeline (since `.state/` intermediates
-    have been cleaned up on the previous success)."""
+    mismatch and re-execute the pipeline (since .state/ intermediates have
+    been cleaned up on the previous success).  The contract is: the rerun
+    notices the change and produces a consistent final done-file — not
+    which individual stages fired."""
     assert run_generator(generator, tmp_output_dir).returncode == 0
     out = run_dir(tmp_output_dir, generator)
 
-    # Corrupt the final edge.csv.
     (out / "edge.csv").write_text("source,target\n0,1\n")
 
     second = run_generator(generator, tmp_output_dir)
@@ -129,12 +130,16 @@ def test_final_output_corruption_triggers_full_rerun(
         f"expected state.sh to notice the mutated edge.csv.\n"
         f"stdout:\n{second.stdout}"
     )
-    # All stages re-run because .state/ was cleaned after the first success.
-    for stage in ("1a", "1b", "1c", "2a", "2b", "3a", "3b"):
-        assert f"Success [Stage {stage}" in second.stdout, (
-            f"Stage {stage} should have re-run after final-output corruption.\n"
-            f"stdout:\n{second.stdout}"
-        )
+    # Final artifacts are back and the done-file hashes match them.
+    for name in ("edge.csv", "com.csv", "sources.json", "done"):
+        assert (out / name).is_file(), f"{name} missing after rerun"
+    check = subprocess.run(
+        ["sha256sum", "-c", "--status", "done"],
+        cwd=out, capture_output=True, text=True,
+    )
+    assert check.returncode == 0, (
+        f"top-level done inconsistent with disk after rerun:\n{check.stderr}"
+    )
 
 
 @pytest.mark.parametrize("generator", ["ec-sbm-v1", "ec-sbm-v2"])

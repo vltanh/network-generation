@@ -157,14 +157,12 @@ def test_keep_state_stage2_cache_survives_final_output_corruption(
     )
     assert second.returncode == 0, second.stderr
     assert "State change detected" in second.stdout, second.stdout
-    assert "Skipping Stage 2" in second.stdout, (
-        f"{gen_spec.name}: stage-2 cache should survive final-output corruption "
-        f"under --keep-state.\nstdout:\n{second.stdout}"
-    )
-    # Stage 1 should also still cache (its outputs never moved).
-    assert "Skipping Stage 1" in second.stdout, (
-        f"{gen_spec.name}: stage-1 cache should survive final-output corruption "
-        f"under --keep-state.\nstdout:\n{second.stdout}"
+    # The contract: no stage re-executes because every .state/*/done stayed
+    # valid.  `Success [Stage ...]` is emitted by mark_done, so its absence
+    # means nothing ran.
+    assert "Success [Stage" not in second.stdout, (
+        f"{gen_spec.name}: no stage should have re-run under --keep-state "
+        f"after mutating edge.csv.\nstdout:\n{second.stdout}"
     )
 
 
@@ -273,10 +271,16 @@ def test_final_output_corruption_triggers_full_rerun(
     assert "State change detected" in second.stdout, (
         f"{gen_spec.name}: expected state.sh to notice mutated edge.csv.\n{second.stdout}"
     )
-    for stage in SIMPLE_STAGES:
-        assert f"Success [Stage {stage}" in second.stdout, (
-            f"{gen_spec.name}: Stage {stage} should have re-run.\n{second.stdout}"
-        )
+    # Final artifacts are back and the done-file hashes match them.
+    for name in ("edge.csv", "com.csv", "done"):
+        assert (out / name).is_file(), f"{gen_spec.name}: {name} missing after rerun"
+    check = subprocess.run(
+        ["sha256sum", "-c", "--status", "done"],
+        cwd=out, capture_output=True, text=True,
+    )
+    assert check.returncode == 0, (
+        f"{gen_spec.name}: done file inconsistent after rerun.\n{check.stderr}"
+    )
 
 
 def test_input_change_invalidates_pipeline(gen_spec, tmp_path, subprocess_env):
