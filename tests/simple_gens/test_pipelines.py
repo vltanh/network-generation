@@ -161,6 +161,35 @@ def test_keep_state_stage2_cache_survives_final_output_corruption(
         f"{gen_spec.name}: stage-2 cache should survive final-output corruption "
         f"under --keep-state.\nstdout:\n{second.stdout}"
     )
+    # Stage 1 should also still cache (its outputs never moved).
+    assert "Skipping Stage 1" in second.stdout, (
+        f"{gen_spec.name}: stage-1 cache should survive final-output corruption "
+        f"under --keep-state.\nstdout:\n{second.stdout}"
+    )
+
+
+def test_top_level_short_circuit_wipes_stale_state(
+    gen_spec, tmp_output_dir, subprocess_env
+):
+    """If the top-level done validates, .state/ is redundant and potentially
+    stale (e.g. inherited from an older pipeline version whose stage dones
+    were inconsistent).  The dispatcher should wipe .state/ on the top-level
+    short-circuit path rather than trusting it."""
+    first = run_generator(
+        gen_spec, tmp_output_dir, subprocess_env, extra=["--keep-state"]
+    )
+    assert first.returncode == 0, first.stderr
+    out = run_dir(tmp_output_dir, gen_spec.name)
+    assert (out / ".state").is_dir(), "precondition: --keep-state keeps .state/"
+
+    (out / ".state" / "STALE_MARKER").write_text("leftover\n")
+
+    second = run_generator(gen_spec, tmp_output_dir, subprocess_env)
+    assert second.returncode == 0, second.stderr
+    assert "Skipping entire pipeline" in second.stdout, second.stdout
+    assert not (out / ".state").exists(), (
+        f"{gen_spec.name}: .state/ should be wiped on top-level short-circuit"
+    )
 
 
 # ---------------------------------------------------------------------------

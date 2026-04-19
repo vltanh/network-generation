@@ -57,6 +57,10 @@ FINAL_OUT="${OUTPUT_DIR}/edge.csv ${OUTPUT_DIR}/com.csv ${OUTPUT_DIR}/sources.js
 
 if is_step_done "${FINAL_DONE}" "${FINAL_IN}" "${FINAL_OUT}"; then
     echo "Skipping entire pipeline: valid top-level done-file found."
+    # The top-level done is authoritative; any surviving .state/ is unneeded
+    # (and, if inherited from an earlier run with inconsistent stage dones,
+    # potentially misleading).  Remove it so the output tree is clean.
+    rm -rf "${OUTPUT_DIR}/.state"
     echo "=== Pipeline execution completed successfully! ==="
     echo "Final Network: ${OUTPUT_DIR}/edge.csv"
     exit 0
@@ -206,18 +210,21 @@ if ! is_step_done "${STATE_DIR}/final.done" "${IN_3B}" "${OUT_3B}"; then
         --name-2 "match_degree" \
         --output-folder "${STG3_FINAL_DIR}" \
         --output-filename "edge.csv"; } 2> "${STG3_FINAL_DIR}/time_and_err.log"
-    mv "${STG3_FINAL_DIR}/edge.csv" "${OUTPUT_DIR}/edge.csv"
-    mv "${STG3_FINAL_DIR}/sources.json" "${OUTPUT_DIR}/sources.json"
+    # Copy rather than move so stage 3b's done-file and stage 1a's
+    # ${STG1_CLEAN_DIR}/com.csv hash still validate on a --keep-state rerun
+    # that mutates the final outputs.
+    cp "${STG3_FINAL_DIR}/edge.csv" "${OUTPUT_DIR}/edge.csv"
+    cp "${STG3_FINAL_DIR}/sources.json" "${OUTPUT_DIR}/sources.json"
     mark_done "${STATE_DIR}/final.done" "Stage 3b (Final Combine)" "${IN_3B}" "${OUT_3B}"
 else
     echo "Skipping Stage 3b: Valid state found."
 fi
 
-# Promote com.csv from .state/ to OUTPUT_DIR if not already there (idempotent
-# on rerun; source is cleaned up by the final `rm -rf .state/` anyway).
-if [[ ! -f "${OUTPUT_DIR}/com.csv" ]]; then
-    mv "${STG1_CLEAN_DIR}/com.csv" "${OUTPUT_DIR}/com.csv"
-fi
+# Promote com.csv from .state/ to OUTPUT_DIR.  Copy rather than move so
+# stage 1a's hashed ${STG1_CLEAN_DIR}/com.csv still validates on a
+# --keep-state rerun (and so stale ${OUTPUT_DIR}/com.csv is always refreshed
+# from the canonical stage 1a output).
+cp "${STG1_CLEAN_DIR}/com.csv" "${OUTPUT_DIR}/com.csv"
 
 # ==========================================
 # Consolidate per-stage logs into one top-level run.log

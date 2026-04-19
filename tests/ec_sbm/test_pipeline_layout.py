@@ -96,6 +96,72 @@ def test_scratch_directory_cleaned_up_on_success(
 
 
 @pytest.mark.parametrize("generator", ["ec-sbm-v1", "ec-sbm-v2"])
+def test_keep_state_stage_caches_survive_final_output_corruption(
+    tmp_output_dir: Path, generator: str
+):
+    """Under --keep-state, every stage's done-file must still validate on
+    rerun, not just the top-level done.  If the user mutates a final output
+    to force a full rerun, the pipeline should enter stage-by-stage checking
+    and find every `.state/*/done` still consistent — meaning no stage
+    re-executes unnecessarily.
+
+    Regression: stage 1a and stage 3b used to `mv` their outputs into
+    OUTPUT_DIR, leaving the hashed `.state/` paths pointing at missing files.
+    """
+    first = run_generator(generator, tmp_output_dir, extra=["--keep-state"])
+    assert first.returncode == 0, first.stderr
+    out = run_dir(tmp_output_dir, generator)
+
+    # Corrupt the final com.csv to invalidate the top-level done.
+    (out / "com.csv").write_text("node_id,cluster_id\n0,0\n")
+
+    second = run_generator(generator, tmp_output_dir, extra=["--keep-state"])
+    assert second.returncode == 0, second.stderr
+    # Top-level must have invalidated (state change).
+    assert "State change detected" in second.stdout, second.stdout
+    # Every intermediate stage should short-circuit under --keep-state.
+    for marker in (
+        "Skipping Stage 1a",
+        "Skipping Stage 1b",
+        "Skipping Stage 1c",
+        "Skipping Stage 2a",
+        "Skipping Stage 2b",
+        "Skipping Stage 3a",
+        "Skipping Stage 3b",
+    ):
+        assert marker in second.stdout, (
+            f"{generator}: expected {marker!r} in stdout after --keep-state "
+            f"rerun with mutated com.csv.\nstdout:\n{second.stdout}"
+        )
+
+
+@pytest.mark.parametrize("generator", ["ec-sbm-v1", "ec-sbm-v2"])
+def test_top_level_short_circuit_wipes_stale_state(
+    tmp_output_dir: Path, generator: str
+):
+    """If the top-level done validates, .state/ is redundant and potentially
+    stale (e.g. inherited from an older pipeline version whose stage dones
+    were inconsistent).  The dispatcher should wipe .state/ on the top-level
+    short-circuit path rather than trusting it."""
+    first = run_generator(generator, tmp_output_dir, extra=["--keep-state"])
+    assert first.returncode == 0, first.stderr
+    out = run_dir(tmp_output_dir, generator)
+    assert (out / ".state").is_dir(), "precondition: --keep-state keeps .state/"
+
+    # Seed a stale-looking marker under .state/ and rerun *without*
+    # --keep-state.  Because the top-level done is still valid, the
+    # pipeline should short-circuit and wipe .state/.
+    (out / ".state" / "STALE_MARKER").write_text("leftover\n")
+
+    second = run_generator(generator, tmp_output_dir)
+    assert second.returncode == 0, second.stderr
+    assert "Skipping entire pipeline" in second.stdout, second.stdout
+    assert not (out / ".state").exists(), (
+        f"{generator}: .state/ should be wiped on top-level short-circuit"
+    )
+
+
+@pytest.mark.parametrize("generator", ["ec-sbm-v1", "ec-sbm-v2"])
 def test_keep_state_retains_scratch_directory(
     tmp_output_dir: Path, generator: str
 ):
@@ -257,24 +323,6 @@ def test_existing_flags_removed(pipeline_rel: str):
     )
     assert "--existing-outlier" not in content, (
         f"--existing-outlier flag should be removed from {pipeline_rel}"
-    )
-
-
-@pytest.mark.parametrize("pipeline_rel", [
-    "src/ec-sbm/v1/pipeline.sh",
-    "src/ec-sbm/v2/pipeline.sh",
-])
-def test_com_csv_moved_not_copied(pipeline_rel: str):
-    """Stage 3b should `mv` com.csv out of `.state/`, not `cp` it.  The
-    clean-outlier stage's com.csv has no downstream consumer after 3b
-    finishes, and `.state/` is wiped on success anyway — so a copy
-    just doubles the on-disk footprint during the final stage."""
-    content = (REPO_ROOT / pipeline_rel).read_text()
-    assert 'cp "${STG1_CLEAN_DIR}/com.csv"' not in content, (
-        f"{pipeline_rel}: com.csv should be moved, not copied"
-    )
-    assert 'mv "${STG1_CLEAN_DIR}/com.csv" "${OUTPUT_DIR}/com.csv"' in content, (
-        f"{pipeline_rel}: expected `mv` of com.csv from .state/ to OUTPUT_DIR"
     )
 
 

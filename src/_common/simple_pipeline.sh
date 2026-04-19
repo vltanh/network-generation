@@ -79,6 +79,10 @@ mkdir -p "${OUTPUT_DIR}"
 
 if is_step_done "${FINAL_DONE}" "${FINAL_IN}" "${FINAL_OUT}"; then
     echo "Skipping entire pipeline: valid top-level done-file found."
+    # The top-level done is authoritative; any surviving .state/ is unneeded
+    # (and, if inherited from an earlier run with inconsistent stage dones,
+    # potentially misleading).  Remove it so the output tree is clean.
+    rm -rf "${OUTPUT_DIR}/.state"
     echo "=== ${GEN_NAME} pipeline completed successfully ==="
     echo "Final Network: ${OUTPUT_DIR}/edge.csv"
     exit 0
