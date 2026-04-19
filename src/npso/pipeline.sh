@@ -10,6 +10,7 @@ SHARED_DIR="$( cd "${SCRIPT_DIR}/../_common" && pwd )"
 TIMEOUT="3d"
 SEED=0
 N_THREADS=1
+KEEP_STATE=0
 NPSO_DIR=""
 
 while [[ "$#" -gt 0 ]]; do
@@ -21,6 +22,7 @@ while [[ "$#" -gt 0 ]]; do
         --timeout) TIMEOUT="$2"; shift ;;
         --seed) SEED="$2"; shift ;;
         --n-threads) N_THREADS="$2"; shift ;;
+        --keep-state) KEEP_STATE=1 ;;
         *) echo "Unknown parameter passed: $1"; exit 1 ;;
     esac
     shift

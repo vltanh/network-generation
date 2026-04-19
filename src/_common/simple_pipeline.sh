@@ -53,6 +53,7 @@ fi
 : "${TIMEOUT:=3d}"
 : "${SEED:=0}"
 : "${N_THREADS:=1}"
+: "${KEEP_STATE:=0}"
 : "${GEN_EXTRA_STAGE2_INPUTS:=}"
 
 SHARED_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -154,7 +155,11 @@ append_stage_log "${FINAL_LOG}" "Stage 2 (gen)"     "${STG2_DIR}/run.log"
 # ==========================================
 mark_done "${FINAL_DONE}" "Pipeline" "${FINAL_IN}" "${FINAL_OUT}"
 
-rm -rf "${STATE_DIR}"
+if [ "${KEEP_STATE}" = "1" ]; then
+    echo "Keeping intermediates under ${STATE_DIR} (--keep-state)."
+else
+    rm -rf "${STATE_DIR}"
+fi
 
 echo "=== ${GEN_NAME} pipeline completed successfully ==="
 echo "Final Network: ${OUTPUT_DIR}/edge.csv"

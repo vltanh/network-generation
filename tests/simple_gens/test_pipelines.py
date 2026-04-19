@@ -43,7 +43,12 @@ SIMPLE_STAGES = ("1 (profile)", "2 (gen)")
 
 
 def run_generator(
-    gen_spec, output_dir: Path, env: dict, inp_edge: Path = INP_EDGE, inp_com: Path = INP_COM
+    gen_spec,
+    output_dir: Path,
+    env: dict,
+    inp_edge: Path = INP_EDGE,
+    inp_com: Path = INP_COM,
+    extra: list[str] | None = None,
 ) -> subprocess.CompletedProcess:
     cmd = [
         str(RUN_GENERATOR),
@@ -59,6 +64,8 @@ def run_generator(
     ]
     for flag, val in gen_spec.binary_env.items():
         cmd.extend([flag, val])
+    if extra:
+        cmd.extend(extra)
     return subprocess.run(cmd, cwd=REPO_ROOT, env=env, capture_output=True, text=True)
 
 
@@ -103,6 +110,27 @@ def test_scratch_directory_cleaned_up_on_success(
     assert not (out / ".state").exists(), (
         f"{gen_spec.name}: .state/ should be removed after successful completion"
     )
+
+
+def test_keep_state_retains_scratch_directory(
+    gen_spec, tmp_output_dir, subprocess_env
+):
+    result = run_generator(
+        gen_spec, tmp_output_dir, subprocess_env, extra=["--keep-state"]
+    )
+    assert result.returncode == 0, result.stderr
+    out = run_dir(tmp_output_dir, gen_spec.name)
+    state = out / ".state"
+    assert state.is_dir(), (
+        f"{gen_spec.name}: --keep-state should preserve .state/ but it was removed"
+    )
+    # Setup outputs (the profile artifacts) should still be sitting there.
+    assert (state / "setup").is_dir(), (
+        f"{gen_spec.name}: .state/setup/ missing after --keep-state run"
+    )
+    # Final outputs are still produced — flag only affects cleanup.
+    assert (out / "edge.csv").is_file()
+    assert (out / "done").is_file()
 
 
 # ---------------------------------------------------------------------------

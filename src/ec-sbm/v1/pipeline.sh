@@ -14,6 +14,7 @@ export PYTHONPATH="${SRC_DIR}${PYTHONPATH:+:${PYTHONPATH}}"
 # Default values
 TIMEOUT="3d"
 N_THREADS=1
+KEEP_STATE=0
 
 # Parse named arguments
 while [[ "$#" -gt 0 ]]; do
@@ -23,6 +24,7 @@ while [[ "$#" -gt 0 ]]; do
         --output-dir) OUTPUT_DIR="$2"; shift ;;
         --timeout) TIMEOUT="$2"; shift ;;
         --n-threads) N_THREADS="$2"; shift ;;
+        --keep-state) KEEP_STATE=1 ;;
         *) echo "Unknown parameter passed: $1"; exit 1 ;;
     esac
     shift
@@ -233,7 +235,11 @@ append_stage_log "${FINAL_LOG}" "Stage 3b" "${STG3_FINAL_DIR}/run.log"
 # ==========================================
 mark_done "${FINAL_DONE}" "Pipeline" "${FINAL_IN}" "${FINAL_OUT}"
 
-rm -rf "${STATE_DIR}"
+if [ "${KEEP_STATE}" = "1" ]; then
+    echo "Keeping intermediates under ${STATE_DIR} (--keep-state)."
+else
+    rm -rf "${STATE_DIR}"
+fi
 
 echo "=== Pipeline execution completed successfully! ==="
 echo "Final Network: ${OUTPUT_DIR}/edge.csv"

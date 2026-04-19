@@ -4,4 +4,5 @@ GEN_REQUIRED_DIR_FLAG=""
 GEN_EXTRA_ARGS=(
     --seed "${seed}"
     --n-threads "${n_threads}"
+    "${KEEP_STATE_ARG[@]}"
 )

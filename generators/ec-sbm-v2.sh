@@ -6,4 +6,5 @@ GEN_EXTRA_ARGS=(
     --edge-correction "rewire"
     --algorithm "true_greedy"
     --n-threads "${n_threads}"
+    "${KEEP_STATE_ARG[@]}"
 )
