@@ -4,6 +4,7 @@ from contextlib import contextmanager
 from pathlib import Path
 
 import pandas as pd
+from scipy.sparse import dok_matrix
 
 
 def setup_logging(log_filepath: Path):
@@ -49,6 +50,25 @@ def write_edge_tuples_csv(path, edges, node_iid2id=None):
     else:
         rows = [(node_iid2id[int(s)], node_iid2id[int(t)]) for s, t in edges]
     pd.DataFrame(rows, columns=["source", "target"]).to_csv(path, index=False)
+
+
+def load_probs_matrix(edge_counts_path, num_clusters):
+    """Load an (r, c, w) edge-counts CSV into a num_clusters x num_clusters
+    dok_matrix.  Returns a zero matrix if the file is empty (the empirical
+    graph has no cross-cluster structure to preserve).
+    """
+    probs = dok_matrix((num_clusters, num_clusters), dtype=int)
+    try:
+        df = pd.read_csv(edge_counts_path, header=None, names=["r", "c", "w"])
+    except pd.errors.EmptyDataError:
+        logging.warning(
+            f"Edge counts file ({edge_counts_path}) is empty. "
+            "Assuming completely disconnected clusters."
+        )
+        return probs
+    for _, row in df.iterrows():
+        probs[int(row["r"]), int(row["c"])] = int(row["w"])
+    return probs
 
 
 def drop_singleton_clusters(com_df):

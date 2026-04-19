@@ -3,10 +3,14 @@ import argparse
 
 import numpy as np
 import pandas as pd
-from scipy.sparse import dok_matrix
 import graph_tool.all as gt
 
-from pipeline_common import standard_setup, timed, write_edge_tuples_csv
+from pipeline_common import (
+    standard_setup,
+    timed,
+    write_edge_tuples_csv,
+    load_probs_matrix,
+)
 
 
 def create_edge(u, v):
@@ -113,17 +117,7 @@ def load_inputs(
     deg = pd.read_csv(degree_path, header=None)[0].to_numpy(copy=True)
     mcs = pd.read_csv(mincut_path, header=None)[0].to_numpy(copy=True)
 
-    probs = dok_matrix((num_clusters, num_clusters), dtype=int)
-    try:
-        edge_counts_df = pd.read_csv(
-            edge_counts_path, header=None, names=["r", "c", "w"]
-        )
-        for _, row in edge_counts_df.iterrows():
-            probs[int(row["r"]), int(row["c"])] = int(row["w"])
-    except pd.errors.EmptyDataError:
-        logging.warning(
-            f"Edge counts file ({edge_counts_path}) is empty. Assuming completely disconnected clusters."
-        )
+    probs = load_probs_matrix(edge_counts_path, num_clusters)
 
     return node_id2id, node2cluster, clustering, deg, mcs, probs
 
