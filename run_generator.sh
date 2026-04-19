@@ -80,7 +80,9 @@ fi
 GENERATORS_DIR="${SCRIPT_DIR}/generators"
 ACCEPTED_GENERATORS=()
 for cfg in "${GENERATORS_DIR}"/*.sh; do
-    [ -e "${cfg}" ] || continue
+    # -f requires a regular file (not a directory); dereferences symlinks
+    # and returns false on dangling ones.
+    [ -f "${cfg}" ] || continue
     ACCEPTED_GENERATORS+=("$(basename "${cfg}" .sh)")
 done
 

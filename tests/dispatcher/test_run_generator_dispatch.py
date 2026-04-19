@@ -238,6 +238,23 @@ def test_unsupported_generator_rejected(stub_repo: Path):
     assert "Unsupported generator" in result.stdout or "Unsupported generator" in result.stderr
 
 
+def test_generators_glob_ignores_non_regular_files(stub_repo: Path):
+    """A directory or dangling symlink named `foo.sh` under generators/ must
+    not leak into ACCEPTED_GENERATORS — only regular files count."""
+    # A directory that masquerades as a generator config.
+    (stub_repo / "generators" / "ghost.sh").mkdir()
+    # A symlink pointing at a nonexistent target.
+    (stub_repo / "generators" / "phantom.sh").symlink_to("nonexistent")
+
+    result = invoke(stub_repo, "ghost")
+    assert result.returncode != 0, "directory entry must not be accepted"
+    assert "Unsupported generator" in result.stdout + result.stderr
+
+    result = invoke(stub_repo, "phantom")
+    assert result.returncode != 0, "dangling symlink must not be accepted"
+    assert "Unsupported generator" in result.stdout + result.stderr
+
+
 def test_missing_required_external_dir_rejected(tmp_path: Path):
     # Build a stub repo, then *remove* the abcd dir before invoking.
     root = tmp_path / "repo"
