@@ -99,6 +99,53 @@ def test_generator_output_deterministic(profile_module, tmp_path, generator):
         )
 
 
+@pytest.mark.parametrize("generator", sorted(EXPECTED_OUTPUTS.keys()))
+def test_generator_output_stable_across_pythonhashseed(
+    profile_module, tmp_path, generator,
+):
+    """Outputs are byte-identical across processes with different
+    PYTHONHASHSEED values.
+
+    Prior to the sort-fix, iteration over the `nodes` set in
+    compute_node_degree / compute_edge_count caused tie-breaking to vary by
+    hash seed, so assignment.csv, node_id.csv, and edge_counts.csv flaked
+    across processes. The fix sorts on (-degree, node_id) and on cluster
+    iid pairs at export.
+    """
+    import os
+    import subprocess
+
+    # In-process run as the golden.
+    gold = tmp_path / "gold"
+    gold.mkdir()
+    profile_module.setup_generator_inputs(
+        str(EDGELIST), str(CLUSTERING), str(gold), generator,
+    )
+
+    # Run profile.py in a fresh process with a non-default PYTHONHASHSEED.
+    other = tmp_path / "other"
+    other.mkdir()
+    env = os.environ.copy()
+    env["PYTHONHASHSEED"] = "42"
+    subprocess.run(
+        [
+            "python", str(REPO_ROOT / "src" / "profile.py"),
+            "--edgelist", str(EDGELIST),
+            "--clustering", str(CLUSTERING),
+            "--output-folder", str(other),
+            "--generator", generator,
+        ],
+        cwd=str(REPO_ROOT),
+        env=env,
+        check=True,
+        capture_output=True,
+    )
+    for name in EXPECTED_OUTPUTS[generator]:
+        assert (gold / name).read_bytes() == (other / name).read_bytes(), (
+            f"{generator}: {name} differs across PYTHONHASHSEED values"
+        )
+
+
 def test_abcd_and_lfr_produce_identical_degree_and_cluster_sizes(
     profile_module, tmp_path,
 ):
@@ -122,14 +169,9 @@ def test_abcd_and_lfr_produce_identical_degree_and_cluster_sizes(
         )
 
 
-# Note: we deliberately do *not* pin golden byte hashes here.  The
-# pre-refactor profile.py iterates over `nodes` (a Python set) when
-# computing node-degree order, so tie-breaking among equal-degree nodes
-# depends on PYTHONHASHSEED — outputs like assignment.csv and
-# node_id.csv legitimately differ across processes for degree ties.
-# Intra-process determinism is covered by
-# test_generator_output_deterministic; cross-generator invariants are
-# covered by the shared-output tests below.
+# Cross-generator invariants are covered by the shared-output tests below.
+# Cross-process byte stability is covered by
+# test_generator_output_stable_across_pythonhashseed.
 
 
 def test_sbm_and_ecsbm_share_node_id_cluster_id_edge_counts(
