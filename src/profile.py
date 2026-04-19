@@ -52,17 +52,26 @@ def read_edgelist(edgelist_path, nodes):
 
 
 def compute_node_degree(nodes, neighbors):
-    """Return nodes sorted by degree descending and a node_id → iid mapping."""
+    """Return nodes sorted by degree descending and a node_id → iid mapping.
+
+    Tie-break on node id ascending so the output is stable across processes
+    (iteration over a Python set depends on PYTHONHASHSEED).
+    """
     node_degree_sorted = sorted(
-        [(u, len(neighbors[u])) for u in nodes], reverse=True, key=lambda x: x[1]
+        ((u, len(neighbors[u])) for u in nodes), key=lambda x: (-x[1], x[0])
     )
     node_id2iid = {u: i for i, (u, _) in enumerate(node_degree_sorted)}
     return node_degree_sorted, node_id2iid
 
 
 def compute_comm_size(cluster_counts):
-    """Return clusters sorted by size descending and a cluster_id → iid mapping."""
-    comm_size_sorted = sorted(cluster_counts.items(), reverse=True, key=lambda x: x[1])
+    """Return clusters sorted by size descending and a cluster_id → iid mapping.
+
+    Tie-break on cluster id ascending for cross-process stability.
+    """
+    comm_size_sorted = sorted(
+        cluster_counts.items(), key=lambda x: (-x[1], x[0])
+    )
     cluster_id2iid = {c: i for i, (c, _) in enumerate(comm_size_sorted)}
     return comm_size_sorted, cluster_id2iid
 
@@ -126,8 +135,12 @@ def compute_edge_count(nodes, neighbors, node2com, cluster_id2iid):
 
 
 def export_edge_count(out_dir, edge_counts):
-    """Write (row, col, weight) triples to edge_counts.csv (no header)."""
-    data = [[r, c, w] for (r, c), w in edge_counts.items()]
+    """Write (row, col, weight) triples to edge_counts.csv (no header).
+
+    Rows are sorted by (row iid, col iid) so the output is stable regardless
+    of dict insertion order (which reflects the upstream node-iteration order).
+    """
+    data = [[r, c, w] for (r, c), w in sorted(edge_counts.items())]
     pd.DataFrame(data).to_csv(f"{out_dir}/edge_counts.csv", index=False, header=False)
 
 
@@ -215,9 +228,11 @@ def compute_mixing_parameter(nodes, neighbors, node2com, generator_type):
                 out_degree[u] += 1
 
     if generator_type == "lfr":
+        # Sort for cross-process determinism: floating-point sum varies with
+        # summation order even though the mean is mathematically order-free.
         mus = [
             out_degree[u] / (in_degree[u] + out_degree[u])
-            for u in nodes
+            for u in sorted(nodes)
         ]
         return float(np.mean(mus))
     else:
