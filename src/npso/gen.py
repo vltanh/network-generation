@@ -1,6 +1,7 @@
 import logging
 import argparse
 import subprocess
+import tempfile
 from pathlib import Path
 
 import numpy as np
@@ -32,9 +33,22 @@ def compute_global_ccoeff_from_edgelist(edgelist_path):
     return nk.globals.ClusteringCoefficient.exactGlobal(g)
 
 
-def _matlab_subprocess_script(n_threads, npso_dir_abs, matlab_wrapper_dir):
-    """Bash command that locates the matlab binary (lmod-dance) and runs a
-    passed-in MATLAB one-liner. Used by SubprocessRunner."""
+def _ccoeff_from_edges(edges_df):
+    g = nk.graph.Graph(n=0, weighted=False, directed=False)
+    nodes = pd.unique(pd.concat([edges_df["source"], edges_df["target"]], ignore_index=True))
+    idx = {v: i for i, v in enumerate(nodes)}
+    for _ in range(len(nodes)):
+        g.addNode()
+    for u, v in zip(edges_df["source"].to_numpy(), edges_df["target"].to_numpy()):
+        g.addEdge(idx[u], idx[v])
+    g.removeMultiEdges()
+    g.removeSelfLoops()
+    return nk.globals.ClusteringCoefficient.exactGlobal(g)
+
+
+def _matlab_subprocess_script(n_threads):
+    """Bash one-liner: load matlab via lmod if not in PATH, then run the
+    inner MATLAB command passed as $1."""
     single_flag = "-singleCompThread " if n_threads == 1 else ""
     return (
         "if ! command -v matlab >/dev/null 2>&1; then "
@@ -46,16 +60,21 @@ def _matlab_subprocess_script(n_threads, npso_dir_abs, matlab_wrapper_dir):
 
 
 class SubprocessRunner:
-    """Runs MATLAB once per iteration via a fresh `matlab` subprocess.
+    """Spawns a fresh `matlab` per iteration.
 
-    Baseline path. Used when matlab.engine for Python is not installed, or as
-    a fallback when the engine raises a non-recoverable error mid-loop.
+    Backup path. Used when matlab.engine for Python is not installed, or as
+    a per-iter fallback when an engine call fails.
+
+    run_iter() writes {prefix}_edge.tsv / {prefix}_com.tsv via the MATLAB
+    script, then reads them back into DataFrames. The TSVs live in a
+    caller-supplied scratch dir so the main loop doesn't have to clean
+    them up individually.
     """
 
     def __init__(self, n_threads, npso_dir_abs, matlab_wrapper_dir):
         self.n_threads = n_threads
-        self.npso_dir_abs = npso_dir_abs
-        self.matlab_wrapper_dir = matlab_wrapper_dir
+        self.npso_dir_abs = str(npso_dir_abs)
+        self.matlab_wrapper_dir = str(matlab_wrapper_dir)
 
     def run_iter(self, N, m, T, gamma, c, prefix, seed):
         matlab_inner = (
@@ -65,26 +84,34 @@ class SubprocessRunner:
             f"run_npso({N}, {m}, {T}, {gamma}, {c}, '{prefix}', {seed}), "
             f"catch e, fprintf(1, e.message), end, quit"
         )
-        bash_script = _matlab_subprocess_script(
-            self.n_threads, self.npso_dir_abs, self.matlab_wrapper_dir
-        )
+        bash_script = _matlab_subprocess_script(self.n_threads)
         subprocess.run(
             ["bash", "-c", bash_script, "bash", matlab_inner],
             check=False,
         )
+        edge_path = Path(f"{prefix}edge.tsv")
+        com_path = Path(f"{prefix}com.tsv")
+        if not edge_path.exists() or not com_path.exists():
+            return None
+        edge_df = pd.read_csv(edge_path, sep="\t", header=None, names=["source", "target"])
+        com_df = pd.read_csv(com_path, sep="\t", header=None, names=["node_id", "cluster_id"])
+        # Clean up the scratch TSVs — their data is now in memory.
+        _safe_remove(edge_path)
+        _safe_remove(com_path)
+        return edge_df, com_df
 
     def close(self):
         pass
 
 
 class EngineRunner:
-    """Runs each iteration inside one persistent MATLAB Engine session.
+    """One persistent MATLAB session shared by every bisection iter.
 
-    Removes the ~20–60s per-iter cold-start of the subprocess path. On a
-    per-iter MATLAB error, logs and returns without killing the engine;
-    caller treats that iter as failed and may invoke a SubprocessRunner
-    fallback. On engine-level failures (start, path setup) raises so the
-    caller can downgrade to SubprocessRunner for the whole run.
+    run_iter() returns the edges/comm matrices directly from MATLAB — no
+    TSV write/read round-trip. On a per-iter MATLAB error logs and returns
+    None; the main loop treats that as a failed iter and can retry via
+    SubprocessRunner. On engine start/path-setup failure raises so
+    make_runner() can downgrade the whole run.
     """
 
     def __init__(self, n_threads, npso_dir_abs, matlab_wrapper_dir):
@@ -101,14 +128,25 @@ class EngineRunner:
 
     def run_iter(self, N, m, T, gamma, c, prefix, seed):
         try:
-            self._eng.run_npso(
+            edges_mat, comm_mat = self._eng.run_npso(
                 float(N), float(m), float(T), float(gamma), float(c),
-                str(prefix), float(seed), nargout=0,
+                str(prefix), float(seed), nargout=2,
             )
-            return True
         except _matlab_engine.MatlabExecutionError as exc:
             logging.error(f"MATLAB iter failed (engine): {exc}")
-            return False
+            return None
+
+        edges_arr = np.asarray(edges_mat, dtype=np.int64)
+        if edges_arr.size == 0:
+            edges_arr = edges_arr.reshape(0, 2)
+        comm_arr = np.asarray(comm_mat, dtype=np.int64).reshape(-1)
+
+        edge_df = pd.DataFrame({"source": edges_arr[:, 0], "target": edges_arr[:, 1]})
+        com_df = pd.DataFrame({
+            "node_id": np.arange(1, len(comm_arr) + 1, dtype=np.int64),
+            "cluster_id": comm_arr,
+        })
+        return edge_df, com_df
 
     def close(self):
         try:
@@ -164,6 +202,8 @@ def run_npso_generation(
 
     min_T, max_T = 0.0, 1.0
     best_T = None
+    best_edge_df = None
+    best_com_df = None
     best_global_ccoeff = None
     best_diff = None
     prev_global_ccoeff, global_ccoeff = None, None
@@ -174,87 +214,69 @@ def run_npso_generation(
     runner = make_runner(n_threads, npso_dir_abs, matlab_wrapper_dir)
     fallback = None
 
-    try:
-        for it in range(max_iters):
-            T = min_T + (max_T - min_T) / 2
-            if T < 0.0005:
-                break
-            logging.info(f"[iter {it}] T={T}")
+    # Scratch dir for SubprocessRunner's {prefix}_{edge,com}.tsv files —
+    # EngineRunner returns in memory so nothing lands here in that path.
+    with tempfile.TemporaryDirectory(prefix="npso_scratch_", dir=output_dir) as scratch_str:
+        scratch_dir = Path(scratch_str)
+        try:
+            for it in range(max_iters):
+                T = min_T + (max_T - min_T) / 2
+                if T < 0.0005:
+                    break
+                logging.info(f"[iter {it}] T={T}")
 
-            with timed("Generation"):
-                prefix = output_dir / f"{T:.5f}_"
-                ok = runner.run_iter(N, m, T, gamma, c, prefix, seed)
-                if ok is False and not isinstance(runner, SubprocessRunner):
-                    logging.warning("Engine iter failed; retrying via subprocess fallback for this iter.")
-                    if fallback is None:
-                        fallback = SubprocessRunner(n_threads, npso_dir_abs, matlab_wrapper_dir)
-                    fallback.run_iter(N, m, T, gamma, c, prefix, seed)
+                with timed("Generation"):
+                    prefix = scratch_dir / f"{T:.5f}_"
+                    result = runner.run_iter(N, m, T, gamma, c, prefix, seed)
+                    if result is None and not isinstance(runner, SubprocessRunner):
+                        logging.warning("Engine iter failed; retrying via subprocess fallback for this iter.")
+                        if fallback is None:
+                            fallback = SubprocessRunner(n_threads, npso_dir_abs, matlab_wrapper_dir)
+                        result = fallback.run_iter(N, m, T, gamma, c, prefix, seed)
 
-            edge_path = output_dir / f"{T:.5f}_edge.tsv"
-            com_path = output_dir / f"{T:.5f}_com.tsv"
-            if not edge_path.exists() or not com_path.exists():
-                logging.error(f"Missing MATLAB outputs at T={T}")
-                global_ccoeff = None
-            else:
-                elr = nk.graphio.EdgeListReader("\t", 0, continuous=False, directed=False)
-                graph = elr.read(str(edge_path))
-                graph.removeMultiEdges()
-                graph.removeSelfLoops()
-                prev_global_ccoeff = global_ccoeff
-                global_ccoeff = nk.globals.ClusteringCoefficient.exactGlobal(graph)
-                logging.info(f"Global clustering coefficient: {global_ccoeff}")
+                if result is None:
+                    logging.error(f"Missing MATLAB outputs at T={T}")
+                    global_ccoeff = None
+                    edge_df, com_df = None, None
+                else:
+                    edge_df, com_df = result
+                    prev_global_ccoeff = global_ccoeff
+                    global_ccoeff = _ccoeff_from_edges(edge_df)
+                    logging.info(f"Global clustering coefficient: {global_ccoeff}")
 
-            diff = abs(global_ccoeff - target_global_ccoeff) if global_ccoeff is not None else 2.0
-            step = abs(prev_global_ccoeff - global_ccoeff) if prev_global_ccoeff is not None and global_ccoeff is not None else 2.0
+                diff = abs(global_ccoeff - target_global_ccoeff) if global_ccoeff is not None else 2.0
+                step = abs(prev_global_ccoeff - global_ccoeff) if prev_global_ccoeff is not None and global_ccoeff is not None else 2.0
 
-            if best_global_ccoeff is None or diff < best_diff:
-                if best_T is not None and best_T != T:
-                    _safe_remove(output_dir / f"{best_T:.5f}_edge.tsv")
-                    _safe_remove(output_dir / f"{best_T:.5f}_com.tsv")
-                best_T = T
-                best_global_ccoeff = global_ccoeff
-                best_diff = diff
-            else:
-                if best_T is not None and best_T != T:
-                    _safe_remove(output_dir / f"{T:.5f}_edge.tsv")
-                    _safe_remove(output_dir / f"{T:.5f}_com.tsv")
+                if result is not None and (best_global_ccoeff is None or diff < best_diff):
+                    best_T = T
+                    best_edge_df = edge_df
+                    best_com_df = com_df
+                    best_global_ccoeff = global_ccoeff
+                    best_diff = diff
 
-            logging.info(f"Step: {step}  Best T: {best_T}  Best ccoeff: {best_global_ccoeff}  Best diff: {best_diff}")
-            if best_diff is not None and best_diff < 0.005:
-                break
-            if step < 0.0001:
-                break
+                logging.info(f"Step: {step}  Best T: {best_T}  Best ccoeff: {best_global_ccoeff}  Best diff: {best_diff}")
+                if best_diff is not None and best_diff < 0.005:
+                    break
+                if step < 0.0001:
+                    break
 
-            if global_ccoeff is not None and global_ccoeff < target_global_ccoeff:
-                max_T = T
-            else:
-                min_T = T
-    finally:
-        runner.close()
-        if fallback is not None:
-            fallback.close()
+                if global_ccoeff is not None and global_ccoeff < target_global_ccoeff:
+                    max_T = T
+                else:
+                    min_T = T
+        finally:
+            runner.close()
+            if fallback is not None:
+                fallback.close()
 
-    if best_T is None:
+    if best_T is None or best_edge_df is None:
         raise RuntimeError("nPSO produced no viable output.")
 
-    best_edge = output_dir / f"{best_T:.5f}_edge.tsv"
-    best_com = output_dir / f"{best_T:.5f}_com.tsv"
-    if not best_edge.exists() or not best_com.exists():
-        raise RuntimeError(f"Best nPSO output missing at T={best_T}")
-
-    edge_df = pd.read_csv(best_edge, sep="\t", header=None, names=["source", "target"])
-    com_df = pd.read_csv(best_com, sep="\t", header=None, names=["node_id", "cluster_id"])
     # Drop outlier bucket (cluster_id == 1 matches synnet convention), then singletons.
-    com_df = drop_singleton_clusters(com_df[com_df["cluster_id"] > 1])
+    final_com = drop_singleton_clusters(best_com_df[best_com_df["cluster_id"] > 1])
 
-    edge_df.to_csv(output_dir / "edge.csv", index=False)
-    com_df.to_csv(output_dir / "com.csv", index=False)
-
-    # Cleanup the per-T files.
-    for p in output_dir.glob("*_edge.tsv"):
-        _safe_remove(p)
-    for p in output_dir.glob("*_com.tsv"):
-        _safe_remove(p)
+    best_edge_df.to_csv(output_dir / "edge.csv", index=False)
+    final_com.to_csv(output_dir / "com.csv", index=False)
 
     logging.info("nPSO generation complete.")
 
