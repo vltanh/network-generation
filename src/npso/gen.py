@@ -2,9 +2,9 @@ import hashlib
 import json
 import logging
 import argparse
+import os
 import subprocess
 import tempfile
-import time
 from pathlib import Path
 
 import numpy as np
@@ -15,7 +15,7 @@ import networkit as nk
 from pipeline_common import standard_setup, timed, drop_singleton_clusters
 
 
-SEARCH_LOG_NAME = "search_log.jsonl"
+SEARCH_LOG_NAME = "search_log.json"
 
 
 try:
@@ -229,16 +229,16 @@ def run_npso_generation(
     npso_dir_abs = Path(npso_dir).resolve()
     matlab_wrapper_dir = (Path(__file__).resolve().parent / "matlab")
 
-    # --- Resumability: replay prior iters from search_log.jsonl ------------
+    # --- Resumability: replay prior iters from search_log.json -------------
     inputs_sha256 = _input_hash(N, m, gamma, c, target_global_ccoeff, seed)
     search_log_path = output_dir / SEARCH_LOG_NAME
-    prior_rows = _load_search_log(search_log_path, inputs_sha256)
+    iter_records = _load_search_log(search_log_path, inputs_sha256)
     start_iter = 0
     converged_in_replay = False
-    for row in prior_rows:
-        start_iter = row["iter"] + 1
+    for idx, row in enumerate(iter_records):
+        start_iter = idx + 1
         T_r = row["T"]
-        cc_r = row["global_ccoeff"]
+        cc_r = row["ccoeff"]
         diff_r = abs(cc_r - target_global_ccoeff)
         step_r = abs(prev_global_ccoeff - cc_r) if prev_global_ccoeff is not None else 2.0
         if best_global_ccoeff is None or diff_r < best_diff:
@@ -262,9 +262,9 @@ def run_npso_generation(
         if step_r < 0.0001:
             converged_in_replay = True
             break
-    if prior_rows:
+    if iter_records:
         logging.info(
-            f"Resuming from search_log.jsonl: replayed {len(prior_rows)} iter(s); "
+            f"Resuming from search_log.json: replayed {len(iter_records)} iter(s); "
             f"start_iter={start_iter} best_T={best_T} best_ccoeff={best_global_ccoeff}"
         )
     # --------------------------------------------------------------------
@@ -293,6 +293,7 @@ def run_npso_generation(
                 else:
                     logging.error("Resume re-run at best_T failed; treating log as stale.")
                     search_log_path.unlink(missing_ok=True)
+                    iter_records = []
                     start_iter = 0
                     converged_in_replay = False
                     best_T = None
@@ -310,7 +311,6 @@ def run_npso_generation(
                         break
                     logging.info(f"[iter {it}] T={T}")
 
-                    iter_start = time.monotonic()
                     with timed("Generation"):
                         prefix = scratch_dir / f"{T:.5f}_"
                         result = runner.run_iter(N, m, T, gamma, c, prefix, seed)
@@ -319,7 +319,6 @@ def run_npso_generation(
                             if fallback is None:
                                 fallback = SubprocessRunner(n_threads, npso_dir_abs, matlab_wrapper_dir)
                             result = fallback.run_iter(N, m, T, gamma, c, prefix, seed)
-                    elapsed_s = time.monotonic() - iter_start
 
                     if result is None:
                         logging.error(f"Missing MATLAB outputs at T={T}")
@@ -330,13 +329,8 @@ def run_npso_generation(
                         prev_global_ccoeff = global_ccoeff
                         global_ccoeff = _ccoeff_from_edges(edge_df)
                         logging.info(f"Global clustering coefficient: {global_ccoeff}")
-                        _append_search_log(search_log_path, {
-                            "iter": it,
-                            "T": T,
-                            "inputs_sha256": inputs_sha256,
-                            "global_ccoeff": global_ccoeff,
-                            "elapsed_s": elapsed_s,
-                        })
+                        iter_records.append({"T": T, "ccoeff": global_ccoeff})
+                        _write_search_log(search_log_path, inputs_sha256, iter_records)
 
                     diff = abs(global_ccoeff - target_global_ccoeff) if global_ccoeff is not None else 2.0
                     step = abs(prev_global_ccoeff - global_ccoeff) if prev_global_ccoeff is not None and global_ccoeff is not None else 2.0
@@ -407,33 +401,37 @@ def _input_hash(N, m, gamma, c, target_ccoeff, seed):
 
 
 def _load_search_log(log_path, expected_hash):
-    """Parse existing search_log.jsonl. Return the list of (iter, T, ccoeff)
-    records if every row matches `expected_hash`; else truncate and return []."""
+    """Read the search log. Returns the list of per-iter records if the
+    file exists, parses cleanly, and matches `expected_hash`; else removes
+    it and returns []. Crash-safety comes from `_write_search_log`'s
+    atomic os.replace — so either we see a fully-valid prior file or we
+    see the pre-replace file, never a truncated one."""
     if not log_path.exists():
         return []
-    records = []
     try:
         with log_path.open() as f:
-            for line in f:
-                line = line.strip()
-                if not line:
-                    continue
-                row = json.loads(line)
-                if row.get("inputs_sha256") != expected_hash:
-                    raise ValueError("inputs_sha256 mismatch")
-                records.append(row)
+            doc = json.load(f)
+        if doc.get("inputs_sha256") != expected_hash:
+            raise ValueError("inputs_sha256 mismatch")
+        iters = doc.get("iters", [])
+        if not isinstance(iters, list):
+            raise ValueError("iters field must be a list")
     except (json.JSONDecodeError, ValueError, KeyError) as exc:
-        logging.warning(f"search_log.jsonl incompatible ({exc}); starting fresh.")
+        logging.warning(f"search_log.json incompatible ({exc}); starting fresh.")
         log_path.unlink()
         return []
-    records.sort(key=lambda r: r["iter"])
-    return records
+    return iters
 
 
-def _append_search_log(log_path, row):
-    with log_path.open("a") as f:
-        f.write(json.dumps(row, sort_keys=True) + "\n")
-        f.flush()
+def _write_search_log(log_path, inputs_sha256, iters):
+    """Atomically persist the full header+iters document. Writes to a
+    sibling tempfile under the same dir (so `os.replace` is a same-filesystem
+    rename) then swaps it in."""
+    doc = {"inputs_sha256": inputs_sha256, "iters": iters}
+    tmp = log_path.with_suffix(log_path.suffix + ".tmp")
+    with tmp.open("w") as f:
+        json.dump(doc, f, sort_keys=True)
+    os.replace(tmp, log_path)
 
 
 def _next_T(min_T, max_T, f_min_T, f_max_T):

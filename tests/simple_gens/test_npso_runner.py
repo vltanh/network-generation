@@ -113,7 +113,7 @@ def test_next_T_edge_hugging_secant_falls_back(npso_gen):
     assert npso_gen._next_T(0.0, 1.0, 100.0, -0.01) == 0.5
 
 
-# --- Phase F: search_log.jsonl replay -------------------------------------
+# --- Phase F: search_log.json replay --------------------------------------
 
 
 def test_input_hash_stable(npso_gen):
@@ -126,24 +126,34 @@ def test_input_hash_stable(npso_gen):
 
 
 def test_search_log_roundtrip(npso_gen, tmp_path):
-    """Append two rows, reload with matching hash, receive them in iter order."""
-    log = tmp_path / "search_log.jsonl"
+    """Write two iters via the atomic-replace writer, reload, receive them in order."""
+    log = tmp_path / "search_log.json"
     h = "abc123"
-    npso_gen._append_search_log(log, {"iter": 1, "T": 0.25, "inputs_sha256": h, "global_ccoeff": 0.1, "elapsed_s": 1.0})
-    npso_gen._append_search_log(log, {"iter": 0, "T": 0.5, "inputs_sha256": h, "global_ccoeff": 0.2, "elapsed_s": 0.9})
-    rows = npso_gen._load_search_log(log, h)
-    assert [r["iter"] for r in rows] == [0, 1]
+    npso_gen._write_search_log(log, h, [
+        {"T": 0.5,  "ccoeff": 0.2},
+        {"T": 0.25, "ccoeff": 0.1},
+    ])
+    iters = npso_gen._load_search_log(log, h)
+    assert [r["T"] for r in iters] == [0.5, 0.25]
 
 
 def test_search_log_hash_mismatch_truncates(npso_gen, tmp_path):
     """A log whose inputs_sha256 doesn't match the current run's must be discarded."""
-    log = tmp_path / "search_log.jsonl"
-    npso_gen._append_search_log(log, {"iter": 0, "T": 0.5, "inputs_sha256": "old_hash", "global_ccoeff": 0.1, "elapsed_s": 1.0})
-    rows = npso_gen._load_search_log(log, "new_hash")
-    assert rows == []
+    log = tmp_path / "search_log.json"
+    npso_gen._write_search_log(log, "old_hash", [{"T": 0.5, "ccoeff": 0.1}])
+    assert npso_gen._load_search_log(log, "new_hash") == []
     assert not log.exists()
 
 
 def test_search_log_missing_is_empty(npso_gen, tmp_path):
     """No log yet means the search starts fresh with no replay."""
-    assert npso_gen._load_search_log(tmp_path / "nope.jsonl", "any") == []
+    assert npso_gen._load_search_log(tmp_path / "nope.json", "any") == []
+
+
+def test_search_log_atomic_replace_no_tempfile_left(npso_gen, tmp_path):
+    """After a successful write there must be no .tmp sibling — proves we
+    went through os.replace rather than leaving partial state."""
+    log = tmp_path / "search_log.json"
+    npso_gen._write_search_log(log, "h", [{"T": 0.5, "ccoeff": 0.1}])
+    assert log.exists()
+    assert not (tmp_path / "search_log.json.tmp").exists()
