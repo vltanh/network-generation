@@ -4,7 +4,6 @@ from contextlib import contextmanager
 from pathlib import Path
 
 import pandas as pd
-from scipy.sparse import dok_matrix
 
 
 def setup_logging(log_filepath: Path):
@@ -56,7 +55,13 @@ def load_probs_matrix(edge_counts_path, num_clusters):
     """Load an (r, c, w) edge-counts CSV into a num_clusters x num_clusters
     dok_matrix.  Returns a zero matrix if the file is empty (the empirical
     graph has no cross-cluster structure to preserve).
+
+    scipy is imported lazily: only sbm + ec-sbm v1/v2 gen_clustered.py call
+    this function. Keeping the top-level import out lets abcd/abcd+o/lfr/npso
+    install without scipy.
     """
+    from scipy.sparse import dok_matrix
+
     probs = dok_matrix((num_clusters, num_clusters), dtype=int)
     try:
         df = pd.read_csv(edge_counts_path, header=None, names=["r", "c", "w"])
