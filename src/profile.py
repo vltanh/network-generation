@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from pymincut.pygraph import PyGraph
 
-from pipeline_common import standard_setup, timed
+from pipeline_common import standard_setup, timed, drop_singleton_clusters
 
 
 def read_clustering(clustering_path):
@@ -260,14 +260,22 @@ def export_n_outliers(out_dir, n_outliers):
         f.write(str(n_outliers))
 
 
+def export_com_csv(out_dir, node2com):
+    """Write node_id,cluster_id pairs to com.csv (sorted for determinism)."""
+    rows = sorted(node2com.items())
+    pd.DataFrame(rows, columns=["node_id", "cluster_id"]).to_csv(
+        f"{out_dir}/com.csv", index=False
+    )
+
+
 SBM_OUTLIER_CLUSTER_ID = "__outliers__"
 
 
 # --- Per-generator pre-profile hooks -----------------------------------
-# Run before node-degree / cluster-size compute.  May mutate node2com and
-# cluster_counts in place.  Return nothing.
+# Run before node-degree / cluster-size compute.  May mutate nodes,
+# node2com, cluster_counts, and neighbors in place.  Return nothing.
 
-def _preprofile_sbm(nodes, node2com, cluster_counts):
+def _preprofile_sbm(nodes, node2com, cluster_counts, neighbors):
     # SBM routes outlier edges through the same block structure as the rest
     # of the network by folding true outliers into one mega-cluster.
     outliers = [u for u in nodes if u not in node2com]
@@ -275,6 +283,33 @@ def _preprofile_sbm(nodes, node2com, cluster_counts):
         for u in outliers:
             node2com[u] = SBM_OUTLIER_CLUSTER_ID
         cluster_counts[SBM_OUTLIER_CLUSTER_ID] = len(outliers)
+
+
+def _preprofile_ecsbm(nodes, node2com, cluster_counts, neighbors):
+    # ecsbm profiles only the clustered subnetwork.  Drop singleton clusters
+    # (no meaningful intra-cluster structure), restrict nodes to the
+    # surviving clustered set, and prune outlier adjacency so downstream
+    # degree / mincut / edge-count compute see a clean clustered subgraph.
+    com_df = pd.DataFrame(
+        list(node2com.items()), columns=["node_id", "cluster_id"]
+    )
+    kept_df = drop_singleton_clusters(com_df)
+    kept = set(kept_df["node_id"])
+
+    for u in list(node2com):
+        if u not in kept:
+            del node2com[u]
+    for c in list(cluster_counts):
+        if cluster_counts[c] <= 1:
+            del cluster_counts[c]
+
+    nodes.intersection_update(kept)
+
+    for u in list(neighbors):
+        if u not in kept:
+            del neighbors[u]
+            continue
+        neighbors[u] = {v for v in neighbors[u] if v in kept}
 
 
 # --- Per-generator exporters -------------------------------------------
@@ -300,6 +335,7 @@ def _export_ecsbm(ctx):
         ctx["comm_size_sorted"], ctx["node_id2iid"],
     )
     export_mincut(ctx["output_dir"], mcs)
+    export_com_csv(ctx["output_dir"], ctx["node2com"])
 
 
 def _export_sbm_core(ctx):
@@ -379,12 +415,12 @@ def _export_mixing_parameter_for(ctx, generator_type):
 # Maps generator name to (preprofile_hook_or_None, exporter).  Adding a
 # new generator means adding one entry here + per-generator functions.
 _GENERATOR_REGISTRY = {
-    "sbm":    (_preprofile_sbm, _export_sbm),
-    "ecsbm":  (None,            _export_ecsbm),
-    "abcd":   (None,            _export_abcd),
-    "abcd+o": (None,            _export_abcd_o),
-    "lfr":    (None,            _export_lfr),
-    "npso":   (None,            _export_npso),
+    "sbm":    (_preprofile_sbm,   _export_sbm),
+    "ecsbm":  (_preprofile_ecsbm, _export_ecsbm),
+    "abcd":   (None,              _export_abcd),
+    "abcd+o": (None,              _export_abcd_o),
+    "lfr":    (None,              _export_lfr),
+    "npso":   (None,              _export_npso),
 }
 
 
@@ -395,7 +431,10 @@ def setup_generator_inputs(edgelist_path, clustering_path, output_dir, generator
     Per-generator outputs:
       sbm    → node_id, cluster_id, assignment, degree, edge_counts
                (outliers are folded into a single mega-cluster)
-      ecsbm  → node_id, cluster_id, assignment, degree, edge_counts, mincut
+      ecsbm  → node_id, cluster_id, assignment, degree, edge_counts, mincut,
+               com.csv
+               (singleton clusters and outliers are dropped before profiling;
+               com.csv passes the surviving node→cluster map downstream)
       abcd   → degree, cluster_sizes, mixing_parameter
                (outliers are folded into cluster_sizes as singletons)
       abcd+o → degree, cluster_sizes, mixing_parameter, n_outliers
@@ -418,7 +457,7 @@ def setup_generator_inputs(edgelist_path, clustering_path, output_dir, generator
         nodes, neighbors = read_edgelist(edgelist_path, nodes)
 
     if preprofile is not None:
-        preprofile(nodes, node2com, cluster_counts)
+        preprofile(nodes, node2com, cluster_counts, neighbors)
 
     with timed("Mappings computation"):
         node_deg_sorted, node_id2iid = compute_node_degree(nodes, neighbors)

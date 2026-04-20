@@ -38,7 +38,7 @@ EXPECTED_OUTPUTS = {
     },
     "ecsbm": {
         "node_id.csv", "cluster_id.csv", "assignment.csv",
-        "degree.csv", "edge_counts.csv", "mincut.csv",
+        "degree.csv", "edge_counts.csv", "mincut.csv", "com.csv",
     },
     "abcd": {"degree.csv", "cluster_sizes.csv", "mixing_parameter.txt"},
     "abcd+o": {
@@ -177,12 +177,12 @@ def test_abcd_and_lfr_produce_identical_degree_and_cluster_sizes(
 def test_sbm_and_ecsbm_share_node_id_cluster_id_edge_counts(
     profile_module, tmp_path,
 ):
-    """SBM and ecsbm share the node_id/cluster_id/assignment/degree/edge_counts
-    subset (SBM folds outliers into one mega-cluster, but ecsbm does the same
-    semantics implicitly by *not* treating outliers specially — so shared
-    outputs *will* differ here.  This test documents that expected difference
-    and gates on it so the refactor's side-effect ordering doesn't silently
-    swap sbm and ecsbm semantics."""
+    """SBM folds outliers into one mega-cluster; ecsbm drops outliers and
+    singleton clusters entirely via its pre-profile hook.  Both reduce to a
+    different clustered view of the same input, so the cluster_id sets
+    differ: sbm has at least every non-singleton cluster plus the mega-
+    cluster, ecsbm has only the non-singleton clusters.  This test gates
+    on that inequality so the refactor doesn't silently swap the two."""
     d_sbm = tmp_path / "sbm"
     d_ecsbm = tmp_path / "ecsbm"
     d_sbm.mkdir()
@@ -193,15 +193,11 @@ def test_sbm_and_ecsbm_share_node_id_cluster_id_edge_counts(
     profile_module.setup_generator_inputs(
         str(EDGELIST), str(CLUSTERING), str(d_ecsbm), "ecsbm"
     )
-    # sbm folds outliers into a single mega-cluster; ecsbm doesn't touch
-    # outliers at all.  If the DNC dataset has any true outliers, cluster_id
-    # sets should differ (sbm has the mega-cluster as an extra entry).
     sbm_clusters = (d_sbm / "cluster_id.csv").read_text().splitlines()
     ecsbm_clusters = (d_ecsbm / "cluster_id.csv").read_text().splitlines()
-    # They may or may not differ depending on the input; we just assert both
-    # are non-empty and the sbm variant is not shorter than ecsbm.
     assert sbm_clusters, "sbm cluster_id.csv is empty"
     assert ecsbm_clusters, "ecsbm cluster_id.csv is empty"
     assert len(sbm_clusters) >= len(ecsbm_clusters), (
-        "sbm (with outlier fold) should have >= clusters than ecsbm"
+        "sbm (with outlier fold) should have >= clusters than ecsbm "
+        "(which drops outliers + singletons)"
     )

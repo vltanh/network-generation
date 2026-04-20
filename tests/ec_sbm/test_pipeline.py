@@ -24,7 +24,14 @@ pytestmark = pytest.mark.slow
 
 
 USER_FACING_FILES = {"edge.csv", "com.csv", "sources.json", "done", "run.log"}
-EC_SBM_STAGES = ("1a", "1b", "1c", "2a", "2b", "3a", "3b")
+EC_SBM_STAGES = (
+    "1 (profile)",
+    "2 (gen_clustered)",
+    "3a (gen_outlier)",
+    "3b (gen_outlier/combine)",
+    "4a (match_degree)",
+    "4b (match_degree/combine)",
+)
 
 
 # ---------------------------------------------------------------------------
@@ -168,7 +175,7 @@ def test_input_change_invalidates_pipeline(tmp_path, generator):
     )
     assert second.returncode == 0, second.stderr
     assert "State change detected" in second.stdout
-    assert "Success [Stage 1a" in second.stdout, second.stdout
+    assert "Success [Stage 1 (profile)" in second.stdout, second.stdout
 
 
 def test_keep_state_retains_scratch_directory(tmp_output_dir, generator):
@@ -177,7 +184,8 @@ def test_keep_state_retains_scratch_directory(tmp_output_dir, generator):
     out = run_dir(tmp_output_dir, generator)
     state = out / ".state"
     assert state.is_dir()
-    assert (state / "clustered").is_dir()
+    assert (state / "profile").is_dir()
+    assert (state / "gen_clustered").is_dir()
     assert (out / "edge.csv").is_file()
     assert (out / "done").is_file()
 
@@ -185,8 +193,8 @@ def test_keep_state_retains_scratch_directory(tmp_output_dir, generator):
 def test_keep_state_stage_caches_survive_final_output_corruption(
     tmp_output_dir, generator
 ):
-    """Regression: stage 1a and stage 3b used to `mv` outputs into OUTPUT_DIR,
-    leaving hashed `.state/` paths pointing at missing files."""
+    """Regression: the profile stage and stage 4b used to `mv` outputs into
+    OUTPUT_DIR, leaving hashed `.state/` paths pointing at missing files."""
     first = run_generator(generator, tmp_output_dir, extra=["--keep-state"])
     assert first.returncode == 0, first.stderr
     out = run_dir(tmp_output_dir, generator)

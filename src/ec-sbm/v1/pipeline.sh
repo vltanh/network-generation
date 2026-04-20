@@ -63,179 +63,165 @@ fi
 # All intermediate artifacts live under .state/ so the user-facing output
 # directory contains only final outputs.  .state/ is cleaned up on success.
 STATE_DIR="${OUTPUT_DIR}/.state"
-STG1_CLEAN_DIR="${STATE_DIR}/clustered/clean"
-STG1_SETUP_DIR="${STATE_DIR}/clustered/setup"
-STG1_DIR="${STATE_DIR}/clustered"
-STG2_OUTLIER_DIR="${STATE_DIR}/outlier/edges"
-STG2_DIR="${STATE_DIR}/outlier"
-STG3_MATCH_DIR="${STATE_DIR}/match_degree"
+STG_PROFILE_DIR="${STATE_DIR}/profile"
+STG_GEN_CLUSTERED_DIR="${STATE_DIR}/gen_clustered"
+STG_GEN_OUTLIER_EDGES_DIR="${STATE_DIR}/gen_outlier/edges"
+STG_GEN_OUTLIER_DIR="${STATE_DIR}/gen_outlier"
+STG_MATCH_DEGREE_EDGES_DIR="${STATE_DIR}/match_degree/edges"
+STG_MATCH_DEGREE_DIR="${STATE_DIR}/match_degree"
 
-mkdir -p "${OUTPUT_DIR}" "${STG1_CLEAN_DIR}" "${STG1_SETUP_DIR}" \
-         "${STG1_DIR}" "${STG2_OUTLIER_DIR}" "${STG2_DIR}" "${STG3_MATCH_DIR}"
+mkdir -p "${OUTPUT_DIR}" "${STG_PROFILE_DIR}" "${STG_GEN_CLUSTERED_DIR}" \
+         "${STG_GEN_OUTLIER_EDGES_DIR}" "${STG_GEN_OUTLIER_DIR}" \
+         "${STG_MATCH_DEGREE_EDGES_DIR}" "${STG_MATCH_DEGREE_DIR}"
 
 # ==========================================
-# STAGE 1: Clustered Generation
+# STAGE 1: Profile
 # ==========================================
-echo "=== Starting Stage 1: Core Clustered Generation ==="
+echo "=== Starting Stage 1: Profile ==="
 
-# 1a. Clean Outliers
-IN_1A="${INPUT_EDGELIST} ${INPUT_CLUSTERING}"
-OUT_1A="${STG1_CLEAN_DIR}/edge.csv ${STG1_CLEAN_DIR}/com.csv"
+IN_PROFILE="${INPUT_EDGELIST} ${INPUT_CLUSTERING}"
+OUT_PROFILE="${STG_PROFILE_DIR}/node_id.csv ${STG_PROFILE_DIR}/cluster_id.csv ${STG_PROFILE_DIR}/assignment.csv ${STG_PROFILE_DIR}/degree.csv ${STG_PROFILE_DIR}/mincut.csv ${STG_PROFILE_DIR}/edge_counts.csv ${STG_PROFILE_DIR}/com.csv"
 
-if ! is_step_done "${STG1_CLEAN_DIR}/done" "${OUT_1A}"; then
-    { timeout "${TIMEOUT}" /usr/bin/time -v python "${COMMON_DIR}/clean_outlier.py" \
+if ! is_step_done "${STG_PROFILE_DIR}/done" "${OUT_PROFILE}"; then
+    { timeout "${TIMEOUT}" /usr/bin/time -v python "${SRC_DIR}/profile.py" \
         --edgelist "${INPUT_EDGELIST}" \
         --clustering "${INPUT_CLUSTERING}" \
-        --output-folder "${STG1_CLEAN_DIR}"; } 2> "${STG1_CLEAN_DIR}/time_and_err.log"
-    mark_done "${STG1_CLEAN_DIR}/done" "Stage 1a (clean)" "${IN_1A}" "${OUT_1A}"
+        --output-folder "${STG_PROFILE_DIR}" \
+        --generator ecsbm; } 2> "${STG_PROFILE_DIR}/time_and_err.log"
+    mark_done "${STG_PROFILE_DIR}/done" "Stage 1 (profile)" "${IN_PROFILE}" "${OUT_PROFILE}"
 else
-    echo "Skipping Stage 1a: Valid state found."
+    echo "Skipping Stage 1: Valid state found."
 fi
 
-# 1b. Setup Profiling
-IN_1B="${OUT_1A}"
-OUT_1B="${STG1_SETUP_DIR}/node_id.csv ${STG1_SETUP_DIR}/cluster_id.csv ${STG1_SETUP_DIR}/assignment.csv ${STG1_SETUP_DIR}/degree.csv ${STG1_SETUP_DIR}/mincut.csv ${STG1_SETUP_DIR}/edge_counts.csv"
+# ==========================================
+# STAGE 2: Generate Clustered
+# ==========================================
+echo "=== Starting Stage 2: Generate Clustered ==="
 
-if ! is_step_done "${STG1_SETUP_DIR}/done" "${OUT_1B}"; then
-    { timeout "${TIMEOUT}" /usr/bin/time -v python "${SRC_DIR}/profile.py" \
-        --edgelist "${STG1_CLEAN_DIR}/edge.csv" \
-        --clustering "${STG1_CLEAN_DIR}/com.csv" \
-        --output-folder "${STG1_SETUP_DIR}" \
-        --generator ecsbm; } 2> "${STG1_SETUP_DIR}/time_and_err.log"
-    mark_done "${STG1_SETUP_DIR}/done" "Stage 1b (setup)" "${IN_1B}" "${OUT_1B}"
-else
-    echo "Skipping Stage 1b: Valid state found."
-fi
+IN_GEN_CLUSTERED="${OUT_PROFILE}"
+OUT_GEN_CLUSTERED="${STG_GEN_CLUSTERED_DIR}/edge.csv"
 
-# 1c. Generate Clustered
-IN_1C="${OUT_1B}"
-OUT_1C="${STG1_DIR}/edge.csv"
-
-if ! is_step_done "${STG1_DIR}/done" "${OUT_1C}"; then
+if ! is_step_done "${STG_GEN_CLUSTERED_DIR}/done" "${OUT_GEN_CLUSTERED}"; then
     { timeout "${TIMEOUT}" /usr/bin/time -v python "${SCRIPT_DIR}/gen_clustered.py" \
-        --node-id "${STG1_SETUP_DIR}/node_id.csv" \
-        --cluster-id "${STG1_SETUP_DIR}/cluster_id.csv" \
-        --assignment "${STG1_SETUP_DIR}/assignment.csv" \
-        --degree "${STG1_SETUP_DIR}/degree.csv" \
-        --mincut "${STG1_SETUP_DIR}/mincut.csv" \
-        --edge-counts "${STG1_SETUP_DIR}/edge_counts.csv" \
-        --output-folder "${STG1_DIR}"; } 2> "${STG1_DIR}/time_and_err.log"
-    mark_done "${STG1_DIR}/done" "Stage 1c (gen_clustered)" "${IN_1C}" "${OUT_1C}"
+        --node-id "${STG_PROFILE_DIR}/node_id.csv" \
+        --cluster-id "${STG_PROFILE_DIR}/cluster_id.csv" \
+        --assignment "${STG_PROFILE_DIR}/assignment.csv" \
+        --degree "${STG_PROFILE_DIR}/degree.csv" \
+        --mincut "${STG_PROFILE_DIR}/mincut.csv" \
+        --edge-counts "${STG_PROFILE_DIR}/edge_counts.csv" \
+        --output-folder "${STG_GEN_CLUSTERED_DIR}"; } 2> "${STG_GEN_CLUSTERED_DIR}/time_and_err.log"
+    mark_done "${STG_GEN_CLUSTERED_DIR}/done" "Stage 2 (gen_clustered)" "${IN_GEN_CLUSTERED}" "${OUT_GEN_CLUSTERED}"
 else
-    echo "Skipping Stage 1c: Valid state found."
+    echo "Skipping Stage 2: Valid state found."
 fi
 
 
 # ==========================================
-# STAGE 2: Outlier Generation & First Merge
+# STAGE 3: Outlier Generation & Combine
 # ==========================================
-echo "=== Starting Stage 2: Outlier Generation & Merge ==="
+echo "=== Starting Stage 3: Outlier Generation & Combine ==="
 
-# 2a. Generate Outliers
-IN_2A="${INPUT_EDGELIST} ${INPUT_CLUSTERING}"
-OUT_2A="${STG2_OUTLIER_DIR}/edge_outlier.csv"
+# 3a. Generate Outliers
+IN_GEN_OUTLIER="${INPUT_EDGELIST} ${INPUT_CLUSTERING}"
+OUT_GEN_OUTLIER="${STG_GEN_OUTLIER_EDGES_DIR}/edge_outlier.csv"
 
-if ! is_step_done "${STG2_OUTLIER_DIR}/done" "${OUT_2A}"; then
+if ! is_step_done "${STG_GEN_OUTLIER_EDGES_DIR}/done" "${OUT_GEN_OUTLIER}"; then
     { timeout "${TIMEOUT}" /usr/bin/time -v python "${SCRIPT_DIR}/gen_outlier.py" \
         --edgelist "${INPUT_EDGELIST}" \
         --clustering "${INPUT_CLUSTERING}" \
-        --output-folder "${STG2_OUTLIER_DIR}"; } 2> "${STG2_OUTLIER_DIR}/time_and_err.log"
-    mark_done "${STG2_OUTLIER_DIR}/done" "Stage 2a (gen_outlier)" "${IN_2A}" "${OUT_2A}"
-else
-    echo "Skipping Stage 2a: Valid state found."
-fi
-
-# 2b. Combine Clustered + Outliers
-IN_2B="${STG1_DIR}/edge.csv ${STG2_OUTLIER_DIR}/edge_outlier.csv"
-OUT_2B="${STG2_DIR}/edge.csv ${STG2_DIR}/sources.json"
-
-if ! is_step_done "${STG2_DIR}/done" "${OUT_2B}"; then
-    { timeout "${TIMEOUT}" /usr/bin/time -v python "${COMMON_DIR}/combine_edgelists.py" \
-        --edgelist-1 "${STG1_DIR}/edge.csv" \
-        --name-1 "clustered" \
-        --edgelist-2 "${STG2_OUTLIER_DIR}/edge_outlier.csv" \
-        --name-2 "outlier" \
-        --output-folder "${STG2_DIR}" \
-        --output-filename "edge.csv"; } 2> "${STG2_DIR}/time_and_err.log"
-    mark_done "${STG2_DIR}/done" "Stage 2b (combine_clustered_outlier)" "${IN_2B}" "${OUT_2B}"
-else
-    echo "Skipping Stage 2b: Valid state found."
-fi
-
-# ==========================================
-# STAGE 3: Degree Matching & Final Merge
-# ==========================================
-echo "=== Starting Stage 3: Degree Matching & Final Merge ==="
-
-# 3a. Match Degrees
-IN_3A="${STG2_DIR}/edge.csv ${INPUT_EDGELIST} ${INPUT_CLUSTERING}"
-OUT_3A="${STG3_MATCH_DIR}/degree_matching_edge.csv"
-
-if ! is_step_done "${STG3_MATCH_DIR}/done" "${OUT_3A}"; then
-    { timeout "${TIMEOUT}" /usr/bin/time -v python "${SCRIPT_DIR}/match_degree.py" \
-        --input-edgelist "${STG2_DIR}/edge.csv" \
-        --ref-edgelist "${INPUT_EDGELIST}" \
-        --ref-clustering "${INPUT_CLUSTERING}" \
-        --output-folder "${STG3_MATCH_DIR}"; } 2> "${STG3_MATCH_DIR}/time_and_err.log"
-    mark_done "${STG3_MATCH_DIR}/done" "Stage 3a (match_degree)" "${IN_3A}" "${OUT_3A}"
+        --output-folder "${STG_GEN_OUTLIER_EDGES_DIR}"; } 2> "${STG_GEN_OUTLIER_EDGES_DIR}/time_and_err.log"
+    mark_done "${STG_GEN_OUTLIER_EDGES_DIR}/done" "Stage 3a (gen_outlier)" "${IN_GEN_OUTLIER}" "${OUT_GEN_OUTLIER}"
 else
     echo "Skipping Stage 3a: Valid state found."
 fi
 
-# 3b. Final Combination — writes to top-level OUTPUT_DIR.
-# com.csv is a passthrough from Stage 1a (not read by combine_edgelists), so
-# it's moved directly rather than consumed here.  It's excluded from IN_3B/
-# OUT_3B and handled just below so stage 3b's hashes stay tied to what the
-# combine step actually reads and writes.
-IN_3B="${STG2_DIR}/edge.csv ${STG2_DIR}/sources.json ${STG3_MATCH_DIR}/degree_matching_edge.csv"
-OUT_3B="${OUTPUT_DIR}/edge.csv ${OUTPUT_DIR}/sources.json"
+# 3b. Combine Clustered + Outliers
+IN_GEN_OUTLIER_COMBINE="${STG_GEN_CLUSTERED_DIR}/edge.csv ${STG_GEN_OUTLIER_EDGES_DIR}/edge_outlier.csv"
+OUT_GEN_OUTLIER_COMBINE="${STG_GEN_OUTLIER_DIR}/edge.csv ${STG_GEN_OUTLIER_DIR}/sources.json"
 
-STG3_FINAL_DIR="${STATE_DIR}/final"
-mkdir -p "${STG3_FINAL_DIR}"
-
-if ! is_step_done "${STATE_DIR}/final.done" "${OUT_3B}"; then
+if ! is_step_done "${STG_GEN_OUTLIER_DIR}/done" "${OUT_GEN_OUTLIER_COMBINE}"; then
     { timeout "${TIMEOUT}" /usr/bin/time -v python "${COMMON_DIR}/combine_edgelists.py" \
-        --edgelist-1 "${STG2_DIR}/edge.csv" \
-        --json-1 "${STG2_DIR}/sources.json" \
-        --edgelist-2 "${STG3_MATCH_DIR}/degree_matching_edge.csv" \
-        --name-2 "match_degree" \
-        --output-folder "${STG3_FINAL_DIR}" \
-        --output-filename "edge.csv"; } 2> "${STG3_FINAL_DIR}/time_and_err.log"
-    # Copy rather than move so stage 3b's done-file and stage 1a's
-    # ${STG1_CLEAN_DIR}/com.csv hash still validate on a --keep-state rerun
-    # that mutates the final outputs.
-    cp "${STG3_FINAL_DIR}/edge.csv" "${OUTPUT_DIR}/edge.csv"
-    cp "${STG3_FINAL_DIR}/sources.json" "${OUTPUT_DIR}/sources.json"
-    mark_done "${STATE_DIR}/final.done" "Stage 3b (combine_final)" "${IN_3B}" "${OUT_3B}"
+        --edgelist-1 "${STG_GEN_CLUSTERED_DIR}/edge.csv" \
+        --name-1 "clustered" \
+        --edgelist-2 "${STG_GEN_OUTLIER_EDGES_DIR}/edge_outlier.csv" \
+        --name-2 "outlier" \
+        --output-folder "${STG_GEN_OUTLIER_DIR}" \
+        --output-filename "edge.csv"; } 2> "${STG_GEN_OUTLIER_DIR}/time_and_err.log"
+    mark_done "${STG_GEN_OUTLIER_DIR}/done" "Stage 3b (gen_outlier/combine)" "${IN_GEN_OUTLIER_COMBINE}" "${OUT_GEN_OUTLIER_COMBINE}"
 else
     echo "Skipping Stage 3b: Valid state found."
 fi
 
+# ==========================================
+# STAGE 4: Degree Matching & Final Combine
+# ==========================================
+echo "=== Starting Stage 4: Degree Matching & Final Combine ==="
+
+# 4a. Match Degrees
+IN_MATCH_DEGREE="${STG_GEN_OUTLIER_DIR}/edge.csv ${INPUT_EDGELIST} ${INPUT_CLUSTERING}"
+OUT_MATCH_DEGREE="${STG_MATCH_DEGREE_EDGES_DIR}/degree_matching_edge.csv"
+
+if ! is_step_done "${STG_MATCH_DEGREE_EDGES_DIR}/done" "${OUT_MATCH_DEGREE}"; then
+    { timeout "${TIMEOUT}" /usr/bin/time -v python "${SCRIPT_DIR}/match_degree.py" \
+        --input-edgelist "${STG_GEN_OUTLIER_DIR}/edge.csv" \
+        --ref-edgelist "${INPUT_EDGELIST}" \
+        --ref-clustering "${INPUT_CLUSTERING}" \
+        --output-folder "${STG_MATCH_DEGREE_EDGES_DIR}"; } 2> "${STG_MATCH_DEGREE_EDGES_DIR}/time_and_err.log"
+    mark_done "${STG_MATCH_DEGREE_EDGES_DIR}/done" "Stage 4a (match_degree)" "${IN_MATCH_DEGREE}" "${OUT_MATCH_DEGREE}"
+else
+    echo "Skipping Stage 4a: Valid state found."
+fi
+
+# 4b. Final Combination — writes to top-level OUTPUT_DIR.
+# com.csv is a passthrough from Stage 1 (not read by combine_edgelists), so
+# it's moved directly rather than consumed here.  It's excluded from
+# IN_MATCH_DEGREE_COMBINE/OUT_MATCH_DEGREE_COMBINE and handled just below so
+# stage 4b's hashes stay tied to what the combine step actually reads and
+# writes.
+IN_MATCH_DEGREE_COMBINE="${STG_GEN_OUTLIER_DIR}/edge.csv ${STG_GEN_OUTLIER_DIR}/sources.json ${STG_MATCH_DEGREE_EDGES_DIR}/degree_matching_edge.csv"
+OUT_MATCH_DEGREE_COMBINE="${OUTPUT_DIR}/edge.csv ${OUTPUT_DIR}/sources.json"
+
+if ! is_step_done "${STG_MATCH_DEGREE_DIR}/done" "${OUT_MATCH_DEGREE_COMBINE}"; then
+    { timeout "${TIMEOUT}" /usr/bin/time -v python "${COMMON_DIR}/combine_edgelists.py" \
+        --edgelist-1 "${STG_GEN_OUTLIER_DIR}/edge.csv" \
+        --json-1 "${STG_GEN_OUTLIER_DIR}/sources.json" \
+        --edgelist-2 "${STG_MATCH_DEGREE_EDGES_DIR}/degree_matching_edge.csv" \
+        --name-2 "match_degree" \
+        --output-folder "${STG_MATCH_DEGREE_DIR}" \
+        --output-filename "edge.csv"; } 2> "${STG_MATCH_DEGREE_DIR}/time_and_err.log"
+    # Copy rather than move so stage 4b's done-file and stage 1's
+    # ${STG_PROFILE_DIR}/com.csv hash still validate on a --keep-state rerun
+    # that mutates the final outputs.
+    cp "${STG_MATCH_DEGREE_DIR}/edge.csv" "${OUTPUT_DIR}/edge.csv"
+    cp "${STG_MATCH_DEGREE_DIR}/sources.json" "${OUTPUT_DIR}/sources.json"
+    mark_done "${STG_MATCH_DEGREE_DIR}/done" "Stage 4b (match_degree/combine)" "${IN_MATCH_DEGREE_COMBINE}" "${OUT_MATCH_DEGREE_COMBINE}"
+else
+    echo "Skipping Stage 4b: Valid state found."
+fi
+
 # Promote com.csv from .state/ to OUTPUT_DIR.  Copy rather than move so
-# stage 1a's hashed ${STG1_CLEAN_DIR}/com.csv still validates on a
+# stage 1's hashed ${STG_PROFILE_DIR}/com.csv still validates on a
 # --keep-state rerun (and so stale ${OUTPUT_DIR}/com.csv is always refreshed
-# from the canonical stage 1a output).
-cp "${STG1_CLEAN_DIR}/com.csv" "${OUTPUT_DIR}/com.csv"
+# from the canonical stage 1 output).
+cp "${STG_PROFILE_DIR}/com.csv" "${OUTPUT_DIR}/com.csv"
 
 # ==========================================
 # Consolidate per-stage logs into one top-level run.log
 # ==========================================
 FINAL_LOG="${OUTPUT_DIR}/run.log"
 rm -f "${FINAL_LOG}"
-append_stage_log "${FINAL_LOG}" "Stage 1a" "${STG1_CLEAN_DIR}/time_and_err.log"
-append_stage_log "${FINAL_LOG}" "Stage 1a" "${STG1_CLEAN_DIR}/run.log"
-append_stage_log "${FINAL_LOG}" "Stage 1b" "${STG1_SETUP_DIR}/time_and_err.log"
-append_stage_log "${FINAL_LOG}" "Stage 1b" "${STG1_SETUP_DIR}/run.log"
-append_stage_log "${FINAL_LOG}" "Stage 1c" "${STG1_DIR}/time_and_err.log"
-append_stage_log "${FINAL_LOG}" "Stage 1c" "${STG1_DIR}/run.log"
-append_stage_log "${FINAL_LOG}" "Stage 2a" "${STG2_OUTLIER_DIR}/time_and_err.log"
-append_stage_log "${FINAL_LOG}" "Stage 2a" "${STG2_OUTLIER_DIR}/run.log"
-append_stage_log "${FINAL_LOG}" "Stage 2b" "${STG2_DIR}/time_and_err.log"
-append_stage_log "${FINAL_LOG}" "Stage 2b" "${STG2_DIR}/run.log"
-append_stage_log "${FINAL_LOG}" "Stage 3a" "${STG3_MATCH_DIR}/time_and_err.log"
-append_stage_log "${FINAL_LOG}" "Stage 3a" "${STG3_MATCH_DIR}/run.log"
-append_stage_log "${FINAL_LOG}" "Stage 3b" "${STG3_FINAL_DIR}/time_and_err.log"
-append_stage_log "${FINAL_LOG}" "Stage 3b" "${STG3_FINAL_DIR}/run.log"
+append_stage_log "${FINAL_LOG}" "Stage 1 (profile)" "${STG_PROFILE_DIR}/time_and_err.log"
+append_stage_log "${FINAL_LOG}" "Stage 1 (profile)" "${STG_PROFILE_DIR}/run.log"
+append_stage_log "${FINAL_LOG}" "Stage 2 (gen_clustered)" "${STG_GEN_CLUSTERED_DIR}/time_and_err.log"
+append_stage_log "${FINAL_LOG}" "Stage 2 (gen_clustered)" "${STG_GEN_CLUSTERED_DIR}/run.log"
+append_stage_log "${FINAL_LOG}" "Stage 3a (gen_outlier)" "${STG_GEN_OUTLIER_EDGES_DIR}/time_and_err.log"
+append_stage_log "${FINAL_LOG}" "Stage 3a (gen_outlier)" "${STG_GEN_OUTLIER_EDGES_DIR}/run.log"
+append_stage_log "${FINAL_LOG}" "Stage 3b (gen_outlier/combine)" "${STG_GEN_OUTLIER_DIR}/time_and_err.log"
+append_stage_log "${FINAL_LOG}" "Stage 3b (gen_outlier/combine)" "${STG_GEN_OUTLIER_DIR}/run.log"
+append_stage_log "${FINAL_LOG}" "Stage 4a (match_degree)" "${STG_MATCH_DEGREE_EDGES_DIR}/time_and_err.log"
+append_stage_log "${FINAL_LOG}" "Stage 4a (match_degree)" "${STG_MATCH_DEGREE_EDGES_DIR}/run.log"
+append_stage_log "${FINAL_LOG}" "Stage 4b (match_degree/combine)" "${STG_MATCH_DEGREE_DIR}/time_and_err.log"
+append_stage_log "${FINAL_LOG}" "Stage 4b (match_degree/combine)" "${STG_MATCH_DEGREE_DIR}/run.log"
 
 # ==========================================
 # Record top-level done (original inputs -> final outputs) and clean up

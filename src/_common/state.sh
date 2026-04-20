@@ -103,7 +103,9 @@ append_stage_log() {
     mkdir -p "$(dirname "${dest_log}")"
     {
         echo "=== [${stage_label}] ${source_log} ==="
-        sed -e "s/^/[${stage_label}] /" "${source_log}"
+        # Use '|' as sed delimiter so labels that contain '/' (e.g. the
+        # ec-sbm "gen_outlier/combine" stage) don't break the substitution.
+        sed -e "s|^|[${stage_label}] |" "${source_log}"
         echo ""
     } >> "${dest_log}"
 }
