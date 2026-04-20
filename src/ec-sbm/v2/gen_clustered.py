@@ -1,5 +1,6 @@
 import logging
 import argparse
+import random
 
 import numpy as np
 import pandas as pd
@@ -185,9 +186,13 @@ def run_ecsbm_generation(
     mincut_path,
     edge_counts_path,
     output_dir,
+    seed,
 ):
     """Load profiled inputs, generate intra-cluster edges for all clusters, and export edge.csv."""
     output_dir = standard_setup(output_dir)
+
+    random.seed(seed)
+    np.random.seed(seed)
 
     logging.info("Starting Core Clustered Generation Pipeline...")
 
@@ -219,6 +224,12 @@ def parse_args():
     parser.add_argument("--mincut", type=str, required=True)
     parser.add_argument("--edge-counts", type=str, required=True)
     parser.add_argument("--output-folder", type=str, required=True)
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=0,
+        help="RNG seed for numpy/random",
+    )
     return parser.parse_args()
 
 
@@ -232,6 +243,7 @@ def main():
         args.mincut,
         args.edge_counts,
         args.output_folder,
+        args.seed,
     )
 
 

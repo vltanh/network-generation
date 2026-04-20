@@ -4,6 +4,7 @@ import heapq
 import random
 from collections import deque
 
+import numpy as np
 import pandas as pd
 
 from pipeline_common import standard_setup, timed
@@ -22,6 +23,12 @@ def parse_args():
         choices=["greedy", "true_greedy", "random_greedy", "rewire", "hybrid"],
         default="true_greedy",
         help="Choose 'greedy' for max-heap, 'true_greedy' for true greedy matching, 'random_greedy' for unbiased dynamic filtering, 'rewire' for the configuration model, or 'hybrid' for a combination of 'rewire' followed by 'true_greedy'.",
+    )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=0,
+        help="RNG seed (used by random_greedy, rewire, hybrid; pinned in others for parity)",
     )
     return parser.parse_args()
 
@@ -395,6 +402,10 @@ def export_degree_matched_edgelist(degree_edges, node_iid2id, output_dir):
 def main():
     args = parse_args()
     out_dir = standard_setup(args.output_folder)
+
+    random.seed(args.seed)
+    np.random.seed(args.seed)
+
     logging.info(
         f"--- Starting Stage 6: Degree Matching ({args.algorithm.upper()} mode) ---"
     )
