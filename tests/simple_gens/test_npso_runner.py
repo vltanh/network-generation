@@ -81,3 +81,33 @@ def test_subprocess_runner_constructs(npso_gen):
     assert runner.n_threads == 1
     # close() must be a no-op (nothing persistent in the subprocess path).
     runner.close()
+
+
+# --- Phase C: _next_T secant picker ---------------------------------------
+
+
+def test_next_T_bootstraps_with_midpoint(npso_gen):
+    """First iter has no residuals yet; must hand back the midpoint."""
+    assert npso_gen._next_T(0.0, 1.0, None, None) == 0.5
+
+
+def test_next_T_one_residual_known_midpoint(npso_gen):
+    """Second iter has only one bound's residual; still midpoint (no secant yet)."""
+    assert npso_gen._next_T(0.5, 1.0, 0.1, None) == 0.75
+
+
+def test_next_T_secant_inside_bracket(npso_gen):
+    """With opposite-sign residuals, secant root lies strictly inside the bracket."""
+    T = npso_gen._next_T(0.5, 0.75, 0.1, -0.05)
+    assert 0.5 < T < 0.75
+
+
+def test_next_T_same_sign_falls_back_to_midpoint(npso_gen):
+    """Same-sign residuals mean the bracket is busted; bisection is the safe fallback."""
+    assert npso_gen._next_T(0.5, 0.75, 0.1, 0.05) == 0.625
+
+
+def test_next_T_edge_hugging_secant_falls_back(npso_gen):
+    """A secant root within 5% of either bound collapses the bracket — midpoint instead."""
+    # f_min huge, f_max tiny → root pinned near max_T.
+    assert npso_gen._next_T(0.0, 1.0, 100.0, -0.01) == 0.5
