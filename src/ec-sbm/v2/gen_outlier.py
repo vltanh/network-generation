@@ -263,8 +263,13 @@ def run_outlier_generation(
     outlier_mode,
     edge_correction_mode,
     output_folder,
+    seed,
 ):
     output_dir = standard_setup(output_folder)
+
+    random.seed(seed)
+    np.random.seed(seed)
+    gt.seed_rng(seed)
 
     logging.info("Starting Residual SBM Generation...")
     logging.info(
@@ -307,6 +312,12 @@ def parse_args():
         help="'drop' removes bad edges (faster but alters degree), 'rewire' swaps them (preserves degree).",
     )
     parser.add_argument("--output-folder", type=str, required=True)
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=0,
+        help="RNG seed for numpy/random/graph-tool",
+    )
     return parser.parse_args()
 
 
@@ -319,6 +330,7 @@ def main():
         args.outlier_mode,
         args.edge_correction,
         args.output_folder,
+        args.seed,
     )
 
 

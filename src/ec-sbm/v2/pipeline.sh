@@ -15,6 +15,7 @@ export PYTHONPATH="${SCRIPT_DIR}:${SRC_DIR}${PYTHONPATH:+:${PYTHONPATH}}"
 TIMEOUT="3d"
 N_THREADS=1
 KEEP_STATE=0
+SEED=0
 
 # Parse named arguments
 while [[ "$#" -gt 0 ]]; do
@@ -28,12 +29,17 @@ while [[ "$#" -gt 0 ]]; do
         --timeout) TIMEOUT="$2"; shift ;;
         --n-threads) N_THREADS="$2"; shift ;;
         --keep-state) KEEP_STATE=1 ;;
+        --seed) SEED="$2"; shift ;;
         *) echo "Unknown parameter passed: $1"; exit 1 ;;
     esac
     shift
 done
 
 export OMP_NUM_THREADS="${N_THREADS}"
+# Pin Python hash seed: gen_outlier's `for u in all_nodes` (set iteration)
+# determines block assignment ordering, and match_degree's true_greedy walks
+# `current_degrees` (a dict whose insertion order traces back to a set scan).
+export PYTHONHASHSEED=0
 
 if [ ! -f "${INPUT_EDGELIST}" ] || [ ! -f "${INPUT_CLUSTERING}" ]; then
     echo "Error: The input network or clustering file does not exist."
@@ -115,7 +121,8 @@ if ! is_step_done "${STG_GEN_CLUSTERED_DIR}/done" "${OUT_GEN_CLUSTERED}"; then
         --degree "${STG_PROFILE_DIR}/degree.csv" \
         --mincut "${STG_PROFILE_DIR}/mincut.csv" \
         --edge-counts "${STG_PROFILE_DIR}/edge_counts.csv" \
-        --output-folder "${STG_GEN_CLUSTERED_DIR}"; } 2> "${STG_GEN_CLUSTERED_DIR}/time_and_err.log"
+        --output-folder "${STG_GEN_CLUSTERED_DIR}" \
+        --seed "${SEED}"; } 2> "${STG_GEN_CLUSTERED_DIR}/time_and_err.log"
     mark_done "${STG_GEN_CLUSTERED_DIR}/done" "Stage 2 (gen_clustered)" "${IN_GEN_CLUSTERED}" "${OUT_GEN_CLUSTERED}"
 else
     echo "Skipping Stage 2: Valid state found."
@@ -137,7 +144,8 @@ if ! is_step_done "${STG_GEN_OUTLIER_EDGES_DIR}/done" "${OUT_GEN_OUTLIER}"; then
         --exist-edgelist "${STG_GEN_CLUSTERED_DIR}/edge.csv" \
         --outlier-mode "${OUTLIER_MODE}" \
         --edge-correction "${EDGE_CORRECTION}" \
-        --output-folder "${STG_GEN_OUTLIER_EDGES_DIR}"; } 2> "${STG_GEN_OUTLIER_EDGES_DIR}/time_and_err.log"
+        --output-folder "${STG_GEN_OUTLIER_EDGES_DIR}" \
+        --seed "$((SEED + 1))"; } 2> "${STG_GEN_OUTLIER_EDGES_DIR}/time_and_err.log"
     mark_done "${STG_GEN_OUTLIER_EDGES_DIR}/done" "Stage 3a (gen_outlier)" "${IN_GEN_OUTLIER}" "${OUT_GEN_OUTLIER}"
 else
     echo "Skipping Stage 3a: Valid state found."
@@ -175,7 +183,8 @@ if ! is_step_done "${STG_MATCH_DEGREE_EDGES_DIR}/done" "${OUT_MATCH_DEGREE}"; th
         --ref-edgelist "${INPUT_EDGELIST}" \
         --ref-clustering "${INPUT_CLUSTERING}" \
         --algorithm "${ALGORITHM}" \
-        --output-folder "${STG_MATCH_DEGREE_EDGES_DIR}"; } 2> "${STG_MATCH_DEGREE_EDGES_DIR}/time_and_err.log"
+        --output-folder "${STG_MATCH_DEGREE_EDGES_DIR}" \
+        --seed "$((SEED + 2))"; } 2> "${STG_MATCH_DEGREE_EDGES_DIR}/time_and_err.log"
     mark_done "${STG_MATCH_DEGREE_EDGES_DIR}/done" "Stage 4a (match_degree)" "${IN_MATCH_DEGREE}" "${OUT_MATCH_DEGREE}"
 else
     echo "Skipping Stage 4a: Valid state found."
