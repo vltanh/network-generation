@@ -18,8 +18,8 @@ Use this mode to provide explicit file paths for your own datasets.
 | --- | --- |
 | `--generator <gen>` | Generator to use. One of: `ec-sbm-v2`, `ec-sbm-v1`, `sbm`, `abcd`, `abcd+o`, `lfr`, `npso`. |
 | `--run-id <id>` | Numerical run identifier. |
-| `--input-edgelist <p>` | Path to the input empirical edge list CSV. |
-| `--input-clustering <p>` | Path to the reference clustering `com.csv`. |
+| `--input-edgelist <p>` | Path to the empirical edge list CSV (header `source,target`). |
+| `--input-clustering <p>` | Path to the reference clustering CSV (header `node_id,cluster_id`). |
 | `--output-dir <dir>` | Root directory for all generated outputs. |
 
 ### Optional Arguments & Flags
@@ -32,11 +32,17 @@ Use this mode to provide explicit file paths for your own datasets.
 | `--input-cluster-stats <p>` | Path to reference cluster stats directory (for `--run-comp`). |
 | `--run-stats` | Enables computation of synthetic network and cluster statistics. |
 | `--run-comp` | Enables statistical comparison. **Requires** `--input-network-stats` and `--input-cluster-stats`. |
-| `--seed <n>` | Seed forwarded to `sbm`, `abcd`, `abcd+o`, `lfr`, `npso` generators (default `0`). |
-| `--n-threads <n>` | Thread count for parallelizable backends (default `1`). Applies to `sbm`/`ec-sbm-*` (via `OMP_NUM_THREADS` for graph-tool), `abcd`/`abcd+o` (via `JULIA_NUM_THREADS`), and `npso` (via MATLAB `maxNumCompThreads`). `lfr` is single-threaded and ignores this flag. **Warning:** values greater than `1` are untested and may break determinism or produce unknown behavior — leave at `1` unless you have a reason to change it. |
+| `--keep-state` | Preserve the per-stage `.state/` directory in the output instead of wiping it at setup. Useful for debugging a failed run or resuming partially. |
+| `--seed <n>` | Seed forwarded to every generator (default `1`). See note below. |
+| `--n-threads <n>` | Thread count for parallelizable backends (default `1`). See note below. |
+| `--timeout <dur>` | Wall-clock timeout for the generation step, passed through to each generator's `pipeline.sh` (default `3d`). Accepts any `timeout(1)`-compatible duration (e.g. `30m`, `2h`, `3d`). |
 | `--abcd-dir <p>` | Override for `abcd` / `abcd+o`. Defaults to `externals/abcd`. Path to an `ABCDGraphGenerator.jl` checkout (exposes `utils/graph_sampler.jl`). |
 | `--lfr-binary <p>` | Override for `lfr`. Defaults to `externals/lfr/unweighted_undirected/benchmark`. Path to the compiled LFR benchmark executable. |
 | `--npso-dir <p>` | Override for `npso`. Defaults to `externals/npso`. Path to the `nPSO_model` checkout; requires `matlab` on PATH. |
+
+**Note on `--seed`:** **Do not pass `0`** to graph-tool-backed generators (`sbm`, `ec-sbm-v1`, `ec-sbm-v2`): `gt.seed_rng(0)` is interpreted as "use the system entropy source" and silently disables byte-reproducibility.
+
+**Note on `--n-threads`:** Applies to `sbm`/`ec-sbm-*` (via `OMP_NUM_THREADS` for graph-tool), `abcd`/`abcd+o` (via `JULIA_NUM_THREADS`), and `npso` (via MATLAB `maxNumCompThreads`). `lfr` is single-threaded and ignores this flag. Values greater than `1` are untested and may break determinism or produce unknown behavior; leave at `1` unless you have a reason to change it.
 
 ### Directory Structure
 
@@ -125,28 +131,30 @@ Compares the synthetic statistics against the empirical baseline distributions.
 
 ## Examples
 
-The two examples below are equivalent invocations for the same network and clustering. Custom mode writes to the specified directory; macro mode writes to its pre-configured `data/` paths.
+The invocation below reproduces the committed `examples/output/synthetic_networks/` tree for `ec-sbm-v2`, using the inputs committed under `examples/input/`. It runs the full pipeline (generation, synthetic stats, comparison) and preserves the per-stage `.state/` directories that are also committed.
 
 ```bash
 ./run_generator.sh \
-    --generator ec-sbm-v2 --run-id 0 \
-    --input-edgelist examples/input/empirical_networks/networks/dnc/dnc.csv \
-    --input-clustering "examples/input/reference_clusterings/clusterings/sbm-flat-best+cc/dnc/com.csv" \
+    --generator ec-sbm-v2 --run-id 0 --seed 1 \
+    --network dnc --clustering-id sbm-flat-best+cc \
+    --input-edgelist      examples/input/empirical_networks/networks/dnc/dnc.csv \
+    --input-clustering    examples/input/reference_clusterings/clusterings/sbm-flat-best+cc/dnc/com.csv \
     --input-network-stats examples/input/empirical_networks/stats/dnc \
-    --input-cluster-stats "examples/input/reference_clusterings/stats/sbm-flat-best+cc/dnc" \
-    --output-dir examples/output/synthetic_networks/ \
-    --network dnc --clustering-id "sbm-flat-best+cc"  \
-    --run-stats --run-comp
+    --input-cluster-stats examples/input/reference_clusterings/stats/sbm-flat-best+cc/dnc \
+    --output-dir          examples/output/synthetic_networks \
+    --run-stats --run-comp --keep-state
 ```
 
+The macro-mode equivalent reads from and writes to the standard `data/` tree rather than `examples/`:
+
 ```bash
 ./run_generator.sh \
-    --generator ec-sbm-v2 --run-id 0 \
+    --generator ec-sbm-v2 --run-id 0 --seed 1 \
     --macro \
-    --network dnc --clustering-id "sbm-flat-best+cc"  \
-    --run-stats --run-comp
+    --network dnc --clustering-id sbm-flat-best+cc \
+    --run-stats --run-comp --keep-state
 ```
 
 ## Installation
 
-Generators are independent — install only the ones you plan to use. Each has its own minimum Python deps: `sbm` and `ec-sbm-*` need `graph-tool` (conda-only), `ec-sbm-*` additionally need `pymincut`, `lfr`/`npso` need `powerlaw`, `npso` also needs `networkit`, and `abcd`/`abcd+o` only need `pandas`. The `abcd`, `abcd+o`, `lfr`, and `npso` generators additionally need a submodule under `externals/` and their own host prerequisites (`julia`, `make`+C++, `matlab`). The `--run-stats` / `--run-comp` flags require the `network_evaluation` submodule, which pulls in its own deps. See [INSTALL.md](INSTALL.md) for per-generator steps.
+Generators are independent, so install only the ones you plan to use. See [INSTALL.md](INSTALL.md) for per-generator steps.
