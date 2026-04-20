@@ -149,4 +149,4 @@ The two examples below are equivalent invocations for the same network and clust
 
 ## Installation
 
-Run `./install.sh` after cloning to initialize submodules and build the external tools required by the `abcd`, `abcd+o`, `lfr`, and `npso` generators. See [INSTALL.md](INSTALL.md) for host prerequisites per generator and details on what the installer does.
+Generators are independent — install only the ones you plan to use. Every generator needs a Python env with a shared base (`numpy`, `pandas`, `scipy`, `pymincut`) plus generator-specific packages (`graph-tool` for `sbm`/`ec-sbm-*`, `powerlaw` for `lfr`/`npso`, `networkit` for `npso`). The `abcd`, `abcd+o`, `lfr`, and `npso` generators additionally need a submodule under `externals/` and their own host prerequisites (`julia`, `make`+C++, `matlab`). The `--run-stats` / `--run-comp` flags require the `network_evaluation` submodule. See [INSTALL.md](INSTALL.md) for per-generator steps.
