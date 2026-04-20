@@ -11,6 +11,18 @@ import networkit as nk
 from pipeline_common import standard_setup, timed, drop_singleton_clusters
 
 
+try:
+    import matlab.engine as _matlab_engine
+    _ENGINE_IMPORT_ERROR = None
+except Exception as _exc:
+    _matlab_engine = None
+    _ENGINE_IMPORT_ERROR = _exc
+
+
+def _engine_available():
+    return _matlab_engine is not None
+
+
 def compute_global_ccoeff_from_edgelist(edgelist_path):
     """Compute the exact global clustering coefficient of an undirected edgelist."""
     elr = nk.graphio.EdgeListReader(",", 1, continuous=False, directed=False)
@@ -18,6 +30,107 @@ def compute_global_ccoeff_from_edgelist(edgelist_path):
     g.removeMultiEdges()
     g.removeSelfLoops()
     return nk.globals.ClusteringCoefficient.exactGlobal(g)
+
+
+def _matlab_subprocess_script(n_threads, npso_dir_abs, matlab_wrapper_dir):
+    """Bash command that locates the matlab binary (lmod-dance) and runs a
+    passed-in MATLAB one-liner. Used by SubprocessRunner."""
+    single_flag = "-singleCompThread " if n_threads == 1 else ""
+    return (
+        "if ! command -v matlab >/dev/null 2>&1; then "
+        "for f in /etc/profile.d/z00_lmod.sh /usr/share/lmod/lmod/init/bash; do "
+        '[ -r "$f" ] && . "$f" && break; done; '
+        "command -v module >/dev/null 2>&1 && module load matlab 2>/dev/null; fi; "
+        f'exec matlab {single_flag}-nodisplay -nosplash -nodesktop -r "$1"'
+    )
+
+
+class SubprocessRunner:
+    """Runs MATLAB once per iteration via a fresh `matlab` subprocess.
+
+    Baseline path. Used when matlab.engine for Python is not installed, or as
+    a fallback when the engine raises a non-recoverable error mid-loop.
+    """
+
+    def __init__(self, n_threads, npso_dir_abs, matlab_wrapper_dir):
+        self.n_threads = n_threads
+        self.npso_dir_abs = npso_dir_abs
+        self.matlab_wrapper_dir = matlab_wrapper_dir
+
+    def run_iter(self, N, m, T, gamma, c, prefix, seed):
+        matlab_inner = (
+            f"try, maxNumCompThreads({self.n_threads}), "
+            f"addpath(genpath('{self.npso_dir_abs}')), "
+            f"addpath('{self.matlab_wrapper_dir}'), "
+            f"run_npso({N}, {m}, {T}, {gamma}, {c}, '{prefix}', {seed}), "
+            f"catch e, fprintf(1, e.message), end, quit"
+        )
+        bash_script = _matlab_subprocess_script(
+            self.n_threads, self.npso_dir_abs, self.matlab_wrapper_dir
+        )
+        subprocess.run(
+            ["bash", "-c", bash_script, "bash", matlab_inner],
+            check=False,
+        )
+
+    def close(self):
+        pass
+
+
+class EngineRunner:
+    """Runs each iteration inside one persistent MATLAB Engine session.
+
+    Removes the ~20–60s per-iter cold-start of the subprocess path. On a
+    per-iter MATLAB error, logs and returns without killing the engine;
+    caller treats that iter as failed and may invoke a SubprocessRunner
+    fallback. On engine-level failures (start, path setup) raises so the
+    caller can downgrade to SubprocessRunner for the whole run.
+    """
+
+    def __init__(self, n_threads, npso_dir_abs, matlab_wrapper_dir):
+        if not _engine_available():
+            raise RuntimeError("matlab.engine not importable")
+        self.n_threads = n_threads
+        self.npso_dir_abs = str(npso_dir_abs)
+        self.matlab_wrapper_dir = str(matlab_wrapper_dir)
+        logging.info("Starting persistent MATLAB engine session...")
+        self._eng = _matlab_engine.start_matlab("-singleCompThread -nodisplay -nosplash -nodesktop")
+        self._eng.addpath(self._eng.genpath(self.npso_dir_abs), nargout=0)
+        self._eng.addpath(self.matlab_wrapper_dir, nargout=0)
+        self._eng.maxNumCompThreads(self.n_threads, nargout=0)
+
+    def run_iter(self, N, m, T, gamma, c, prefix, seed):
+        try:
+            self._eng.run_npso(
+                float(N), float(m), float(T), float(gamma), float(c),
+                str(prefix), float(seed), nargout=0,
+            )
+            return True
+        except _matlab_engine.MatlabExecutionError as exc:
+            logging.error(f"MATLAB iter failed (engine): {exc}")
+            return False
+
+    def close(self):
+        try:
+            self._eng.quit()
+        except Exception:
+            pass
+
+
+def make_runner(n_threads, npso_dir_abs, matlab_wrapper_dir):
+    """Prefer the persistent engine; silently fall back to subprocess if
+    matlab.engine isn't installed or the engine fails to start."""
+    if not _engine_available():
+        logging.info(
+            "matlab.engine for Python not available "
+            f"({_ENGINE_IMPORT_ERROR}); using subprocess fallback."
+        )
+        return SubprocessRunner(n_threads, npso_dir_abs, matlab_wrapper_dir)
+    try:
+        return EngineRunner(n_threads, npso_dir_abs, matlab_wrapper_dir)
+    except Exception as exc:
+        logging.error(f"MATLAB engine failed to start: {exc}; falling back to subprocess.")
+        return SubprocessRunner(n_threads, npso_dir_abs, matlab_wrapper_dir)
 
 
 def run_npso_generation(
@@ -58,73 +171,68 @@ def run_npso_generation(
     npso_dir_abs = Path(npso_dir).resolve()
     matlab_wrapper_dir = (Path(__file__).resolve().parent / "matlab")
 
-    for it in range(max_iters):
-        T = min_T + (max_T - min_T) / 2
-        if T < 0.0005:
-            break
-        logging.info(f"[iter {it}] T={T}")
+    runner = make_runner(n_threads, npso_dir_abs, matlab_wrapper_dir)
+    fallback = None
 
-        with timed("Generation"):
-            prefix = output_dir / f"{T:.5f}_"
-            matlab_inner = (
-                f"try, maxNumCompThreads({n_threads}), "
-                f"addpath(genpath('{npso_dir_abs}')), "
-                f"addpath('{matlab_wrapper_dir}'), "
-                f"run_npso({N}, {m}, {T}, {gamma}, {c}, '{prefix}', {seed}), "
-                f"catch e, fprintf(1, e.message), end, quit"
-            )
-            single_flag = "-singleCompThread " if n_threads == 1 else ""
-            bash_script = (
-                "if ! command -v matlab >/dev/null 2>&1; then "
-                "for f in /etc/profile.d/z00_lmod.sh /usr/share/lmod/lmod/init/bash; do "
-                '[ -r "$f" ] && . "$f" && break; done; '
-                "command -v module >/dev/null 2>&1 && module load matlab 2>/dev/null; fi; "
-                f'exec matlab {single_flag}-nodisplay -nosplash -nodesktop -r "$1"'
-            )
-            subprocess.run(
-                ["bash", "-c", bash_script, "bash", matlab_inner],
-                check=False,
-            )
+    try:
+        for it in range(max_iters):
+            T = min_T + (max_T - min_T) / 2
+            if T < 0.0005:
+                break
+            logging.info(f"[iter {it}] T={T}")
 
-        edge_path = output_dir / f"{T:.5f}_edge.tsv"
-        com_path = output_dir / f"{T:.5f}_com.tsv"
-        if not edge_path.exists() or not com_path.exists():
-            logging.error(f"Missing MATLAB outputs at T={T}")
-            global_ccoeff = None
-        else:
-            elr = nk.graphio.EdgeListReader("\t", 0, continuous=False, directed=False)
-            graph = elr.read(str(edge_path))
-            graph.removeMultiEdges()
-            graph.removeSelfLoops()
-            prev_global_ccoeff = global_ccoeff
-            global_ccoeff = nk.globals.ClusteringCoefficient.exactGlobal(graph)
-            logging.info(f"Global clustering coefficient: {global_ccoeff}")
+            with timed("Generation"):
+                prefix = output_dir / f"{T:.5f}_"
+                ok = runner.run_iter(N, m, T, gamma, c, prefix, seed)
+                if ok is False and not isinstance(runner, SubprocessRunner):
+                    logging.warning("Engine iter failed; retrying via subprocess fallback for this iter.")
+                    if fallback is None:
+                        fallback = SubprocessRunner(n_threads, npso_dir_abs, matlab_wrapper_dir)
+                    fallback.run_iter(N, m, T, gamma, c, prefix, seed)
 
-        diff = abs(global_ccoeff - target_global_ccoeff) if global_ccoeff is not None else 2.0
-        step = abs(prev_global_ccoeff - global_ccoeff) if prev_global_ccoeff is not None and global_ccoeff is not None else 2.0
+            edge_path = output_dir / f"{T:.5f}_edge.tsv"
+            com_path = output_dir / f"{T:.5f}_com.tsv"
+            if not edge_path.exists() or not com_path.exists():
+                logging.error(f"Missing MATLAB outputs at T={T}")
+                global_ccoeff = None
+            else:
+                elr = nk.graphio.EdgeListReader("\t", 0, continuous=False, directed=False)
+                graph = elr.read(str(edge_path))
+                graph.removeMultiEdges()
+                graph.removeSelfLoops()
+                prev_global_ccoeff = global_ccoeff
+                global_ccoeff = nk.globals.ClusteringCoefficient.exactGlobal(graph)
+                logging.info(f"Global clustering coefficient: {global_ccoeff}")
 
-        if best_global_ccoeff is None or diff < best_diff:
-            if best_T is not None and best_T != T:
-                _safe_remove(output_dir / f"{best_T:.5f}_edge.tsv")
-                _safe_remove(output_dir / f"{best_T:.5f}_com.tsv")
-            best_T = T
-            best_global_ccoeff = global_ccoeff
-            best_diff = diff
-        else:
-            if best_T is not None and best_T != T:
-                _safe_remove(output_dir / f"{T:.5f}_edge.tsv")
-                _safe_remove(output_dir / f"{T:.5f}_com.tsv")
+            diff = abs(global_ccoeff - target_global_ccoeff) if global_ccoeff is not None else 2.0
+            step = abs(prev_global_ccoeff - global_ccoeff) if prev_global_ccoeff is not None and global_ccoeff is not None else 2.0
 
-        logging.info(f"Step: {step}  Best T: {best_T}  Best ccoeff: {best_global_ccoeff}  Best diff: {best_diff}")
-        if best_diff is not None and best_diff < 0.005:
-            break
-        if step < 0.0001:
-            break
+            if best_global_ccoeff is None or diff < best_diff:
+                if best_T is not None and best_T != T:
+                    _safe_remove(output_dir / f"{best_T:.5f}_edge.tsv")
+                    _safe_remove(output_dir / f"{best_T:.5f}_com.tsv")
+                best_T = T
+                best_global_ccoeff = global_ccoeff
+                best_diff = diff
+            else:
+                if best_T is not None and best_T != T:
+                    _safe_remove(output_dir / f"{T:.5f}_edge.tsv")
+                    _safe_remove(output_dir / f"{T:.5f}_com.tsv")
 
-        if global_ccoeff is not None and global_ccoeff < target_global_ccoeff:
-            max_T = T
-        else:
-            min_T = T
+            logging.info(f"Step: {step}  Best T: {best_T}  Best ccoeff: {best_global_ccoeff}  Best diff: {best_diff}")
+            if best_diff is not None and best_diff < 0.005:
+                break
+            if step < 0.0001:
+                break
+
+            if global_ccoeff is not None and global_ccoeff < target_global_ccoeff:
+                max_T = T
+            else:
+                min_T = T
+    finally:
+        runner.close()
+        if fallback is not None:
+            fallback.close()
 
     if best_T is None:
         raise RuntimeError("nPSO produced no viable output.")
