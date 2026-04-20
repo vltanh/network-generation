@@ -7,5 +7,6 @@ GEN_EXTRA_ARGS=(
     --algorithm "true_greedy"
     --n-threads "${n_threads}"
     --seed "${seed}"
+    --timeout "${timeout_duration}"
     "${KEEP_STATE_ARG[@]}"
 )

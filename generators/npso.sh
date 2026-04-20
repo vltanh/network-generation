@@ -5,5 +5,6 @@ GEN_EXTRA_ARGS=(
     --npso-dir "${npso_dir}"
     --seed "${seed}"
     --n-threads "${n_threads}"
+    --timeout "${timeout_duration}"
     "${KEEP_STATE_ARG[@]}"
 )

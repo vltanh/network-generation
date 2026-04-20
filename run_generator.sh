@@ -37,6 +37,7 @@ keep_state=0
 
 seed=1
 n_threads=1
+timeout_duration="3d"
 abcd_dir="${SCRIPT_DIR}/externals/abcd"
 lfr_binary="${SCRIPT_DIR}/externals/lfr/unweighted_undirected/benchmark"
 npso_dir="${SCRIPT_DIR}/externals/npso"
@@ -58,6 +59,7 @@ while [[ "$#" -gt 0 ]]; do
         --keep-state) keep_state=1; shift 1 ;;
         --seed) seed="$2"; shift 2 ;;
         --n-threads) n_threads="$2"; shift 2 ;;
+        --timeout) timeout_duration="$2"; shift 2 ;;
         --abcd-dir) abcd_dir="$2"; shift 2 ;;
         --lfr-binary) lfr_binary="$2"; shift 2 ;;
         --npso-dir) npso_dir="$2"; shift 2 ;;
