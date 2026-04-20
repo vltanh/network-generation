@@ -33,6 +33,10 @@ fi
 
 N_THREADS=1
 
+# Pin PYTHONHASHSEED for stage-1 profile.py determinism (set/dict iteration);
+# stage-2 LFR C++ binary reads its seed from time_seed.dat written by gen.py.
+export PYTHONHASHSEED=0
+
 SETUP="${OUTPUT_DIR}/.state/setup"
 
 GEN_NAME="lfr"
