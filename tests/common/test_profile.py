@@ -1,10 +1,14 @@
-"""Unit tests for src/profile.py compute_* primitives.
+"""Unit tests for profile primitives across the per-generator modules.
 
-These functions accept plain dict/set/list inputs and return in-memory
-results, so they are unit-testable without going through the CLI.
+``compute_edge_count`` and ``compute_mixing_parameter`` live in
+``src/profile_common.py`` (shared by every generator).  ``compute_mincut``
+is specific to ec-sbm and lives in ``src/ec-sbm/common/profile.py``.  All
+three accept plain dict/set/list inputs and return in-memory results, so
+they are unit-testable without going through the CLI.
 """
 from __future__ import annotations
 
+import importlib.util
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -14,11 +18,33 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
-from profile import (  # noqa: E402
+from profile_common import (  # noqa: E402
     compute_edge_count,
-    compute_mincut,
     compute_mixing_parameter,
 )
+
+
+def _load_ecsbm_profile():
+    """Load src/ec-sbm/common/profile.py by absolute path.
+
+    The directory name contains a hyphen so we can't `import ec-sbm.common`;
+    we load by file path instead, and push the module dir onto sys.path so
+    its local `from profile_common import ...` resolves.
+    """
+    path = REPO_ROOT / "src" / "ec-sbm" / "common" / "profile.py"
+    gen_dir = str(path.parent)
+    sys.path.insert(0, gen_dir)
+    try:
+        spec = importlib.util.spec_from_file_location("ecsbm_profile", str(path))
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod
+    finally:
+        sys.path.remove(gen_dir)
+
+
+ecsbm_profile = _load_ecsbm_profile()
+compute_mincut = ecsbm_profile.compute_mincut
 
 
 def _neighbors(edges):
