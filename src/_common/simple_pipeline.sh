@@ -17,10 +17,10 @@
 #   N_THREADS           — thread count (wrapper also decides whether/how to
 #                         export it to a per-gen env var before sourcing)
 #
-# Stage 1 (profile) is identical across all 5 gens: it invokes
-# `src/profile.py --generator ${GEN_NAME}`.  The outputs are whatever
-# profile.py's exporter for this generator writes; the wrapper declares
-# them via:
+# Stage 1 (profile) invokes the generator's own profile module at
+# `${GEN_SCRIPT_DIR}/profile.py`.  Each generator's profile module writes
+# only the files that generator's gen.py needs; the wrapper declares them
+# via:
 #
 #   GEN_PROFILE_OUTPUTS  — bash array of stage-1 output *basenames* (relative
 #                          to the stage-1 setup dir) that gen.py consumes
@@ -110,11 +110,10 @@ done
 OUT_1="${OUT_1_PATHS[*]}"
 
 if ! is_step_done "${STG1_SETUP_DIR}/done" "${OUT_1}"; then
-    { timeout "${TIMEOUT}" /usr/bin/time -v python "${SRC_DIR}/profile.py" \
+    { timeout "${TIMEOUT}" /usr/bin/time -v python "${GEN_SCRIPT_DIR}/profile.py" \
         --edgelist "${INPUT_EDGELIST}" \
         --clustering "${INPUT_CLUSTERING}" \
-        --output-folder "${STG1_SETUP_DIR}" \
-        --generator "${GEN_NAME}"; } 2> "${STG1_SETUP_DIR}/time_and_err.log"
+        --output-folder "${STG1_SETUP_DIR}"; } 2> "${STG1_SETUP_DIR}/time_and_err.log"
     mark_done "${STG1_SETUP_DIR}/done" "Stage 1 (profile)" "${IN_1}" "${OUT_1}"
 else
     echo "Skipping Stage 1: Valid state found."
