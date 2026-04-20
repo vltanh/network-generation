@@ -8,7 +8,7 @@ SRC_DIR="$( cd "${SCRIPT_DIR}/../.." && pwd )"
 COMMON_DIR="$( cd "${SCRIPT_DIR}/../common" && pwd )"
 SHARED_DIR="$( cd "${SRC_DIR}/_common" && pwd )"
 # v2 scripts import helpers from the local v2/utils.py; the shared src/
-# dir is needed for pipeline_common.py and profile.py.
+# dir is needed for pipeline_common.py and profile_common.py.
 export PYTHONPATH="${SCRIPT_DIR}:${SRC_DIR}${PYTHONPATH:+:${PYTHONPATH}}"
 
 # Default values
@@ -95,11 +95,10 @@ IN_PROFILE="${INPUT_EDGELIST} ${INPUT_CLUSTERING}"
 OUT_PROFILE="${STG_PROFILE_DIR}/node_id.csv ${STG_PROFILE_DIR}/cluster_id.csv ${STG_PROFILE_DIR}/assignment.csv ${STG_PROFILE_DIR}/degree.csv ${STG_PROFILE_DIR}/mincut.csv ${STG_PROFILE_DIR}/edge_counts.csv ${STG_PROFILE_DIR}/com.csv"
 
 if ! is_step_done "${STG_PROFILE_DIR}/done" "${OUT_PROFILE}"; then
-    { timeout "${TIMEOUT}" /usr/bin/time -v python "${SRC_DIR}/profile.py" \
+    { timeout "${TIMEOUT}" /usr/bin/time -v python "${COMMON_DIR}/profile.py" \
         --edgelist "${INPUT_EDGELIST}" \
         --clustering "${INPUT_CLUSTERING}" \
-        --output-folder "${STG_PROFILE_DIR}" \
-        --generator ecsbm; } 2> "${STG_PROFILE_DIR}/time_and_err.log"
+        --output-folder "${STG_PROFILE_DIR}"; } 2> "${STG_PROFILE_DIR}/time_and_err.log"
     mark_done "${STG_PROFILE_DIR}/done" "Stage 1 (profile)" "${IN_PROFILE}" "${OUT_PROFILE}"
 else
     echo "Skipping Stage 1: Valid state found."
