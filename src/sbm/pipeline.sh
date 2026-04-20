@@ -27,6 +27,9 @@ while [[ "$#" -gt 0 ]]; do
 done
 
 export OMP_NUM_THREADS="${N_THREADS}"
+# gt.generate_sbm is hash-seed-sensitive even with gt.seed_rng + single OMP
+# thread; pin PYTHONHASHSEED so final edge.csv is byte-stable.
+export PYTHONHASHSEED=0
 
 # Must match STG1_SETUP_DIR in _common/simple_pipeline.sh.
 SETUP="${OUTPUT_DIR}/.state/setup"
