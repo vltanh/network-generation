@@ -27,7 +27,7 @@ def parse_args():
     parser.add_argument(
         "--seed",
         type=int,
-        default=0,
+        default=1,
         help="RNG seed (used by random_greedy, rewire, hybrid; pinned in others for parity)",
     )
     return parser.parse_args()

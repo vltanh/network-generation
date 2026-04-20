@@ -35,7 +35,7 @@ run_stats_flag=0
 run_comp_flag=0
 keep_state=0
 
-seed=0
+seed=1
 n_threads=1
 abcd_dir="${SCRIPT_DIR}/externals/abcd"
 lfr_binary="${SCRIPT_DIR}/externals/lfr/unweighted_undirected/benchmark"
