@@ -114,6 +114,49 @@ is_state_tree_consistent() {
     [ "${found_any}" = "1" ]
 }
 
+# Run a stage under timeout + /usr/bin/time -v, appending a delimited
+# EXECUTED block to the stage's time_and_err.log.  Captures the exit code
+# outside `time` so timeouts (124) and SIGKILLs get recorded in the footer
+# — /usr/bin/time's own "Exit status:" line is only emitted on clean exit.
+#
+# The log is append-only across invocations; `grep '^===' time_and_err.log`
+# yields one header per executed attempt.
+#
+# Usage: run_stage "time_and_err.log" <command and args...>
+run_stage() {
+    local log="$1"; shift
+    mkdir -p "$(dirname "${log}")"
+    echo "=== $(date -u +%Y-%m-%dT%H:%M:%SZ) | pid=$$ | host=$(hostname) | EXECUTED ===" >> "${log}"
+    { timeout "${TIMEOUT}" /usr/bin/time -v "$@"; } 2>> "${log}"
+    local rc=$?
+    echo "=== exit=${rc} ===" >> "${log}"
+    return ${rc}
+}
+
+# Record that a stage was skipped because its cache still validates.
+# Same "^===" header shape as run_stage so the stage's full decision history
+# can be grepped with one pattern.
+#
+# Usage: note_stage_skipped "time_and_err.log"
+note_stage_skipped() {
+    local log="$1"
+    mkdir -p "$(dirname "${log}")"
+    echo "=== $(date -u +%Y-%m-%dT%H:%M:%SZ) | pid=$$ | host=$(hostname) | SKIPPED (cache hit) ===" >> "${log}"
+}
+
+# Append a pipeline-invocation header to the top-level run.log.  Called
+# unconditionally at pipeline start, before the top-level short-circuit,
+# so every invocation (including top-level cache hits) leaves a trace.
+#
+# Usage: log_invocation_header "run.log" "seed" "keep_state"
+log_invocation_header() {
+    local final_log="$1"
+    local seed="$2"
+    local keep_state="$3"
+    mkdir -p "$(dirname "${final_log}")"
+    echo "=== Invocation $(date -u +%Y-%m-%dT%H:%M:%SZ) | seed=${seed} | keep_state=${keep_state} | pid=$$ | host=$(hostname) ===" >> "${final_log}"
+}
+
 # Append a per-stage log file to a consolidated run.log with a prefix.
 #
 # If the source log exists, each line is written to ${dest_log} prefixed

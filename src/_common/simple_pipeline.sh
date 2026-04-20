@@ -74,8 +74,11 @@ source "${SHARED_DIR}/state.sh"
 FINAL_DONE="${OUTPUT_DIR}/done"
 FINAL_IN="${INPUT_EDGELIST} ${INPUT_CLUSTERING}"
 FINAL_OUT="${OUTPUT_DIR}/edge.csv ${OUTPUT_DIR}/com.csv"
+FINAL_LOG="${OUTPUT_DIR}/run.log"
 
 mkdir -p "${OUTPUT_DIR}"
+
+log_invocation_header "${FINAL_LOG}" "${SEED}" "${KEEP_STATE}"
 
 if is_step_done "${FINAL_DONE}" "${FINAL_OUT}"; then
     # If a .state/ tree exists alongside the top-level done, it must be
@@ -125,12 +128,14 @@ done
 OUT_1="${OUT_1_PATHS[*]}"
 
 if ! is_step_done "${STG1_SETUP_DIR}/done" "${OUT_1}"; then
-    { timeout "${TIMEOUT}" /usr/bin/time -v python "${GEN_SCRIPT_DIR}/profile.py" \
+    run_stage "${STG1_SETUP_DIR}/time_and_err.log" \
+        python "${GEN_SCRIPT_DIR}/profile.py" \
         --edgelist "${INPUT_EDGELIST}" \
         --clustering "${INPUT_CLUSTERING}" \
-        --output-folder "${STG1_SETUP_DIR}"; } 2> "${STG1_SETUP_DIR}/time_and_err.log"
+        --output-folder "${STG1_SETUP_DIR}"
     mark_done "${STG1_SETUP_DIR}/done" "Stage 1 (profile)" "${IN_1}" "${OUT_1}"
 else
+    note_stage_skipped "${STG1_SETUP_DIR}/time_and_err.log"
     echo "Skipping Stage 1: Valid state found."
 fi
 
@@ -143,12 +148,14 @@ IN_2="${OUT_1} ${GEN_EXTRA_STAGE2_INPUTS}"
 OUT_2="${STG2_DIR}/edge.csv ${STG2_DIR}/com.csv"
 
 if ! is_step_done "${STG2_DIR}/done" "${OUT_2}"; then
-    { timeout "${TIMEOUT}" /usr/bin/time -v python "${GEN_SCRIPT_DIR}/gen.py" \
+    run_stage "${STG2_DIR}/time_and_err.log" \
+        python "${GEN_SCRIPT_DIR}/gen.py" \
         "${GEN_CLI_ARGS[@]}" \
         --output-folder "${STG2_DIR}" \
-        --seed "${SEED}"; } 2> "${STG2_DIR}/time_and_err.log"
+        --seed "${SEED}"
     mark_done "${STG2_DIR}/done" "Stage 2 (gen)" "${IN_2}" "${OUT_2}"
 else
+    note_stage_skipped "${STG2_DIR}/time_and_err.log"
     echo "Skipping Stage 2: Valid state found."
 fi
 
@@ -166,8 +173,8 @@ cp "${STG2_DIR}/com.csv"  "${OUTPUT_DIR}/com.csv"
 # ==========================================
 # Consolidate per-stage logs into one top-level run.log
 # ==========================================
-FINAL_LOG="${OUTPUT_DIR}/run.log"
-rm -f "${FINAL_LOG}"
+# FINAL_LOG is append-only and already has this invocation's header from
+# log_invocation_header at pipeline start; per-stage logs get appended under it.
 append_stage_log "${FINAL_LOG}" "Stage 1 (profile)" "${STG1_SETUP_DIR}/time_and_err.log"
 append_stage_log "${FINAL_LOG}" "Stage 1 (profile)" "${STG1_SETUP_DIR}/run.log"
 append_stage_log "${FINAL_LOG}" "Stage 2 (gen)"     "${STG2_DIR}/time_and_err.log"
