@@ -1,5 +1,6 @@
 import logging
 import argparse
+import random
 from pathlib import Path
 
 import numpy as np
@@ -91,10 +92,14 @@ def export_generated_edges(g, node_iid2id, output_dir: Path):
     write_edge_tuples_csv(output_dir / "edge_outlier.csv", g.iter_edges(), node_iid2id)
 
 
-def run_outlier_generation(orig_edgelist_fp, orig_clustering_fp, output_folder):
+def run_outlier_generation(orig_edgelist_fp, orig_clustering_fp, output_folder, seed):
     orig_edgelist_fp = Path(orig_edgelist_fp)
     orig_clustering_fp = Path(orig_clustering_fp)
     output_dir = standard_setup(output_folder)
+
+    random.seed(seed)
+    np.random.seed(seed)
+    gt.seed_rng(seed)
 
     logging.info("Generation of Outlier Subnetwork")
     logging.info(f"Network: {orig_edgelist_fp}")
@@ -139,12 +144,20 @@ def parse_args():
         required=True,
         help="Directory to save output files",
     )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=0,
+        help="RNG seed for numpy/random/graph-tool",
+    )
     return parser.parse_args()
 
 
 def main():
     args = parse_args()
-    run_outlier_generation(args.edgelist, args.clustering, args.output_folder)
+    run_outlier_generation(
+        args.edgelist, args.clustering, args.output_folder, args.seed
+    )
 
 
 if __name__ == "__main__":

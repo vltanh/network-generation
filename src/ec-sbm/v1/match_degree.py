@@ -1,7 +1,9 @@
 import argparse
 import logging
 import heapq
+import random
 
+import numpy as np
 import pandas as pd
 
 from pipeline_common import standard_setup, timed
@@ -13,6 +15,12 @@ def parse_args():
     parser.add_argument("--ref-edgelist", type=str, required=True)
     parser.add_argument("--ref-clustering", type=str, required=True)
     parser.add_argument("--output-folder", type=str, required=True)
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=0,
+        help="RNG seed (no Python-level RNG used, but pinned for parity with sibling stages)",
+    )
     return parser.parse_args()
 
 
@@ -109,6 +117,10 @@ def export_degree_matched_edgelist(degree_edges, node_iid2id, output_dir):
 def main():
     args = parse_args()
     out_dir = standard_setup(args.output_folder)
+
+    random.seed(args.seed)
+    np.random.seed(args.seed)
+
     logging.info("--- Starting Stage 6: Degree Matching ---")
 
     with timed("Loaded reference topologies"):
