@@ -1,26 +1,79 @@
 # Installation
 
-The `abcd`, `abcd+o`, `lfr`, and `npso` generators depend on external tools vendored as submodules under `externals/`. Run the installer once after cloning:
+Each generator is independent — only install what you plan to use. Every generator needs a working Python environment with a generator-specific set of packages. Four of them (`abcd`, `abcd+o`, `lfr`, `npso`) additionally depend on a vendored external tool under `externals/`.
+
+Recommended: create a conda env (graph-tool is not pip-installable). The examples below use `conda`, but any equivalent works.
+
+## Shared Python dependencies (all generators)
+
+Every generator runs `src/profile.py` to derive empirical bounds from the input edgelist and clustering. That step needs:
+
+- `numpy`
+- `pandas`
+- `scipy`
+- `pymincut` (see https://github.com/illinois-or-research-analytics/pymincut)
 
 ```bash
-./install.sh
+conda create -n netgen python=3.11 numpy pandas scipy -c conda-forge
+conda activate netgen
+pip install pymincut
 ```
 
-This will:
+Add the generator-specific packages below on top of this base env.
 
-1. Initialize the submodules (`externals/abcd`, `externals/lfr`, `externals/npso`).
-2. Register ABCD with Julia via `Pkg.develop(path="externals/abcd")` (requires `julia` on `PATH`).
-3. Build the LFR benchmark binary in `externals/lfr/unweighted_undirected/` (requires `make` and a C++ compiler).
+## Optional: statistics and comparison (`--run-stats`, `--run-comp`)
 
-## Host prerequisites per generator
+Needed only if you pass `--run-stats` or `--run-comp` to `run_generator.sh`. These flags invoke scripts under the `network_evaluation/` submodule.
 
-| Generator | Needs |
-| --- | --- |
-| `abcd`, `abcd+o` | `julia` |
-| `lfr` | `make` + C++ compiler; Python `powerlaw` |
-| `npso` | `matlab` on PATH at run time (on campus cluster: `module load matlab`); Python `powerlaw` |
-| `sbm`, `ec-sbm-v1`, `ec-sbm-v2` | Python env only (no external tool) |
+```bash
+git submodule update --init --recursive network_evaluation
+conda install -c conda-forge graph-tool
+```
 
-The nPSO MATLAB wrapper `run_npso.m` lives under `src/npso/matlab/` (tracked in-repo) and is auto-added to MATLAB's path by `src/npso/gen.py`, so it does not need to be copied into the `externals/npso` submodule.
+`network_evaluation` additionally uses `scipy.sparse.linalg` (already installed above) and `pymincut` (already installed above).
 
-After installation, `run_generator.sh` defaults `--abcd-dir`, `--lfr-binary`, and `--npso-dir` to the submodule paths, so you can omit those flags unless you want to point at a different checkout.
+## `sbm`, `ec-sbm-v1`, `ec-sbm-v2`
+
+Python-only generators, but they require `graph-tool`, which is **not** available via pip.
+
+```bash
+conda install -c conda-forge graph-tool
+```
+
+No submodule init needed.
+
+## `abcd` / `abcd+o`
+
+Requires `julia` on `PATH`, plus the shared Python deps above.
+
+```bash
+git submodule update --init --recursive externals/abcd
+julia -e 'using Pkg; Pkg.develop(path="externals/abcd"); Pkg.instantiate()'
+```
+
+## `lfr`
+
+Requires `make` and a C++ compiler for the benchmark build, plus Python `powerlaw` on top of the shared deps.
+
+```bash
+git submodule update --init --recursive externals/lfr
+make -C externals/lfr/unweighted_undirected
+pip install powerlaw
+```
+
+The build produces the binary at `externals/lfr/unweighted_undirected/benchmark`.
+
+## `npso`
+
+Requires `matlab` on `PATH` at run time (on the campus cluster: `module load matlab`), plus Python `powerlaw` and `networkit` on top of the shared deps.
+
+```bash
+git submodule update --init --recursive externals/npso
+pip install powerlaw networkit
+```
+
+No build step — the MATLAB wrapper [src/npso/matlab/run_npso.m](src/npso/matlab/run_npso.m) is tracked in-repo and auto-added to MATLAB's path by [src/npso/gen.py](src/npso/gen.py), so it does not need to be copied into the submodule.
+
+## Submodule path defaults
+
+After installing a generator's submodule, `run_generator.sh` picks it up automatically via the defaults `--abcd-dir=externals/abcd`, `--lfr-binary=externals/lfr/unweighted_undirected/benchmark`, `--npso-dir=externals/npso`. Override those flags if you want to point at a different checkout.
