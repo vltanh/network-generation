@@ -78,14 +78,29 @@ FINAL_OUT="${OUTPUT_DIR}/edge.csv ${OUTPUT_DIR}/com.csv"
 mkdir -p "${OUTPUT_DIR}"
 
 if is_step_done "${FINAL_DONE}" "${FINAL_OUT}"; then
-    echo "Skipping entire pipeline: valid top-level done-file found."
-    # The top-level done is authoritative; any surviving .state/ is unneeded
-    # (and, if inherited from an earlier run with inconsistent stage dones,
-    # potentially misleading).  Remove it so the output tree is clean.
-    rm -rf "${OUTPUT_DIR}/.state"
-    echo "=== ${GEN_NAME} pipeline completed successfully ==="
-    echo "Final Network: ${OUTPUT_DIR}/edge.csv"
-    exit 0
+    # If a .state/ tree exists alongside the top-level done, it must be
+    # internally consistent: otherwise the cache is lying about what's on
+    # disk, which we must not preserve (under --keep-state) and must not
+    # silently wipe (without --keep-state, since an inconsistent .state/
+    # is a signal something went wrong — regenerate so the final state is
+    # coherent regardless of --keep-state).
+    if [ -d "${OUTPUT_DIR}/.state" ] && ! is_state_tree_consistent "${OUTPUT_DIR}/.state"; then
+        echo "Top-level done valid but .state/ is inconsistent; regenerating to restore cache."
+        rm -rf "${OUTPUT_DIR}/.state" "${FINAL_DONE}"
+    else
+        echo "Skipping entire pipeline: valid top-level done-file found."
+        if [ "${KEEP_STATE}" = "1" ]; then
+            echo "Keeping intermediates under ${OUTPUT_DIR}/.state (--keep-state)."
+        else
+            # Default mode: the top-level done is authoritative and .state/,
+            # if present, is already verified consistent above.  Either way
+            # we don't need it in the user-facing tree, so remove it.
+            rm -rf "${OUTPUT_DIR}/.state"
+        fi
+        echo "=== ${GEN_NAME} pipeline completed successfully ==="
+        echo "Final Network: ${OUTPUT_DIR}/edge.csv"
+        exit 0
+    fi
 fi
 
 # All intermediates live under .state/ — cleaned on success.
