@@ -33,6 +33,10 @@ if [ -z "${NPSO_DIR}" ]; then
     exit 1
 fi
 
+# Pin PYTHONHASHSEED for stage-1 profile.py determinism (set/dict iteration);
+# stage-2 MATLAB inherits the env but is unaffected — run_npso.m calls rng(seed).
+export PYTHONHASHSEED=0
+
 SETUP="${OUTPUT_DIR}/.state/setup"
 
 GEN_NAME="npso"
