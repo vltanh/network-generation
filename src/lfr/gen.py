@@ -94,7 +94,7 @@ def parse_args():
     parser.add_argument("--lfr-binary", type=str, required=True,
                         help="Path to LFR benchmark executable (unweighted_undirected/benchmark)")
     parser.add_argument("--output-folder", type=str, required=True)
-    parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--seed", type=int, default=1)
     return parser.parse_args()
 
 

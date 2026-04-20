@@ -8,7 +8,7 @@ fi
 SHARED_DIR="$( cd "${SCRIPT_DIR}/../_common" && pwd )"
 
 TIMEOUT="3d"
-SEED=0
+SEED=1
 N_THREADS=1
 KEEP_STATE=0
 NPSO_DIR=""

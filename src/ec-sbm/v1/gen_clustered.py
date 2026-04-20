@@ -224,7 +224,7 @@ def parse_args():
     parser.add_argument(
         "--seed",
         type=int,
-        default=0,
+        default=1,
         help="RNG seed for numpy/random/graph-tool",
     )
     return parser.parse_args()

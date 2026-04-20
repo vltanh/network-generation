@@ -157,14 +157,14 @@ def test_common_flags_always_forwarded(stub_repo: Path, generator: str):
 
 # (generator, flag, expected_value, should_be_present)
 FLAG_MATRIX = [
-    # seed: every gen *except* ec-sbm v1/v2 takes --seed
+    # seed: every gen takes --seed
     ("sbm", "--seed", "42", True),
     ("abcd", "--seed", "42", True),
     ("abcd+o", "--seed", "42", True),
     ("lfr", "--seed", "42", True),
     ("npso", "--seed", "42", True),
-    ("ec-sbm-v1", "--seed", None, False),
-    ("ec-sbm-v2", "--seed", None, False),
+    ("ec-sbm-v1", "--seed", "42", True),
+    ("ec-sbm-v2", "--seed", "42", True),
     # n-threads: every gen *except* lfr
     ("sbm", "--n-threads", "3", True),
     ("abcd", "--n-threads", "3", True),

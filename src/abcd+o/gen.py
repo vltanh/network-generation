@@ -110,7 +110,7 @@ def parse_args():
     parser.add_argument("--n-outliers", type=str, required=True)
     parser.add_argument("--abcd-dir", type=str, required=True)
     parser.add_argument("--output-folder", type=str, required=True)
-    parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--seed", type=int, default=1)
     return parser.parse_args()
 
 

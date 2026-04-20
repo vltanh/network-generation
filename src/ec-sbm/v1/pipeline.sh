@@ -15,7 +15,7 @@ export PYTHONPATH="${SRC_DIR}${PYTHONPATH:+:${PYTHONPATH}}"
 TIMEOUT="3d"
 N_THREADS=1
 KEEP_STATE=0
-SEED=0
+SEED=1
 
 # Parse named arguments
 while [[ "$#" -gt 0 ]]; do
