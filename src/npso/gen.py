@@ -1,7 +1,10 @@
+import hashlib
+import json
 import logging
 import argparse
 import subprocess
 import tempfile
+import time
 from pathlib import Path
 
 import numpy as np
@@ -10,6 +13,9 @@ import powerlaw
 import networkit as nk
 
 from pipeline_common import standard_setup, timed, drop_singleton_clusters
+
+
+SEARCH_LOG_NAME = "search_log.jsonl"
 
 
 try:
@@ -223,6 +229,46 @@ def run_npso_generation(
     npso_dir_abs = Path(npso_dir).resolve()
     matlab_wrapper_dir = (Path(__file__).resolve().parent / "matlab")
 
+    # --- Resumability: replay prior iters from search_log.jsonl ------------
+    inputs_sha256 = _input_hash(N, m, gamma, c, target_global_ccoeff, seed)
+    search_log_path = output_dir / SEARCH_LOG_NAME
+    prior_rows = _load_search_log(search_log_path, inputs_sha256)
+    start_iter = 0
+    converged_in_replay = False
+    for row in prior_rows:
+        start_iter = row["iter"] + 1
+        T_r = row["T"]
+        cc_r = row["global_ccoeff"]
+        diff_r = abs(cc_r - target_global_ccoeff)
+        step_r = abs(prev_global_ccoeff - cc_r) if prev_global_ccoeff is not None else 2.0
+        if best_global_ccoeff is None or diff_r < best_diff:
+            best_T = T_r
+            best_global_ccoeff = cc_r
+            best_diff = diff_r
+        f_T = cc_r - target_global_ccoeff
+        if f_T < 0:
+            max_T = T_r
+            f_max_T = f_T
+        else:
+            min_T = T_r
+            f_min_T = f_T
+        prev_global_ccoeff = cc_r
+        global_ccoeff = cc_r
+        # Mirror the in-loop early-exit predicates so resume doesn't
+        # redo work the prior run would have skipped.
+        if best_diff is not None and best_diff < 0.005:
+            converged_in_replay = True
+            break
+        if step_r < 0.0001:
+            converged_in_replay = True
+            break
+    if prior_rows:
+        logging.info(
+            f"Resuming from search_log.jsonl: replayed {len(prior_rows)} iter(s); "
+            f"start_iter={start_iter} best_T={best_T} best_ccoeff={best_global_ccoeff}"
+        )
+    # --------------------------------------------------------------------
+
     runner = make_runner(n_threads, npso_dir_abs, matlab_wrapper_dir)
     fallback = None
 
@@ -231,57 +277,93 @@ def run_npso_generation(
     with tempfile.TemporaryDirectory(prefix="npso_scratch_", dir=output_dir) as scratch_str:
         scratch_dir = Path(scratch_str)
         try:
-            for it in range(max_iters):
-                T = _next_T(min_T, max_T, f_min_T, f_max_T)
-                if T < 0.0005:
-                    break
-                logging.info(f"[iter {it}] T={T}")
-
-                with timed("Generation"):
-                    prefix = scratch_dir / f"{T:.5f}_"
-                    result = runner.run_iter(N, m, T, gamma, c, prefix, seed)
-                    if result is None and not isinstance(runner, SubprocessRunner):
-                        logging.warning("Engine iter failed; retrying via subprocess fallback for this iter.")
-                        if fallback is None:
-                            fallback = SubprocessRunner(n_threads, npso_dir_abs, matlab_wrapper_dir)
-                        result = fallback.run_iter(N, m, T, gamma, c, prefix, seed)
-
-                if result is None:
-                    logging.error(f"Missing MATLAB outputs at T={T}")
-                    global_ccoeff = None
-                    edge_df, com_df = None, None
+            # If we resumed with a best_T but no matrices in memory, re-run
+            # it once to restore them. Cheaper than persisting adj/comm to
+            # disk in phase B's in-memory model.
+            if best_T is not None and best_edge_df is None:
+                logging.info(f"Re-running best_T={best_T} to restore matrices post-resume.")
+                prefix = scratch_dir / f"resume_{best_T:.5f}_"
+                restored = runner.run_iter(N, m, best_T, gamma, c, prefix, seed)
+                if restored is None and not isinstance(runner, SubprocessRunner):
+                    if fallback is None:
+                        fallback = SubprocessRunner(n_threads, npso_dir_abs, matlab_wrapper_dir)
+                    restored = fallback.run_iter(N, m, best_T, gamma, c, prefix, seed)
+                if restored is not None:
+                    best_edge_df, best_com_df = restored
                 else:
-                    edge_df, com_df = result
-                    prev_global_ccoeff = global_ccoeff
-                    global_ccoeff = _ccoeff_from_edges(edge_df)
-                    logging.info(f"Global clustering coefficient: {global_ccoeff}")
+                    logging.error("Resume re-run at best_T failed; treating log as stale.")
+                    search_log_path.unlink(missing_ok=True)
+                    start_iter = 0
+                    converged_in_replay = False
+                    best_T = None
+                    best_global_ccoeff = None
+                    best_diff = None
+                    min_T, max_T = 0.0, 1.0
+                    f_min_T, f_max_T = None, None
+                    prev_global_ccoeff = None
+                    global_ccoeff = None
 
-                diff = abs(global_ccoeff - target_global_ccoeff) if global_ccoeff is not None else 2.0
-                step = abs(prev_global_ccoeff - global_ccoeff) if prev_global_ccoeff is not None and global_ccoeff is not None else 2.0
+            if not converged_in_replay:
+                for it in range(start_iter, max_iters):
+                    T = _next_T(min_T, max_T, f_min_T, f_max_T)
+                    if T < 0.0005:
+                        break
+                    logging.info(f"[iter {it}] T={T}")
 
-                if result is not None and (best_global_ccoeff is None or diff < best_diff):
-                    best_T = T
-                    best_edge_df = edge_df
-                    best_com_df = com_df
-                    best_global_ccoeff = global_ccoeff
-                    best_diff = diff
+                    iter_start = time.monotonic()
+                    with timed("Generation"):
+                        prefix = scratch_dir / f"{T:.5f}_"
+                        result = runner.run_iter(N, m, T, gamma, c, prefix, seed)
+                        if result is None and not isinstance(runner, SubprocessRunner):
+                            logging.warning("Engine iter failed; retrying via subprocess fallback for this iter.")
+                            if fallback is None:
+                                fallback = SubprocessRunner(n_threads, npso_dir_abs, matlab_wrapper_dir)
+                            result = fallback.run_iter(N, m, T, gamma, c, prefix, seed)
+                    elapsed_s = time.monotonic() - iter_start
 
-                logging.info(f"Step: {step}  Best T: {best_T}  Best ccoeff: {best_global_ccoeff}  Best diff: {best_diff}")
-                if best_diff is not None and best_diff < 0.005:
-                    break
-                if step < 0.0001:
-                    break
-
-                if global_ccoeff is not None:
-                    # ccoeff is decreasing in T. f(T) = ccoeff(T) - target.
-                    # f > 0 ⇒ need higher T (raise min_T); f < 0 ⇒ lower T (lower max_T).
-                    f_T = global_ccoeff - target_global_ccoeff
-                    if f_T < 0:
-                        max_T = T
-                        f_max_T = f_T
+                    if result is None:
+                        logging.error(f"Missing MATLAB outputs at T={T}")
+                        global_ccoeff = None
+                        edge_df, com_df = None, None
                     else:
-                        min_T = T
-                        f_min_T = f_T
+                        edge_df, com_df = result
+                        prev_global_ccoeff = global_ccoeff
+                        global_ccoeff = _ccoeff_from_edges(edge_df)
+                        logging.info(f"Global clustering coefficient: {global_ccoeff}")
+                        _append_search_log(search_log_path, {
+                            "iter": it,
+                            "T": T,
+                            "inputs_sha256": inputs_sha256,
+                            "global_ccoeff": global_ccoeff,
+                            "elapsed_s": elapsed_s,
+                        })
+
+                    diff = abs(global_ccoeff - target_global_ccoeff) if global_ccoeff is not None else 2.0
+                    step = abs(prev_global_ccoeff - global_ccoeff) if prev_global_ccoeff is not None and global_ccoeff is not None else 2.0
+
+                    if result is not None and (best_global_ccoeff is None or diff < best_diff):
+                        best_T = T
+                        best_edge_df = edge_df
+                        best_com_df = com_df
+                        best_global_ccoeff = global_ccoeff
+                        best_diff = diff
+
+                    logging.info(f"Step: {step}  Best T: {best_T}  Best ccoeff: {best_global_ccoeff}  Best diff: {best_diff}")
+                    if best_diff is not None and best_diff < 0.005:
+                        break
+                    if step < 0.0001:
+                        break
+
+                    if global_ccoeff is not None:
+                        # ccoeff is decreasing in T. f(T) = ccoeff(T) - target.
+                        # f > 0 ⇒ need higher T (raise min_T); f < 0 ⇒ lower T (lower max_T).
+                        f_T = global_ccoeff - target_global_ccoeff
+                        if f_T < 0:
+                            max_T = T
+                            f_max_T = f_T
+                        else:
+                            min_T = T
+                            f_min_T = f_T
         finally:
             runner.close()
             if fallback is not None:
@@ -311,6 +393,47 @@ def _safe_remove(p):
         Path(p).unlink()
     except FileNotFoundError:
         pass
+
+
+def _input_hash(N, m, gamma, c, target_ccoeff, seed):
+    """Stable digest of the derived search inputs — if any of these change
+    between runs, the log must be discarded."""
+    payload = json.dumps(
+        {"N": int(N), "m": int(m), "gamma": float(gamma),
+         "c": int(c), "target": float(target_ccoeff), "seed": int(seed)},
+        sort_keys=True,
+    ).encode()
+    return hashlib.sha256(payload).hexdigest()
+
+
+def _load_search_log(log_path, expected_hash):
+    """Parse existing search_log.jsonl. Return the list of (iter, T, ccoeff)
+    records if every row matches `expected_hash`; else truncate and return []."""
+    if not log_path.exists():
+        return []
+    records = []
+    try:
+        with log_path.open() as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                row = json.loads(line)
+                if row.get("inputs_sha256") != expected_hash:
+                    raise ValueError("inputs_sha256 mismatch")
+                records.append(row)
+    except (json.JSONDecodeError, ValueError, KeyError) as exc:
+        logging.warning(f"search_log.jsonl incompatible ({exc}); starting fresh.")
+        log_path.unlink()
+        return []
+    records.sort(key=lambda r: r["iter"])
+    return records
+
+
+def _append_search_log(log_path, row):
+    with log_path.open("a") as f:
+        f.write(json.dumps(row, sort_keys=True) + "\n")
+        f.flush()
 
 
 def _next_T(min_T, max_T, f_min_T, f_max_T):
