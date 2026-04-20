@@ -34,6 +34,9 @@ if [ -z "${ABCD_DIR}" ]; then
 fi
 
 export JULIA_NUM_THREADS="${N_THREADS}"
+# Pin PYTHONHASHSEED for stage-1 profile.py determinism (set/dict iteration);
+# stage-2 Julia inherits the env but is unaffected by Python's hash seed.
+export PYTHONHASHSEED=0
 
 SETUP="${OUTPUT_DIR}/.state/setup"
 
