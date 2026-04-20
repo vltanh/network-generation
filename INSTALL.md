@@ -57,8 +57,7 @@ The build produces the binary at `externals/lfr/unweighted_undirected/benchmark`
 ## `npso`
 
 Python deps: `pandas`, `numpy`, `powerlaw`, `networkit`.  
-Host deps: MATLAB R2024a on `PATH` at run time. R2024a's Statistics and
-Machine Learning Toolbox is required (`nPSO_model.m` calls `gmdistribution`).
+Host deps: MATLAB R2024a on `PATH` at run time. R2024a's Statistics and Machine Learning Toolbox is required.
 
 ```bash
 conda create -n npso python=3.11 numpy pandas
@@ -67,21 +66,20 @@ pip install powerlaw networkit
 git submodule update --init --recursive externals/npso
 ```
 
-The MATLAB wrapper at [src/npso/matlab/run_npso.m](src/npso/matlab/run_npso.m) is tracked in-repo and auto-added to MATLAB's path by [src/npso/gen.py](src/npso/gen.py), so it does not need to be copied into the submodule.
+The MATLAB wrapper at [src/npso/matlab/run_npso.m](src/npso/matlab/run_npso.m) is tracked in-repo and auto-added to MATLAB's path by [src/npso/gen.py](src/npso/gen.py), so it does not need to be copied into the submodule. 
 
-### Optional: MATLAB Engine for Python (recommended — large speedup)
+**Optional: MATLAB Engine for Python (recommended for large speedup)**
 
-With MATLAB's Engine for Python installed, [src/npso/gen.py](src/npso/gen.py) starts one persistent MATLAB session per pipeline invocation instead of spawning `matlab` per bisection iter, cutting a ~6 min dnc run to ~15s (23×). If the import fails at runtime, gen.py falls back to the per-iter subprocess path — the pipeline runs unchanged, just slower.
+With MATLAB's Engine for Python installed, [src/npso/gen.py](src/npso/gen.py) starts one persistent MATLAB session per pipeline invocation instead of spawning `matlab` per bisection iter. If the import fails at runtime, gen.py falls back to the per-iter subprocess path.
 
-The engine package for R2024a is officially Python 3.9–3.11; this is why the env above pins `python=3.11`. Install from the local MATLAB tree (the PyPI wheel requires MATLAB to be discoverable, so setting `LD_LIBRARY_PATH` first makes the build find it):
+The engine package for R2024a (24.1) is officially Python 3.9-3.11. Install from the local MATLAB tree (the PyPI wheel requires MATLAB to be discoverable, so setting `LD_LIBRARY_PATH` first makes the build find it):
 
 ```bash
-module load matlab/R2024a
 LD_LIBRARY_PATH=$(dirname $(dirname $(readlink -f $(which matlab))))/bin/glnxa64:$LD_LIBRARY_PATH \
   pip install matlabengine==24.1.4
 ```
 
-No `LD_LIBRARY_PATH` is needed at run time — matlabengine configures its own loader path at import.
+No `LD_LIBRARY_PATH` is needed at run time (matlabengine configures its own loader path at import).
 
 ## Optional: Submodule path overrides
 
