@@ -4,5 +4,6 @@ GEN_REQUIRED_DIR_FLAG="--lfr-binary"
 GEN_EXTRA_ARGS=(
     --lfr-binary "${lfr_binary}"
     --seed "${seed}"
+    --timeout "${timeout_duration}"
     "${KEEP_STATE_ARG[@]}"
 )

@@ -4,5 +4,6 @@ GEN_REQUIRED_DIR_FLAG=""
 GEN_EXTRA_ARGS=(
     --n-threads "${n_threads}"
     --seed "${seed}"
+    --timeout "${timeout_duration}"
     "${KEEP_STATE_ARG[@]}"
 )
