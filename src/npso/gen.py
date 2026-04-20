@@ -209,6 +209,10 @@ def run_npso_generation(
         logging.info(f"N={N} m={m} gamma={gamma} c={c} target_ccoeff={target_global_ccoeff}")
 
     min_T, max_T = 0.0, 1.0
+    # Signed residuals f(T) = ccoeff(T) - target at the bracket endpoints,
+    # measured lazily from the last iter that landed there. Populated as
+    # we go; secant step only fires once both are known with opposite signs.
+    f_min_T, f_max_T = None, None
     best_T = None
     best_edge_df = None
     best_com_df = None
@@ -228,7 +232,7 @@ def run_npso_generation(
         scratch_dir = Path(scratch_str)
         try:
             for it in range(max_iters):
-                T = min_T + (max_T - min_T) / 2
+                T = _next_T(min_T, max_T, f_min_T, f_max_T)
                 if T < 0.0005:
                     break
                 logging.info(f"[iter {it}] T={T}")
@@ -268,10 +272,16 @@ def run_npso_generation(
                 if step < 0.0001:
                     break
 
-                if global_ccoeff is not None and global_ccoeff < target_global_ccoeff:
-                    max_T = T
-                else:
-                    min_T = T
+                if global_ccoeff is not None:
+                    # ccoeff is decreasing in T. f(T) = ccoeff(T) - target.
+                    # f > 0 ⇒ need higher T (raise min_T); f < 0 ⇒ lower T (lower max_T).
+                    f_T = global_ccoeff - target_global_ccoeff
+                    if f_T < 0:
+                        max_T = T
+                        f_max_T = f_T
+                    else:
+                        min_T = T
+                        f_min_T = f_T
         finally:
             runner.close()
             if fallback is not None:
@@ -301,6 +311,31 @@ def _safe_remove(p):
         Path(p).unlink()
     except FileNotFoundError:
         pass
+
+
+def _next_T(min_T, max_T, f_min_T, f_max_T):
+    """Pick the next T to evaluate.
+
+    Secant when both endpoints have signed residuals and they straddle
+    zero; otherwise midpoint. Clamp near-boundary secant picks back to
+    the midpoint so we don't collapse the bracket.
+    """
+    mid = min_T + (max_T - min_T) / 2
+    if f_min_T is None or f_max_T is None:
+        return mid
+    if f_min_T * f_max_T > 0:
+        # Same sign — bracket invalid (shouldn't happen given how we
+        # update bounds, but stay safe). Fall back to midpoint.
+        return mid
+    denom = f_max_T - f_min_T
+    if denom == 0:
+        return mid
+    T_sec = min_T - f_min_T * (max_T - min_T) / denom
+    # Guard against degenerate secant steps that hug the edge.
+    margin = 0.05 * (max_T - min_T)
+    if T_sec <= min_T + margin or T_sec >= max_T - margin:
+        return mid
+    return T_sec
 
 
 def parse_args():
