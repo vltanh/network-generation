@@ -261,9 +261,14 @@ def export_n_outliers(out_dir, n_outliers):
 
 
 def export_com_csv(out_dir, node2com):
-    """Write node_id,cluster_id pairs to com.csv (sorted for determinism)."""
-    rows = sorted(node2com.items())
-    pd.DataFrame(rows, columns=["node_id", "cluster_id"]).to_csv(
+    """Write node_id,cluster_id pairs to com.csv in input-clustering row order.
+
+    `node2com` is built from `dict(zip(...))` over the input CSV and (for ecsbm)
+    pruned in place by the pre-profile hook, so iteration order traces back to
+    the input file's row order. Matches the pass-through convention used by
+    sbm/abcd/abcd+o/lfr/npso, which preserve their source's row order.
+    """
+    pd.DataFrame(node2com.items(), columns=["node_id", "cluster_id"]).to_csv(
         f"{out_dir}/com.csv", index=False
     )
 
