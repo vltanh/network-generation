@@ -75,6 +75,7 @@ class SubprocessRunner:
         self.n_threads = n_threads
         self.npso_dir_abs = str(npso_dir_abs)
         self.matlab_wrapper_dir = str(matlab_wrapper_dir)
+        self.last_error = None
 
     def run_iter(self, N, m, T, gamma, c, prefix, seed):
         matlab_inner = (
@@ -85,13 +86,18 @@ class SubprocessRunner:
             f"catch e, fprintf(1, e.message), end, quit"
         )
         bash_script = _matlab_subprocess_script(self.n_threads)
-        subprocess.run(
+        proc = subprocess.run(
             ["bash", "-c", bash_script, "bash", matlab_inner],
-            check=False,
+            check=False, capture_output=True, text=True,
         )
         edge_path = Path(f"{prefix}edge.tsv")
         com_path = Path(f"{prefix}com.tsv")
         if not edge_path.exists() or not com_path.exists():
+            # No TSVs means MATLAB caught an error via the try/catch above
+            # and printed e.message on stdout; preserve it for diagnostics.
+            tail = (proc.stdout or "").strip().splitlines()[-5:]
+            self.last_error = "\n".join(tail) or "unknown MATLAB failure (no TSVs produced)"
+            logging.error(f"MATLAB iter failed (subprocess): {self.last_error}")
             return None
         edge_df = pd.read_csv(edge_path, sep="\t", header=None, names=["source", "target"])
         com_df = pd.read_csv(com_path, sep="\t", header=None, names=["node_id", "cluster_id"])
@@ -120,6 +126,7 @@ class EngineRunner:
         self.n_threads = n_threads
         self.npso_dir_abs = str(npso_dir_abs)
         self.matlab_wrapper_dir = str(matlab_wrapper_dir)
+        self.last_error = None
         logging.info("Starting persistent MATLAB engine session...")
         self._eng = _matlab_engine.start_matlab("-singleCompThread -nodisplay -nosplash -nodesktop")
         self._eng.addpath(self._eng.genpath(self.npso_dir_abs), nargout=0)
@@ -133,7 +140,8 @@ class EngineRunner:
                 str(prefix), float(seed), nargout=2,
             )
         except _matlab_engine.MatlabExecutionError as exc:
-            logging.error(f"MATLAB iter failed (engine): {exc}")
+            self.last_error = str(exc).strip() or "unknown MatlabExecutionError"
+            logging.error(f"MATLAB iter failed (engine): {self.last_error}")
             return None
 
         edges_arr = np.asarray(edges_mat, dtype=np.int64)
@@ -270,7 +278,14 @@ def run_npso_generation(
                 fallback.close()
 
     if best_T is None or best_edge_df is None:
-        raise RuntimeError("nPSO produced no viable output.")
+        # Prefer the fallback's error when present — it's the later attempt.
+        last = (
+            getattr(fallback, "last_error", None) if fallback is not None else None
+        ) or getattr(runner, "last_error", None)
+        msg = "nPSO produced no viable output."
+        if last:
+            msg += f" Last MATLAB error:\n{last}"
+        raise RuntimeError(msg)
 
     # Drop outlier bucket (cluster_id == 1 matches synnet convention), then singletons.
     final_com = drop_singleton_clusters(best_com_df[best_com_df["cluster_id"] > 1])
