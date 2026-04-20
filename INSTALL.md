@@ -1,79 +1,89 @@
 # Installation
 
-Each generator is independent — only install what you plan to use. Every generator needs a working Python environment with a generator-specific set of packages. Four of them (`abcd`, `abcd+o`, `lfr`, `npso`) additionally depend on a vendored external tool under `externals/`.
+Each generator is independent — install only the generators you plan to use. Each section below is self-contained: pick a generator, follow its steps, and nothing else needs to be set up.
 
-Recommended: create a conda env (graph-tool is not pip-installable). The examples below use `conda`, but any equivalent works.
+`graph-tool` is not pip-installable, so `sbm` and the two `ec-sbm` variants need conda. The ABCD / LFR / nPSO generators are pip-only on the Python side but depend on an `externals/` submodule and a host prerequisite (`julia`, a C++ toolchain, or `matlab`).
 
-## Shared Python dependencies (all generators)
+The examples use `conda` + `pip`, but any equivalent environment manager works.
 
-Every generator runs `src/profile.py` to derive empirical bounds from the input edgelist and clustering. That step needs:
+## `sbm`
 
-- `numpy`
-- `pandas`
-- `scipy`
-- `pymincut` (see https://github.com/illinois-or-research-analytics/pymincut)
+Python deps: `numpy`, `pandas`, `scipy`, `graph-tool`.
 
 ```bash
-conda create -n netgen python=3.11 numpy pandas scipy -c conda-forge
-conda activate netgen
-pip install pymincut
-```
-
-Add the generator-specific packages below on top of this base env.
-
-## Optional: statistics and comparison (`--run-stats`, `--run-comp`)
-
-Needed only if you pass `--run-stats` or `--run-comp` to `run_generator.sh`. These flags invoke scripts under the `network_evaluation/` submodule.
-
-```bash
-git submodule update --init --recursive network_evaluation
-conda install -c conda-forge graph-tool
-```
-
-`network_evaluation` additionally uses `scipy.sparse.linalg` (already installed above) and `pymincut` (already installed above).
-
-## `sbm`, `ec-sbm-v1`, `ec-sbm-v2`
-
-Python-only generators, but they require `graph-tool`, which is **not** available via pip.
-
-```bash
+conda create -n sbm python=3.11 numpy pandas scipy -c conda-forge
+conda activate sbm
 conda install -c conda-forge graph-tool
 ```
 
 No submodule init needed.
 
-## `abcd` / `abcd+o`
+## `ec-sbm-v1`, `ec-sbm-v2`
 
-Requires `julia` on `PATH`, plus the shared Python deps above.
+Python deps: `pandas`, `scipy`, `graph-tool`, `numpy`, `pymincut`.
 
 ```bash
+conda create -n ecsbm python=3.11 numpy pandas scipy -c conda-forge
+conda activate ecsbm
+conda install -c conda-forge graph-tool
+pip install pymincut
+```
+
+No submodule init needed. Both versions share the same env.
+
+## `abcd` / `abcd+o`
+
+Python deps: `pandas`.  
+Host deps: `julia` on `PATH`.
+
+```bash
+conda create -n abcd python=3.11 pandas -c conda-forge
+conda activate abcd
 git submodule update --init --recursive externals/abcd
 julia -e 'using Pkg; Pkg.develop(path="externals/abcd"); Pkg.instantiate()'
 ```
 
 ## `lfr`
 
-Requires `make` and a C++ compiler for the benchmark build, plus Python `powerlaw` on top of the shared deps.
+Python deps: `pandas`, `numpy`, `powerlaw`.  
+Host deps: `make` + a C++ compiler (to build the benchmark).
 
 ```bash
+conda create -n lfr python=3.11 numpy pandas -c conda-forge
+conda activate lfr
+pip install powerlaw
 git submodule update --init --recursive externals/lfr
 make -C externals/lfr/unweighted_undirected
-pip install powerlaw
 ```
 
 The build produces the binary at `externals/lfr/unweighted_undirected/benchmark`.
 
 ## `npso`
 
-Requires `matlab` on `PATH` at run time (on the campus cluster: `module load matlab`), plus Python `powerlaw` and `networkit` on top of the shared deps.
+Python deps: `pandas`, `numpy`, `powerlaw`, `networkit`.  
+Host deps: `matlab` on `PATH` at run time (on the campus cluster: `module load matlab`).
 
 ```bash
-git submodule update --init --recursive externals/npso
+conda create -n npso python=3.11 numpy pandas -c conda-forge
+conda activate npso
 pip install powerlaw networkit
+git submodule update --init --recursive externals/npso
 ```
 
-No build step — the MATLAB wrapper [src/npso/matlab/run_npso.m](src/npso/matlab/run_npso.m) is tracked in-repo and auto-added to MATLAB's path by [src/npso/gen.py](src/npso/gen.py), so it does not need to be copied into the submodule.
+No build step — the MATLAB wrapper at [src/npso/matlab/run_npso.m](src/npso/matlab/run_npso.m) is tracked in-repo and auto-added to MATLAB's path by [src/npso/gen.py](src/npso/gen.py), so it does not need to be copied into the submodule.
+
+## Optional: `--run-stats` / `--run-comp`
+
+Only needed if you pass `--run-stats` or `--run-comp` to `run_generator.sh`. These flags invoke the `network_evaluation/` submodule, which has its own deps on top of whatever the chosen generator needs: `graph-tool`, `pymincut`, `scipy`, `sklearn`, `networkit`, `tqdm`, `matplotlib`, `seaborn` (plus `numpy` / `pandas`, already present for every generator).
+
+```bash
+git submodule update --init --recursive network_evaluation
+conda install -c conda-forge graph-tool scikit-learn networkit tqdm matplotlib seaborn
+pip install pymincut   # if not already installed for ec-sbm
+```
+
+If your generator env already has `graph-tool` (`sbm`, `ec-sbm-*`) or `networkit` (`npso`), you only need to add the missing pieces.
 
 ## Submodule path defaults
 
-After installing a generator's submodule, `run_generator.sh` picks it up automatically via the defaults `--abcd-dir=externals/abcd`, `--lfr-binary=externals/lfr/unweighted_undirected/benchmark`, `--npso-dir=externals/npso`. Override those flags if you want to point at a different checkout.
+After installing a generator's submodule, `run_generator.sh` picks it up automatically via the defaults `--abcd-dir=externals/abcd`, `--lfr-binary=externals/lfr/unweighted_undirected/benchmark`, `--npso-dir=externals/npso`. Override those flags to point at a different checkout.
