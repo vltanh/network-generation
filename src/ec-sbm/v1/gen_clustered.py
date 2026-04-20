@@ -1,5 +1,6 @@
 import logging
 import argparse
+import random
 
 import numpy as np
 import pandas as pd
@@ -167,8 +168,13 @@ def run_ecsbm_generation(
     mincut_path,
     edge_counts_path,
     output_dir,
+    seed,
 ):
     output_dir = standard_setup(output_dir)
+
+    random.seed(seed)
+    np.random.seed(seed)
+    gt.seed_rng(seed)
 
     logging.info("Starting EC-SBM Generation Pipeline...")
 
@@ -215,6 +221,12 @@ def parse_args():
         required=True,
         help="Output directory for generated network",
     )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=0,
+        help="RNG seed for numpy/random/graph-tool",
+    )
     return parser.parse_args()
 
 
@@ -228,6 +240,7 @@ def main():
         args.mincut,
         args.edge_counts,
         args.output_folder,
+        args.seed,
     )
 
 
