@@ -158,6 +158,77 @@ def test_mark_done_fails_atomically_when_sha256sum_fails(tmp_path: Path):
 
 
 # ---------------------------------------------------------------------------
+# is_state_tree_consistent
+# ---------------------------------------------------------------------------
+
+def is_state_tree_consistent(tmp_path: Path, state_dir: str) -> bool:
+    result = run_bash(
+        f'if is_state_tree_consistent "{state_dir}"; then exit 0; else exit 1; fi',
+        cwd=tmp_path,
+    )
+    return result.returncode == 0
+
+
+def test_state_tree_consistent_returns_false_when_missing(tmp_path: Path):
+    assert not is_state_tree_consistent(tmp_path, "absent_state")
+
+
+def test_state_tree_consistent_returns_false_when_no_done_files(tmp_path: Path):
+    (tmp_path / "state").mkdir()
+    assert not is_state_tree_consistent(tmp_path, "state")
+
+
+def test_state_tree_consistent_returns_true_when_all_done_files_verify(tmp_path: Path):
+    (tmp_path / "state" / "a").mkdir(parents=True)
+    (tmp_path / "state" / "a" / "in.txt").write_text("in")
+    (tmp_path / "state" / "a" / "out.txt").write_text("out")
+    mark_done(
+        tmp_path, "state/a/done", "t",
+        "state/a/in.txt", "state/a/out.txt",
+    )
+    (tmp_path / "state" / "b").mkdir(parents=True)
+    (tmp_path / "state" / "b" / "in.txt").write_text("in2")
+    (tmp_path / "state" / "b" / "out.txt").write_text("out2")
+    mark_done(
+        tmp_path, "state/b/done", "t",
+        "state/b/in.txt", "state/b/out.txt",
+    )
+    assert is_state_tree_consistent(tmp_path, "state")
+
+
+def test_state_tree_consistent_returns_false_when_hashed_file_missing(tmp_path: Path):
+    (tmp_path / "state" / "a").mkdir(parents=True)
+    (tmp_path / "state" / "a" / "in.txt").write_text("in")
+    (tmp_path / "state" / "a" / "out.txt").write_text("out")
+    mark_done(
+        tmp_path, "state/a/done", "t",
+        "state/a/in.txt", "state/a/out.txt",
+    )
+    (tmp_path / "state" / "a" / "out.txt").unlink()
+    assert not is_state_tree_consistent(tmp_path, "state")
+
+
+def test_state_tree_consistent_returns_false_when_any_done_invalid(tmp_path: Path):
+    """Rule: a single inconsistent stage-done invalidates the whole tree."""
+    (tmp_path / "state" / "ok").mkdir(parents=True)
+    (tmp_path / "state" / "ok" / "in.txt").write_text("in")
+    (tmp_path / "state" / "ok" / "out.txt").write_text("out")
+    mark_done(
+        tmp_path, "state/ok/done", "t",
+        "state/ok/in.txt", "state/ok/out.txt",
+    )
+    (tmp_path / "state" / "bad").mkdir(parents=True)
+    (tmp_path / "state" / "bad" / "in.txt").write_text("in")
+    (tmp_path / "state" / "bad" / "out.txt").write_text("out")
+    mark_done(
+        tmp_path, "state/bad/done", "t",
+        "state/bad/in.txt", "state/bad/out.txt",
+    )
+    (tmp_path / "state" / "bad" / "out.txt").write_text("mutated")
+    assert not is_state_tree_consistent(tmp_path, "state")
+
+
+# ---------------------------------------------------------------------------
 # append_stage_log
 # ---------------------------------------------------------------------------
 

@@ -221,3 +221,70 @@ def test_top_level_short_circuit_wipes_stale_state(tmp_output_dir, generator):
     assert second.returncode == 0, second.stderr
     assert "Skipping entire pipeline" in second.stdout
     assert not (out / ".state").exists()
+
+
+def test_keep_state_rerun_preserves_consistent_state(tmp_output_dir, generator):
+    first = run_generator(generator, tmp_output_dir, extra=["--keep-state"])
+    assert first.returncode == 0, first.stderr
+    out = run_dir(tmp_output_dir, generator)
+    assert (out / ".state").is_dir()
+
+    second = run_generator(generator, tmp_output_dir, extra=["--keep-state"])
+    assert second.returncode == 0, second.stderr
+    assert "Skipping entire pipeline" in second.stdout
+    assert (out / ".state").is_dir(), (
+        f"{generator}: --keep-state rerun must preserve consistent .state/"
+    )
+    assert (out / ".state" / "profile" / "done").is_file()
+    assert (out / ".state" / "match_degree" / "done").is_file()
+
+
+def test_keep_state_rerun_regenerates_when_state_inconsistent(
+    tmp_output_dir, generator
+):
+    first = run_generator(generator, tmp_output_dir, extra=["--keep-state"])
+    assert first.returncode == 0, first.stderr
+    out = run_dir(tmp_output_dir, generator)
+
+    # Delete an internal intermediate so `.state/gen_clustered/done` now
+    # references a file that no longer exists, without touching user-facing
+    # outputs or the top-level done.
+    clustered_edge = out / ".state" / "gen_clustered" / "edge.csv"
+    assert clustered_edge.is_file()
+    clustered_edge.unlink()
+
+    second = run_generator(generator, tmp_output_dir, extra=["--keep-state"])
+    assert second.returncode == 0, second.stderr
+    assert "Top-level done valid but .state/ is inconsistent" in second.stdout
+    assert (out / ".state").is_dir()
+    assert (out / ".state" / "gen_clustered" / "edge.csv").is_file()
+    assert (out / ".state" / "gen_clustered" / "done").is_file()
+    assert (out / "edge.csv").is_file()
+    assert (out / "done").is_file()
+
+    third = run_generator(generator, tmp_output_dir, extra=["--keep-state"])
+    assert third.returncode == 0, third.stderr
+    assert "Skipping entire pipeline" in third.stdout
+    assert "inconsistent" not in third.stdout
+
+
+def test_rerun_without_keep_state_regenerates_when_state_inconsistent(
+    tmp_output_dir, generator
+):
+    """An inconsistent .state/ is a signal something went wrong — even
+    without --keep-state the pipeline must regenerate rather than trust
+    the top-level done and silently wipe the broken cache."""
+    first = run_generator(generator, tmp_output_dir, extra=["--keep-state"])
+    assert first.returncode == 0, first.stderr
+    out = run_dir(tmp_output_dir, generator)
+
+    clustered_edge = out / ".state" / "gen_clustered" / "edge.csv"
+    assert clustered_edge.is_file()
+    clustered_edge.unlink()
+
+    second = run_generator(generator, tmp_output_dir)
+    assert second.returncode == 0, second.stderr
+    assert "Top-level done valid but .state/ is inconsistent" in second.stdout
+    assert not (out / ".state").exists()
+    assert (out / "edge.csv").is_file()
+    assert (out / "done").is_file()

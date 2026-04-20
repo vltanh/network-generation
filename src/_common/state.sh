@@ -86,6 +86,34 @@ mark_done() {
     echo "Success [${stage_name}]: I/O hashes recorded atomically. Marked as done."
 }
 
+# Check whether every `done` file under a .state/ tree is still consistent.
+#
+# Returns 0 (true) if `state_dir` exists, contains at least one `done` file,
+# and `sha256sum -c` succeeds for every one of them (i.e. every hashed input
+# and output recorded by a prior run still matches on disk).
+#
+# Returns 1 (false) if `state_dir` does not exist, contains no `done` files,
+# or any `done` file fails verification.
+#
+# Used by `--keep-state` reruns: if the top-level done-file validates but
+# an inner `.state/*/done` points at a file that was deleted or mutated,
+# the intermediates are no longer a faithful rerun-cache and the pipeline
+# must regenerate from scratch rather than preserve a broken `.state/`.
+#
+# Usage: is_state_tree_consistent "state_dir"
+is_state_tree_consistent() {
+    local state_dir="$1"
+    [ -d "${state_dir}" ] || return 1
+    local found_any=0
+    while IFS= read -r -d '' done_file; do
+        found_any=1
+        if ! sha256sum --status -c "${done_file}" 2>/dev/null; then
+            return 1
+        fi
+    done < <(find "${state_dir}" -type f -name done -print0)
+    [ "${found_any}" = "1" ]
+}
+
 # Append a per-stage log file to a consolidated run.log with a prefix.
 #
 # If the source log exists, each line is written to ${dest_log} prefixed
