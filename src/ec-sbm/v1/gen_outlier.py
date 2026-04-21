@@ -123,33 +123,11 @@ def run_outlier_generation(orig_edgelist_fp, orig_clustering_fp, output_folder, 
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(
-        description="Generate an outlier subnetwork using SBM."
-    )
-    parser.add_argument(
-        "--edgelist",
-        type=str,
-        required=True,
-        help="Path to original edgelist (source,target)",
-    )
-    parser.add_argument(
-        "--clustering",
-        type=str,
-        required=True,
-        help="Path to original clustering (node_id,cluster_id)",
-    )
-    parser.add_argument(
-        "--output-folder",
-        type=str,
-        required=True,
-        help="Directory to save output files",
-    )
-    parser.add_argument(
-        "--seed",
-        type=int,
-        default=1,
-        help="RNG seed for numpy/random/graph-tool",
-    )
+    parser = argparse.ArgumentParser(description="Outlier subnetwork via SBM.")
+    parser.add_argument("--edgelist", type=str, required=True)
+    parser.add_argument("--clustering", type=str, required=True)
+    parser.add_argument("--output-folder", type=str, required=True)
+    parser.add_argument("--seed", type=int, default=1)
     return parser.parse_args()
 
 

@@ -1,18 +1,7 @@
-"""ABCD profile: builds the inputs abcd/gen.py consumes.
+"""ABCD profile.
 
-Output contract: degree.csv, cluster_sizes.csv, mixing_parameter.txt.
-
-ABCD's default outlier policy is `(singleton, drop_oo=false)` — every
-outlier gets its own size-1 cluster in cluster_sizes, outlier-outlier
-edges count as cross-cluster. Mixing parameter uses the global ratio
-ξ = Σ_out / Σ_total.
-
-CLI precedence: individual flags (``--outlier-mode``/...) win over
-``--params-file`` when both are given. The pipeline writes params.txt
-itself and passes only ``--params-file``; standalone users pass per-knob
-flags directly.
-
-Deps: stdlib + pandas (no numpy, scipy, or pymincut).
+Outputs: degree.csv, cluster_sizes.csv, mixing_parameter.txt.
+Mixing parameter is the global ratio ξ = Σ_out / Σ_total.
 """
 from __future__ import annotations
 
@@ -74,10 +63,7 @@ def parse_args():
     parser.add_argument("--edgelist", type=str, required=True)
     parser.add_argument("--clustering", type=str, required=True)
     parser.add_argument("--output-folder", type=str, required=True)
-    parser.add_argument(
-        "--params-file", type=str, default=None,
-        help="params.txt to read stage knobs from; CLI flags override."
-    )
+    parser.add_argument("--params-file", type=str, default=None)
     parser.add_argument(
         "--outlier-mode", choices=OUTLIER_MODES, default=None,
     )

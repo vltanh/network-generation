@@ -7,8 +7,6 @@ fi
 SRC_DIR="$( cd "${SCRIPT_DIR}/../.." && pwd )"
 COMMON_DIR="$( cd "${SCRIPT_DIR}/../common" && pwd )"
 SHARED_DIR="$( cd "${SRC_DIR}/_common" && pwd )"
-# Expose the shared src/ directory so scripts can `from pipeline_common import ...`
-# and `from profile_common import ...`.
 export PYTHONPATH="${SRC_DIR}${PYTHONPATH:+:${PYTHONPATH}}"
 
 # Default values
@@ -16,10 +14,7 @@ TIMEOUT="3d"
 N_THREADS=1
 KEEP_STATE=0
 SEED=1
-# EC-SBM v1 supports only outlier_mode=excluded: the pipeline generates the
-# outlier subnetwork separately in stage 3 and then combines it at stage 4,
-# so the profile stage must drop outliers (and size-1 input clusters, which
-# identify_outliers folds in automatically) rather than merging them.
+# v1 only supports excluded; outliers are synthesized separately in stage 3.
 OUTLIER_MODE="excluded"
 DROP_OO_BOOL="false"
 
@@ -44,8 +39,7 @@ while [[ "$#" -gt 0 ]]; do
 done
 
 export OMP_NUM_THREADS="${N_THREADS}"
-# Pin Python hash seed so set/dict iteration (e.g. match_degree's set.pop(),
-# gen_outlier's node_id2iid construction) is byte-stable across runs.
+# Pin: set/dict iteration order affects byte output.
 export PYTHONHASHSEED=0
 
 if [ ! -f "${INPUT_EDGELIST}" ] || [ ! -f "${INPUT_CLUSTERING}" ]; then
@@ -53,9 +47,6 @@ if [ ! -f "${INPUT_EDGELIST}" ] || [ ! -f "${INPUT_CLUSTERING}" ]; then
     exit 1
 fi
 
-# ==========================================
-# Helper Functions: State Management
-# ==========================================
 source "${SHARED_DIR}/state.sh"
 
 # ==========================================
@@ -69,8 +60,6 @@ FINAL_LOG="${OUTPUT_DIR}/run.log"
 
 mkdir -p "${OUTPUT_DIR}"
 
-# Write top-level params.txt first — changes to any user-facing knob
-# invalidate the top-level done-file (FINAL_IN includes FINAL_PARAMS).
 write_params_file "${FINAL_PARAMS}" \
     "seed=${SEED}" \
     "n_threads=${N_THREADS}" \
@@ -80,12 +69,7 @@ write_params_file "${FINAL_PARAMS}" \
 log_invocation_header "${FINAL_LOG}" "${SEED}" "${KEEP_STATE}"
 
 if is_step_done "${FINAL_DONE}" "${FINAL_OUT}"; then
-    # If a .state/ tree exists alongside the top-level done, it must be
-    # internally consistent: otherwise the cache is lying about what's on
-    # disk, which we must not preserve (under --keep-state) and must not
-    # silently wipe (without --keep-state, since an inconsistent .state/
-    # is a signal something went wrong — regenerate so the final state is
-    # coherent regardless of --keep-state).
+    # Top-level done must not coexist with an inconsistent .state/.
     if [ -d "${OUTPUT_DIR}/.state" ] && ! is_state_tree_consistent "${OUTPUT_DIR}/.state"; then
         echo "Top-level done valid but .state/ is inconsistent; regenerating to restore cache."
         rm -rf "${OUTPUT_DIR}/.state" "${FINAL_DONE}"
@@ -94,9 +78,6 @@ if is_step_done "${FINAL_DONE}" "${FINAL_OUT}"; then
         if [ "${KEEP_STATE}" = "1" ]; then
             echo "Keeping intermediates under ${OUTPUT_DIR}/.state (--keep-state)."
         else
-            # Default mode: the top-level done is authoritative and .state/,
-            # if present, is already verified consistent above.  Either way
-            # we don't need it in the user-facing tree, so remove it.
             rm -rf "${OUTPUT_DIR}/.state"
         fi
         echo "=== Pipeline execution completed successfully! ==="
@@ -105,8 +86,6 @@ if is_step_done "${FINAL_DONE}" "${FINAL_OUT}"; then
     fi
 fi
 
-# All intermediate artifacts live under .state/ so the user-facing output
-# directory contains only final outputs.  .state/ is cleaned up on success.
 STATE_DIR="${OUTPUT_DIR}/.state"
 STG_PROFILE_DIR="${STATE_DIR}/profile"
 STG_GEN_CLUSTERED_DIR="${STATE_DIR}/gen_clustered"
@@ -202,9 +181,7 @@ else
     echo "Skipping Stage 3a: Valid state found."
 fi
 
-# 3b. Combine Clustered + Outliers
-# combine_edgelists is a pure concatenation of its two inputs; no tunable
-# knobs, so no params.txt.
+# 3b. Combine Clustered + Outliers (pure concat; no params.txt).
 IN_GEN_OUTLIER_COMBINE="${STG_GEN_CLUSTERED_DIR}/edge.csv ${STG_GEN_OUTLIER_EDGES_DIR}/edge_outlier.csv"
 OUT_GEN_OUTLIER_COMBINE="${STG_GEN_OUTLIER_DIR}/edge.csv ${STG_GEN_OUTLIER_DIR}/sources.json"
 
@@ -250,12 +227,7 @@ else
     echo "Skipping Stage 4a: Valid state found."
 fi
 
-# 4b. Final Combination — writes to top-level OUTPUT_DIR.
-# com.csv is a passthrough from Stage 1 (not read by combine_edgelists), so
-# it's moved directly rather than consumed here.  It's excluded from
-# IN_MATCH_DEGREE_COMBINE/OUT_MATCH_DEGREE_COMBINE and handled just below so
-# stage 4b's hashes stay tied to what the combine step actually reads and
-# writes.
+# 4b. Final Combination (com.csv is a Stage-1 passthrough; moved separately).
 IN_MATCH_DEGREE_COMBINE="${STG_GEN_OUTLIER_DIR}/edge.csv ${STG_GEN_OUTLIER_DIR}/sources.json ${STG_MATCH_DEGREE_EDGES_DIR}/degree_matching_edge.csv"
 OUT_MATCH_DEGREE_COMBINE="${OUTPUT_DIR}/edge.csv ${OUTPUT_DIR}/sources.json"
 
@@ -268,9 +240,7 @@ if ! is_step_done "${STG_MATCH_DEGREE_DIR}/done" "${OUT_MATCH_DEGREE_COMBINE}"; 
         --name-2 "match_degree" \
         --output-folder "${STG_MATCH_DEGREE_DIR}" \
         --output-filename "edge.csv"
-    # Copy rather than move so stage 4b's done-file and stage 1's
-    # ${STG_PROFILE_DIR}/com.csv hash still validate on a --keep-state rerun
-    # that mutates the final outputs.
+    # Copy (not move) so stage done-files stay valid on rerun.
     cp "${STG_MATCH_DEGREE_DIR}/edge.csv" "${OUTPUT_DIR}/edge.csv"
     cp "${STG_MATCH_DEGREE_DIR}/sources.json" "${OUTPUT_DIR}/sources.json"
     mark_done "${STG_MATCH_DEGREE_DIR}/done" "Stage 4b (match_degree/combine)" "${IN_MATCH_DEGREE_COMBINE}" "${OUT_MATCH_DEGREE_COMBINE}"
@@ -279,17 +249,12 @@ else
     echo "Skipping Stage 4b: Valid state found."
 fi
 
-# Promote com.csv from .state/ to OUTPUT_DIR.  Copy rather than move so
-# stage 1's hashed ${STG_PROFILE_DIR}/com.csv still validates on a
-# --keep-state rerun (and so stale ${OUTPUT_DIR}/com.csv is always refreshed
-# from the canonical stage 1 output).
+# Promote com.csv from Stage 1 (copy, not move — preserves stage-1 hash).
 cp "${STG_PROFILE_DIR}/com.csv" "${OUTPUT_DIR}/com.csv"
 
 # ==========================================
-# Consolidate per-stage logs into one top-level run.log
+# Consolidate per-stage logs into top-level run.log (append-only).
 # ==========================================
-# FINAL_LOG is append-only and already has this invocation's header from
-# log_invocation_header at pipeline start; per-stage logs get appended under it.
 append_stage_log "${FINAL_LOG}" "Stage 1 (profile)" "${STG_PROFILE_DIR}/time_and_err.log"
 append_stage_log "${FINAL_LOG}" "Stage 1 (profile)" "${STG_PROFILE_DIR}/run.log"
 append_stage_log "${FINAL_LOG}" "Stage 2 (gen_clustered)" "${STG_GEN_CLUSTERED_DIR}/time_and_err.log"
@@ -304,7 +269,7 @@ append_stage_log "${FINAL_LOG}" "Stage 4b (match_degree/combine)" "${STG_MATCH_D
 append_stage_log "${FINAL_LOG}" "Stage 4b (match_degree/combine)" "${STG_MATCH_DEGREE_DIR}/run.log"
 
 # ==========================================
-# Record top-level done (original inputs -> final outputs) and clean up
+# Record top-level done and clean up
 # ==========================================
 mark_done "${FINAL_DONE}" "Pipeline" "${FINAL_IN}" "${FINAL_OUT}"
 

@@ -12,8 +12,7 @@ SEED=1
 N_THREADS=1
 KEEP_STATE=0
 ABCD_DIR=""
-# ABCD+o default outlier policy: singleton + drop OO edges (the Julia outlier
-# sampler does not produce outlier-outlier edges; see src/abcd+o/gen.py).
+# ABCD+o drops outlier-outlier edges; Julia sampler cannot produce them.
 OUTLIER_MODE="singleton"
 DROP_OO_BOOL="true"
 
@@ -41,8 +40,7 @@ if [ -z "${ABCD_DIR}" ]; then
 fi
 
 export JULIA_NUM_THREADS="${N_THREADS}"
-# Pin PYTHONHASHSEED for stage-1 profile.py determinism (set/dict iteration);
-# stage-2 Julia inherits the env but is unaffected by Python's hash seed.
+# Stage-1 profile.py needs pinned hash seed; stage-2 Julia is unaffected.
 export PYTHONHASHSEED=0
 
 SETUP="${OUTPUT_DIR}/.state/setup"
@@ -51,7 +49,6 @@ STG1_PARAMS_PATH="${SETUP}/params.txt"
 GEN_NAME="abcd+o"
 GEN_SCRIPT_DIR="${SCRIPT_DIR}"
 GEN_PROFILE_OUTPUTS=(degree.csv cluster_sizes.csv mixing_parameter.txt n_outliers.txt)
-# Pipeline writes ${STG1_PARAMS_PATH} before profile.py runs; profile reads it.
 # shellcheck disable=SC2034
 GEN_PROFILE_CLI_ARGS=(--params-file "${STG1_PARAMS_PATH}")
 # shellcheck disable=SC2034

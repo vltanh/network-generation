@@ -2,27 +2,14 @@ import logging
 
 
 def normalize_edge(u, v):
-    """Return a canonical (min, max) edge tuple."""
     return (min(u, v), max(u, v))
 
 
 def run_rewire_attempts(invalid_edges, process_one_edge, max_retries=10):
-    """
-    Outer retry loop for 2-opt edge rewiring.
+    """Retry loop for 2-opt edge rewiring.
 
-    Repeatedly passes invalid edges to `process_one_edge` until all edges are
-    resolved or `max_retries` attempts have been exhausted.  Within each
-    attempt, a recycle counter tracks whether the pass through the deque is
-    making progress: if `len(invalid_edges)` has not decreased after cycling
-    through all remaining edges, the inner pass ends early (stagnation).
-
-    Args:
-        invalid_edges (deque): Edges that could not be placed without creating
-            self-loops or duplicates.
-        process_one_edge(e, invalid_edges) -> bool: Callback invoked with the
-            popped edge and the live deque.  Must re-append `e` if unresolved.
-            Return True to break the current inner pass, False to continue.
-        max_retries (int): Maximum number of outer passes before giving up.
+    Stagnation (deque size unchanged after a full pass) ends the inner loop.
+    Callback must re-append `e` if unresolved; return True to break early.
     """
     for attempt in range(max_retries):
         if not invalid_edges:
