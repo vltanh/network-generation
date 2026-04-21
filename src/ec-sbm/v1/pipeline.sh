@@ -7,7 +7,7 @@ fi
 SRC_DIR="$( cd "${SCRIPT_DIR}/../.." && pwd )"
 COMMON_DIR="$( cd "${SCRIPT_DIR}/../common" && pwd )"
 SHARED_DIR="$( cd "${SRC_DIR}/_common" && pwd )"
-export PYTHONPATH="${SRC_DIR}${PYTHONPATH:+:${PYTHONPATH}}"
+export PYTHONPATH="${COMMON_DIR}:${SRC_DIR}${PYTHONPATH:+:${PYTHONPATH}}"
 
 # Default values
 TIMEOUT="3d"
@@ -206,19 +206,23 @@ fi
 echo "=== Starting Stage 4: Degree Matching & Final Combine ==="
 
 # 4a. Match Degrees
+# v1 uses the shared match_degree tool with --algorithm greedy to preserve
+# byte-compat with the original v1 heap-greedy behavior. (v2's default is hybrid.)
 STG_MATCH_DEGREE_EDGES_PARAMS="${STG_MATCH_DEGREE_EDGES_DIR}/params.txt"
 write_params_file "${STG_MATCH_DEGREE_EDGES_PARAMS}" \
-    "seed=$((SEED + 2))"
+    "seed=$((SEED + 2))" \
+    "algorithm=greedy"
 
 IN_MATCH_DEGREE="${STG_GEN_OUTLIER_DIR}/edge.csv ${INPUT_EDGELIST} ${INPUT_CLUSTERING} ${STG_MATCH_DEGREE_EDGES_PARAMS}"
 OUT_MATCH_DEGREE="${STG_MATCH_DEGREE_EDGES_DIR}/degree_matching_edge.csv"
 
 if ! is_step_done "${STG_MATCH_DEGREE_EDGES_DIR}/done" "${OUT_MATCH_DEGREE}"; then
     run_stage "${STG_MATCH_DEGREE_EDGES_DIR}/time_and_err.log" \
-        python "${SCRIPT_DIR}/match_degree.py" \
+        python "${SRC_DIR}/match_degree.py" \
         --input-edgelist "${STG_GEN_OUTLIER_DIR}/edge.csv" \
         --ref-edgelist "${INPUT_EDGELIST}" \
         --ref-clustering "${INPUT_CLUSTERING}" \
+        --algorithm "greedy" \
         --output-folder "${STG_MATCH_DEGREE_EDGES_DIR}" \
         --seed "$((SEED + 2))"
     mark_done "${STG_MATCH_DEGREE_EDGES_DIR}/done" "Stage 4a (match_degree)" "${IN_MATCH_DEGREE}" "${OUT_MATCH_DEGREE}"
