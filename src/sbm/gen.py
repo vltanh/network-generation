@@ -52,6 +52,10 @@ def run_sbm_generation(node_id_path, cluster_id_path, assignment_path, degree_pa
         else:
             g = gt.Graph(directed=False)
 
+        # generate_sbm returns a multigraph with self-loops; enforce simple-graph invariant.
+        gt.remove_parallel_edges(g)
+        gt.remove_self_loops(g)
+
     with timed("Export"):
         edges = [(node_ids[int(s)], node_ids[int(t)]) for s, t in g.iter_edges()]
         pd.DataFrame(edges, columns=["source", "target"]).to_csv(

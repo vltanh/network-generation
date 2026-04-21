@@ -174,6 +174,17 @@ The test suite lives under `tests/` and is split by subsystem:
 
 See [INSTALL.md](INSTALL.md) for generator-specific installation instructions. Activate the corresponding conda env before running tests that depend on a generator's externals.
 
+## Benchmarking
+
+End-to-end wall-clock and byte-reproducibility across all 7 generators
+are measured by [scripts/benchmark/bench_gens.sh](scripts/benchmark/bench_gens.sh).
+Default configuration: 2 warmup + 10 kept runs per seed, seeds 1-10,
+single-threaded, on the shipped `dnc + sbm-flat-best+cc` example. Raw
+times land in `scripts/benchmark/results.csv` and a mean/std summary is
+printed to stdout. See the Runtime section of
+[docs/algorithms.md](docs/algorithms.md) for the reference numbers and
+host spec.
+
 ## Acknowledgements
 
 - **`sbm`**: [graph-tool](https://graph-tool.skewed.de/).
