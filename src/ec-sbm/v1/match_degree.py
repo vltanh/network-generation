@@ -15,12 +15,7 @@ def parse_args():
     parser.add_argument("--ref-edgelist", type=str, required=True)
     parser.add_argument("--ref-clustering", type=str, required=True)
     parser.add_argument("--output-folder", type=str, required=True)
-    parser.add_argument(
-        "--seed",
-        type=int,
-        default=1,
-        help="RNG seed (no Python-level RNG used, but pinned for parity with sibling stages)",
-    )
+    parser.add_argument("--seed", type=int, default=1)
     return parser.parse_args()
 
 

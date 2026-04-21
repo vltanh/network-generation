@@ -12,7 +12,6 @@ SEED=1
 N_THREADS=1
 KEEP_STATE=0
 NPSO_DIR=""
-# nPSO default outlier policy: each outlier becomes its own size-1 cluster.
 OUTLIER_MODE="singleton"
 DROP_OO_BOOL="false"
 
@@ -39,8 +38,7 @@ if [ -z "${NPSO_DIR}" ]; then
     exit 1
 fi
 
-# Pin PYTHONHASHSEED for stage-1 profile.py determinism (set/dict iteration);
-# stage-2 MATLAB inherits the env but is unaffected — run_npso.m calls rng(seed).
+# Stage-1 profile.py needs pinned hash seed; stage-2 MATLAB is unaffected.
 export PYTHONHASHSEED=0
 
 SETUP="${OUTPUT_DIR}/.state/setup"
@@ -49,10 +47,8 @@ STG1_PARAMS_PATH="${SETUP}/params.txt"
 GEN_NAME="npso"
 GEN_SCRIPT_DIR="${SCRIPT_DIR}"
 GEN_PROFILE_OUTPUTS=(degree.csv cluster_sizes.csv)
-# npso also reads the original edgelist at stage 2 (for the clustering-coeff
-# computation); declare it so stage-2 cache tracks that input.
+# Stage 2 reads original edgelist for clustering-coeff target.
 GEN_EXTRA_STAGE2_INPUTS="${INPUT_EDGELIST}"
-# Pipeline writes ${STG1_PARAMS_PATH} before profile.py runs; profile reads it.
 # shellcheck disable=SC2034
 GEN_PROFILE_CLI_ARGS=(--params-file "${STG1_PARAMS_PATH}")
 # shellcheck disable=SC2034

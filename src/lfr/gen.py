@@ -53,7 +53,7 @@ def run_lfr_generation(
             "-minc", str(minc), "-maxc", str(maxc),
             "-mu", str(mu), "-t1", str(t1), "-t2", str(t2),
         ]
-        # LFR reads its seed from ./time_seed.dat (and increments it on exit).
+        # LFR reads seed from ./time_seed.dat.
         (output_dir / "time_seed.dat").write_text(f"{seed}\n")
         proc = subprocess.run(cmd, cwd=output_dir)
         if proc.returncode != 0:
@@ -72,7 +72,7 @@ def run_lfr_generation(
         edge_df = pd.read_csv(network_dat, sep=r"\s+", header=None, names=["source", "target"])
         com_df = pd.read_csv(community_dat, sep=r"\s+", header=None, names=["node_id", "cluster_id"])
 
-        # LFR writes each undirected edge twice (u,v) and (v,u); drop the reverse.
+        # LFR writes each edge twice; drop the reverse.
         u = edge_df[["source", "target"]].min(axis=1)
         v = edge_df[["source", "target"]].max(axis=1)
         edge_df = pd.DataFrame({"source": u, "target": v}).drop_duplicates().reset_index(drop=True)

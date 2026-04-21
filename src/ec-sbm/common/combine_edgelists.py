@@ -11,76 +11,37 @@ from pipeline_common import standard_setup, timed
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Combine edgelists with undirected deduplication and provenance tracking."
+        description="Combine edgelists with undirected dedup + provenance tracking."
     )
-
-    parser.add_argument(
-        "--edgelist-1",
-        type=str,
-        required=True,
-        help="First edgelist (CSV with source,target)",
-    )
-    parser.add_argument(
-        "--name-1", type=str, help="Source name for edgelist 1 (if no JSON is provided)"
-    )
-    parser.add_argument(
-        "--json-1", type=str, help="Path to sources.json for edgelist 1"
-    )
-
-    parser.add_argument(
-        "--edgelist-2",
-        type=str,
-        required=True,
-        help="Second edgelist (CSV with source,target)",
-    )
-    parser.add_argument(
-        "--name-2", type=str, help="Source name for edgelist 2 (if no JSON is provided)"
-    )
-    parser.add_argument(
-        "--json-2", type=str, help="Path to sources.json for edgelist 2"
-    )
-
-    parser.add_argument(
-        "--output-folder", type=str, required=True, help="Output folder"
-    )
-    parser.add_argument(
-        "--output-filename",
-        type=str,
-        default="combined_edge.csv",
-        help="Name of the output edgelist",
-    )
+    parser.add_argument("--edgelist-1", type=str, required=True)
+    parser.add_argument("--name-1", type=str)
+    parser.add_argument("--json-1", type=str)
+    parser.add_argument("--edgelist-2", type=str, required=True)
+    parser.add_argument("--name-2", type=str)
+    parser.add_argument("--json-2", type=str)
+    parser.add_argument("--output-folder", type=str, required=True)
+    parser.add_argument("--output-filename", type=str, default="combined_edge.csv")
     return parser.parse_args()
 
 
 def load_annotated_edgelist(edgelist_fp, name, json_fp):
-    """
-    Load an edgelist CSV and annotate each row with its provenance label.
+    """Load edgelist CSV, label each row with its provenance.
 
-    If a sources.json is provided, each row is labelled with the source name
-    whose [start, end] range (1-indexed, inclusive, relative to data rows)
-    covers that row's position.  Rows not covered by any range get an empty
-    label.  If no JSON is given, every row receives the fallback `name`
-    (or the filename stem if `name` is also absent).
-
-    Returns:
-        DataFrame with columns [source, target, prov].
+    JSON ranges are 1-based, inclusive, over data rows only.
     """
     df = pd.read_csv(edgelist_fp, dtype=str)
 
-    # If a JSON exists, unpack the exact source of each line
     if json_fp and Path(json_fp).exists():
         with open(json_fp, "r") as f:
             mapping = json.load(f)
 
         prov_list = [""] * len(df)
         for source_name, (start, end) in mapping.items():
-            # JSON indices are 1-based (data rows only, ignoring header)
             for i in range(start - 1, end):
                 if i < len(prov_list):
                     prov_list[i] = source_name
         df["prov"] = prov_list
     else:
-        # Fallback to the provided generic name (or filename)
         source_name = name if name else Path(edgelist_fp).stem
         df["prov"] = source_name
 

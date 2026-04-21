@@ -1,19 +1,7 @@
-"""nPSO profile: builds the inputs npso/gen.py consumes.
+"""nPSO profile.
 
-Output contract: degree.csv, cluster_sizes.csv.
-
-nPSO's default outlier policy is `(singleton, drop_oo=false)` — same
-cluster_sizes shape as ABCD/LFR. nPSO does not consume a mixing parameter
-(the nPSO MATLAB model derives its own cross-cluster behavior from
-degree + cluster sizes).
-
-CLI precedence: individual flags (``--outlier-mode``/...) win over
-``--params-file`` when both are given. The pipeline writes params.txt
-itself and passes only ``--params-file``; standalone users pass per-knob
-flags directly.
-
-Deps: stdlib + pandas. powerlaw/networkit are deps of npso/gen.py, not
-this module.
+Outputs: degree.csv, cluster_sizes.csv.
+nPSO derives cross-cluster behavior internally; no mixing parameter.
 """
 from __future__ import annotations
 
@@ -69,10 +57,7 @@ def parse_args():
     parser.add_argument("--edgelist", type=str, required=True)
     parser.add_argument("--clustering", type=str, required=True)
     parser.add_argument("--output-folder", type=str, required=True)
-    parser.add_argument(
-        "--params-file", type=str, default=None,
-        help="params.txt to read stage knobs from; CLI flags override."
-    )
+    parser.add_argument("--params-file", type=str, default=None)
     parser.add_argument(
         "--outlier-mode", choices=OUTLIER_MODES, default=None,
     )

@@ -18,18 +18,11 @@ def parse_args():
     parser.add_argument("--ref-clustering", type=str, required=True)
     parser.add_argument("--output-folder", type=str, required=True)
     parser.add_argument(
-        "--algorithm",
-        type=str,
+        "--algorithm", type=str,
         choices=["greedy", "true_greedy", "random_greedy", "rewire", "hybrid"],
         default="true_greedy",
-        help="Choose 'greedy' for max-heap, 'true_greedy' for true greedy matching, 'random_greedy' for unbiased dynamic filtering, 'rewire' for the configuration model, or 'hybrid' for a combination of 'rewire' followed by 'true_greedy'.",
     )
-    parser.add_argument(
-        "--seed",
-        type=int,
-        default=1,
-        help="RNG seed (used by random_greedy, rewire, hybrid; pinned in others for parity)",
-    )
+    parser.add_argument("--seed", type=int, default=1)
     return parser.parse_args()
 
 

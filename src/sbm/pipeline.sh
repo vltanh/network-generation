@@ -11,9 +11,6 @@ TIMEOUT="3d"
 SEED=1
 N_THREADS=1
 KEEP_STATE=0
-# SBM default outlier policy: fold all outliers into one mega-cluster so every
-# edge (including outlier-outlier and clustered-outlier) routes through the
-# same block structure; keep OO edges.
 OUTLIER_MODE="combined"
 DROP_OO_BOOL="false"
 
@@ -35,19 +32,15 @@ while [[ "$#" -gt 0 ]]; do
 done
 
 export OMP_NUM_THREADS="${N_THREADS}"
-# gt.generate_sbm is hash-seed-sensitive even with gt.seed_rng + single OMP
-# thread; pin PYTHONHASHSEED so final edge.csv is byte-stable.
+# gt.generate_sbm is hash-seed-sensitive even under gt.seed_rng.
 export PYTHONHASHSEED=0
 
-# Must match STG1_SETUP_DIR in _common/simple_pipeline.sh.
 SETUP="${OUTPUT_DIR}/.state/setup"
 STG1_PARAMS_PATH="${SETUP}/params.txt"
 
 GEN_NAME="sbm"
 GEN_SCRIPT_DIR="${SCRIPT_DIR}"
 GEN_PROFILE_OUTPUTS=(node_id.csv cluster_id.csv assignment.csv degree.csv edge_counts.csv)
-# Pipeline writes ${STG1_PARAMS_PATH} before profile.py runs; profile reads it
-# (CLI flags would override, but we pass none so the file is authoritative).
 # shellcheck disable=SC2034
 GEN_PROFILE_CLI_ARGS=(--params-file "${STG1_PARAMS_PATH}")
 # shellcheck disable=SC2034
@@ -61,8 +54,7 @@ GEN_CLI_ARGS=(
     --n-threads        "${N_THREADS}"
 )
 
-# Per-stage params.txt contents — fingerprints output-affecting knobs so the
-# cache invalidates when they change. See _common/state.sh:write_params_file.
+# Per-stage params.txt fingerprints (see _common/state.sh:write_params_file).
 # shellcheck disable=SC2034
 GEN_TOPLEVEL_PARAMS=(
     "seed=${SEED}"

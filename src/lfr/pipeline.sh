@@ -11,7 +11,6 @@ TIMEOUT="3d"
 SEED=1
 KEEP_STATE=0
 LFR_BINARY=""
-# LFR default outlier policy: each outlier becomes its own size-1 cluster.
 OUTLIER_MODE="singleton"
 DROP_OO_BOOL="false"
 
@@ -39,8 +38,7 @@ fi
 
 N_THREADS=1
 
-# Pin PYTHONHASHSEED for stage-1 profile.py determinism (set/dict iteration);
-# stage-2 LFR C++ binary reads its seed from time_seed.dat written by gen.py.
+# Stage-1 profile.py needs pinned hash seed; LFR C++ reads its seed from time_seed.dat.
 export PYTHONHASHSEED=0
 
 SETUP="${OUTPUT_DIR}/.state/setup"
@@ -49,7 +47,6 @@ STG1_PARAMS_PATH="${SETUP}/params.txt"
 GEN_NAME="lfr"
 GEN_SCRIPT_DIR="${SCRIPT_DIR}"
 GEN_PROFILE_OUTPUTS=(degree.csv cluster_sizes.csv mixing_parameter.txt)
-# Pipeline writes ${STG1_PARAMS_PATH} before profile.py runs; profile reads it.
 # shellcheck disable=SC2034
 GEN_PROFILE_CLI_ARGS=(--params-file "${STG1_PARAMS_PATH}")
 # shellcheck disable=SC2034

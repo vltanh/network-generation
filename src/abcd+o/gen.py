@@ -43,9 +43,7 @@ def run_abcdo_generation(
     edge_tsv = output_dir / "edge.tsv"
     com_tsv = output_dir / "com.tsv"
 
-    # Julia sampler sorts the degree sequence internally; ordering in deg.tsv
-    # does not matter.  ABCD+o expects the outlier mega-cluster size prepended
-    # to cluster_sizes (it occupies cluster iid=1).
+    # ABCD+o expects outlier mega-cluster size prepended to cluster_sizes (cluster iid=1).
     pd.DataFrame(degrees).to_csv(deg_tsv, sep="\t", header=False, index=False)
     cs_rows = []
     if n_outliers > 0:
@@ -65,8 +63,6 @@ def run_abcdo_generation(
             "xi", str(xi), "false", "false", str(seed), str(n_outliers),
         ]
         proc = subprocess.run(cmd, capture_output=True, text=True)
-        # Sampler writes diagnostics (including @warn) to stderr; stream them
-        # into our log so the run's time_and_err.log keeps them.
         if proc.stderr:
             print(proc.stderr, end="", flush=True)
         if proc.stdout:
@@ -75,10 +71,8 @@ def run_abcdo_generation(
             logging.error(f"ABCD sampler exited with code {proc.returncode}")
             raise RuntimeError("ABCD sampler failed")
 
-        # When ξ is low relative to the outlier degree mass, ABCD's own
-        # diagnostic is that outliers effectively form their own community.
-        # In that regime, promote the outlier mega-cluster to a real cluster
-        # in com.csv instead of stripping it.
+        # At low ξ, ABCD's stderr warns that outliers form their own community;
+        # keep them as a real cluster instead of stripping.
         outliers_lifted = bool(re.search(OUTLIER_LIFT_WARNING, proc.stderr, re.IGNORECASE))
         if outliers_lifted:
             logging.warning(
@@ -90,9 +84,6 @@ def run_abcdo_generation(
         edge_df = pd.read_csv(edge_tsv, sep="\t", header=None, names=["source", "target"])
         com_df = pd.read_csv(com_tsv, sep="\t", header=None, names=["node_id", "cluster_id"])
 
-        # Default ABCD+o behavior: drop the outlier mega-cluster (cluster_id==1)
-        # so downstream consumers see only real clusters. If the sampler warned
-        # that outliers effectively formed a community, keep them instead.
         if n_outliers > 0 and not outliers_lifted:
             com_df = com_df[com_df["cluster_id"] != 1]
 

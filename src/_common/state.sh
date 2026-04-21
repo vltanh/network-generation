@@ -1,57 +1,30 @@
-# State-tracking helpers for network-generation pipelines.
-#
-# Sourced by per-generator pipeline scripts to provide cache-aware stage
-# execution: a stage is skipped if its recorded input/output hashes still
-# match what is on disk.
+# State-tracking helpers: cache-aware stage execution via sha256 done-files.
 
-# Check whether a pipeline stage has already been completed and its results
-# are still valid.
-#
-# Returns 0 (true) if:
-#   - the done-file exists,
-#   - every output file exists and is non-empty, and
-#   - sha256sum verifies every hash recorded in the done-file (the declared
-#     inputs and declared outputs; logs and other side-files are not hashed).
-#
-# The declared inputs aren't passed because input integrity is verified
-# implicitly: mark_done recorded the input hashes into the done-file, and
-# `sha256sum -c` validates them together with the outputs.
-#
 # Usage: is_step_done "done_file" "output1 output2..."
 is_step_done() {
     local done_file="$1"
     read -r -a outputs <<< "$2"
 
     if [ ! -f "${done_file}" ]; then
-        return 1 # False: No state ledger exists
+        return 1
     fi
 
-    # 1. Verify outputs physically exist and have data
     for target_file in "${outputs[@]}"; do
         if [ ! -f "${target_file}" ] || [ ! -s "${target_file}" ]; then
-            return 1 # False
+            return 1
         fi
     done
 
-    # 2. Cryptographically verify inputs and outputs haven't mutated
     if ! sha256sum --status -c "${done_file}" 2>/dev/null; then
         echo "State change detected. Recomputing..."
-        return 1 # False: Hashes mismatch
+        return 1
     fi
 
-    return 0 # True: State is identical
+    return 0
 }
 
-# Write a per-stage `params.txt` fingerprint from a list of key=value pairs.
-#
-# Pipeline contract: write this *before* is_step_done runs so the file
-# participates in the stage's IN-list hash. Changing any value invalidates
-# the cache and cascades downstream (via OUT reused in the next stage's IN).
-#
-# Format matches src/params_common.py: one `key=value` per line, keys sorted
-# alphabetically.  Values are passed through verbatim (no bool coercion —
-# callers must pre-render, e.g. `drop_oo=true`).
-#
+# Write a per-stage params.txt fingerprint; participates in the stage's IN hash.
+# Format: one `key=value` per line, sorted. Values verbatim (no bool coercion).
 # Usage: write_params_file "path/to/params.txt" "key1=val1" "key2=val2" ...
 write_params_file() {
     local out_file="$1"
@@ -67,20 +40,9 @@ write_params_file() {
 }
 
 
-# Record that a pipeline stage has completed successfully.
-#
-# Verifies every output file exists and is non-empty, then writes a done-file
-# containing SHA-256 hashes of the declared input files and the declared
-# output files only.  Side-files in the output directory (logs, scratch,
-# etc.) are deliberately *not* hashed, so incidental churn in those files
-# does not invalidate the cache on the next run.
-#
-# The write is atomic: hashes are collected into a .tmp.$$ file first, then
-# renamed into place so is_step_done never reads a partial done-file.
-#
-# Exits the whole pipeline if any output is missing or empty.
-#
-# Usage: mark_done "done_file" "stage_name" "input1 input2..." "output1 output2..."
+# Record a stage as done. Atomic: tmp+rename so readers never see partial state.
+# Only declared inputs/outputs are hashed; incidental side-files are ignored.
+# Usage: mark_done "done_file" "stage_name" "input1..." "output1..."
 mark_done() {
     local done_file="$1"
     local stage_name="$2"
@@ -111,20 +73,8 @@ mark_done() {
     echo "Success [${stage_name}]: I/O hashes recorded atomically. Marked as done."
 }
 
-# Check whether every `done` file under a .state/ tree is still consistent.
-#
-# Returns 0 (true) if `state_dir` exists, contains at least one `done` file,
-# and `sha256sum -c` succeeds for every one of them (i.e. every hashed input
-# and output recorded by a prior run still matches on disk).
-#
-# Returns 1 (false) if `state_dir` does not exist, contains no `done` files,
-# or any `done` file fails verification.
-#
-# Used by `--keep-state` reruns: if the top-level done-file validates but
-# an inner `.state/*/done` points at a file that was deleted or mutated,
-# the intermediates are no longer a faithful rerun-cache and the pipeline
-# must regenerate from scratch rather than preserve a broken `.state/`.
-#
+# Verify every `done` file under .state/ still matches on disk.
+# Used by --keep-state reruns so a broken inner cache can't masquerade as valid.
 # Usage: is_state_tree_consistent "state_dir"
 is_state_tree_consistent() {
     local state_dir="$1"
@@ -139,14 +89,8 @@ is_state_tree_consistent() {
     [ "${found_any}" = "1" ]
 }
 
-# Run a stage under timeout + /usr/bin/time -v, appending a delimited
-# EXECUTED block to the stage's time_and_err.log.  Captures the exit code
-# outside `time` so timeouts (124) and SIGKILLs get recorded in the footer
-# — /usr/bin/time's own "Exit status:" line is only emitted on clean exit.
-#
-# The log is append-only across invocations; `grep '^===' time_and_err.log`
-# yields one header per executed attempt.
-#
+# Run a stage under timeout + /usr/bin/time -v, appending to time_and_err.log.
+# Exit code captured outside `time` so timeouts/SIGKILLs still get recorded.
 # Usage: run_stage "time_and_err.log" <command and args...>
 run_stage() {
     local log="$1"; shift
@@ -158,10 +102,7 @@ run_stage() {
     return ${rc}
 }
 
-# Record that a stage was skipped because its cache still validates.
-# Same "^===" header shape as run_stage so the stage's full decision history
-# can be grepped with one pattern.
-#
+# Record a cache-hit skip using the same header shape as run_stage.
 # Usage: note_stage_skipped "time_and_err.log"
 note_stage_skipped() {
     local log="$1"
@@ -169,10 +110,8 @@ note_stage_skipped() {
     echo "=== $(date -u +%Y-%m-%dT%H:%M:%SZ) | pid=$$ | host=$(hostname) | SKIPPED (cache hit) ===" >> "${log}"
 }
 
-# Append a pipeline-invocation header to the top-level run.log.  Called
-# unconditionally at pipeline start, before the top-level short-circuit,
-# so every invocation (including top-level cache hits) leaves a trace.
-#
+# Append a pipeline-invocation header to run.log. Called unconditionally
+# at pipeline start so even top-level cache hits leave a trace.
 # Usage: log_invocation_header "run.log" "seed" "keep_state"
 log_invocation_header() {
     local final_log="$1"
@@ -182,12 +121,8 @@ log_invocation_header() {
     echo "=== Invocation $(date -u +%Y-%m-%dT%H:%M:%SZ) | seed=${seed} | keep_state=${keep_state} | pid=$$ | host=$(hostname) ===" >> "${final_log}"
 }
 
-# Append a per-stage log file to a consolidated run.log with a prefix.
-#
-# If the source log exists, each line is written to ${dest_log} prefixed
-# with "[<stage_label>] ".  Missing source logs are silently skipped so
-# callers can idempotently consolidate without pre-checking existence.
-#
+# Append a per-stage log to dest_log with a "[label] " prefix.
+# Missing source logs are silently skipped (idempotent).
 # Usage: append_stage_log "dest_log" "stage_label" "source_log"
 append_stage_log() {
     local dest_log="$1"
@@ -199,8 +134,6 @@ append_stage_log() {
     mkdir -p "$(dirname "${dest_log}")"
     {
         echo "=== [${stage_label}] ${source_log} ==="
-        # Use '|' as sed delimiter so labels that contain '/' (e.g. the
-        # ec-sbm "gen_outlier/combine" stage) don't break the substitution.
         sed -e "s|^|[${stage_label}] |" "${source_log}"
         echo ""
     } >> "${dest_log}"

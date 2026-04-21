@@ -1,18 +1,7 @@
-"""LFR profile: builds the inputs lfr/gen.py consumes.
+"""LFR profile.
 
-Output contract: degree.csv, cluster_sizes.csv, mixing_parameter.txt.
-
-LFR's default outlier policy is `(singleton, drop_oo=false)` — same
-cluster_sizes shape as ABCD. Mixing parameter is the mean of per-node µ_i
-(not the global ratio). numpy is pulled in lazily by
-compute_mixing_parameter's mean branch.
-
-CLI precedence: individual flags (``--outlier-mode``/...) win over
-``--params-file`` when both are given. The pipeline writes params.txt
-itself and passes only ``--params-file``; standalone users pass per-knob
-flags directly.
-
-Deps: stdlib + pandas at load time; numpy during setup_inputs.
+Outputs: degree.csv, cluster_sizes.csv, mixing_parameter.txt.
+Mixing parameter is the mean of per-node µ_i (not the global ratio).
 """
 from __future__ import annotations
 
@@ -74,10 +63,7 @@ def parse_args():
     parser.add_argument("--edgelist", type=str, required=True)
     parser.add_argument("--clustering", type=str, required=True)
     parser.add_argument("--output-folder", type=str, required=True)
-    parser.add_argument(
-        "--params-file", type=str, default=None,
-        help="params.txt to read stage knobs from; CLI flags override."
-    )
+    parser.add_argument("--params-file", type=str, default=None)
     parser.add_argument(
         "--outlier-mode", choices=OUTLIER_MODES, default=None,
     )
