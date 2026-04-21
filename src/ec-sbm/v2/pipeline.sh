@@ -16,11 +16,13 @@ TIMEOUT="3d"
 N_THREADS=1
 KEEP_STATE=0
 SEED=1
-# EC-SBM v2 default outlier policy: fold outliers into one combined block at
-# the profile stage; the residual-SBM in stage 3a reads params.txt from the
-# profile dir and matches that choice when placing outlier edges.
+# EC-SBM v2 profile-stage outlier policy: fold outliers into one combined
+# block so stage-2 gen_clustered sees a single outlier-class at profile time.
 OUTLIER_MODE="combined"
 DROP_OO_BOOL="false"
+# EC-SBM v2 gen-outlier-stage outlier policy: independent of OUTLIER_MODE.
+# The residual-SBM folds all outliers into one combined block by default.
+GEN_OUTLIER_MODE="combined"
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -30,6 +32,7 @@ while [[ "$#" -gt 0 ]]; do
         --outlier-mode) OUTLIER_MODE="$2"; shift ;;
         --drop-outlier-outlier-edges) DROP_OO_BOOL="true" ;;
         --keep-outlier-outlier-edges) DROP_OO_BOOL="false" ;;
+        --gen-outlier-mode) GEN_OUTLIER_MODE="$2"; shift ;;
         --edge-correction) EDGE_CORRECTION="$2"; shift ;;
         --algorithm) ALGORITHM="$2"; shift ;;
         --timeout) TIMEOUT="$2"; shift ;;
@@ -78,6 +81,7 @@ write_params_file "${FINAL_PARAMS}" \
     "n_threads=${N_THREADS}" \
     "outlier_mode=${OUTLIER_MODE}" \
     "drop_outlier_outlier_edges=${DROP_OO_BOOL}" \
+    "gen_outlier_mode=${GEN_OUTLIER_MODE}" \
     "edge_correction=${EDGE_CORRECTION}" \
     "algorithm=${ALGORITHM}"
 
@@ -185,16 +189,16 @@ fi
 echo "=== Starting Stage 3: Outlier Generation & Combine ==="
 
 # 3a. Generate Outliers
-# gen_outlier.py reads the profile-stage params.txt to recover outlier_mode
-# rather than taking --outlier-mode on the CLI. A follow-up commit will
-# give gen_outlier its own --gen-outlier-mode so profile and gen stages
-# can be decoupled.
+# gen_outlier owns its outlier policy independently from the profile stage:
+# its params.txt carries gen_outlier_mode, and the script reads it via
+# --params-file (CLI > file > default).
 STG_GEN_OUTLIER_EDGES_PARAMS="${STG_GEN_OUTLIER_EDGES_DIR}/params.txt"
 write_params_file "${STG_GEN_OUTLIER_EDGES_PARAMS}" \
     "seed=$((SEED + 1))" \
+    "outlier_mode=${GEN_OUTLIER_MODE}" \
     "edge_correction=${EDGE_CORRECTION}"
 
-IN_GEN_OUTLIER="${INPUT_EDGELIST} ${INPUT_CLUSTERING} ${STG_GEN_CLUSTERED_DIR}/edge.csv ${STG_PROFILE_PARAMS} ${STG_GEN_OUTLIER_EDGES_PARAMS}"
+IN_GEN_OUTLIER="${INPUT_EDGELIST} ${INPUT_CLUSTERING} ${STG_GEN_CLUSTERED_DIR}/edge.csv ${STG_GEN_OUTLIER_EDGES_PARAMS}"
 OUT_GEN_OUTLIER="${STG_GEN_OUTLIER_EDGES_DIR}/edge_outlier.csv"
 
 if ! is_step_done "${STG_GEN_OUTLIER_EDGES_DIR}/done" "${OUT_GEN_OUTLIER}"; then
@@ -203,7 +207,7 @@ if ! is_step_done "${STG_GEN_OUTLIER_EDGES_DIR}/done" "${OUT_GEN_OUTLIER}"; then
         --orig-edgelist "${INPUT_EDGELIST}" \
         --orig-clustering "${INPUT_CLUSTERING}" \
         --exist-edgelist "${STG_GEN_CLUSTERED_DIR}/edge.csv" \
-        --profile-params "${STG_PROFILE_PARAMS}" \
+        --params-file "${STG_GEN_OUTLIER_EDGES_PARAMS}" \
         --edge-correction "${EDGE_CORRECTION}" \
         --output-folder "${STG_GEN_OUTLIER_EDGES_DIR}" \
         --seed "$((SEED + 1))"
