@@ -1,12 +1,14 @@
 """Unit tests for profile primitives across the per-generator modules.
 
 ``compute_edge_count``, ``compute_mixing_parameter``, ``identify_outliers``,
-``apply_outlier_mode``, and ``read_outlier_mode`` / ``export_outlier_mode``
-live in ``src/profile_common.py`` (shared by every generator).
-``compute_mincut`` is specific to ec-sbm and lives in
+and ``apply_outlier_mode`` live in ``src/profile_common.py`` (shared by
+every generator).  ``compute_mincut`` is specific to ec-sbm and lives in
 ``src/ec-sbm/common/profile.py``.  All accept plain dict/set/list inputs
 and return in-memory results, so they are unit-testable without going
 through the CLI.
+
+The ``params.txt`` round-trip helpers live in
+``src/params_common.py`` and are covered by ``tests/common/test_params.py``.
 """
 from __future__ import annotations
 
@@ -25,9 +27,7 @@ from profile_common import (  # noqa: E402
     apply_outlier_mode,
     compute_edge_count,
     compute_mixing_parameter,
-    export_outlier_mode,
     identify_outliers,
-    read_outlier_mode,
 )
 
 
@@ -305,34 +305,6 @@ def test_apply_outlier_mode_rejects_unknown_mode():
         apply_outlier_mode(
             nodes, node2com, cluster_counts, neighbors, outliers, mode="bogus",
         )
-
-
-# ---------------------------------------------------------------------------
-# outlier_mode.txt round-trip
-# ---------------------------------------------------------------------------
-
-@pytest.mark.parametrize("mode", ["excluded", "singleton", "combined"])
-@pytest.mark.parametrize("drop_oo", [False, True])
-def test_outlier_mode_roundtrip(tmp_path, mode, drop_oo):
-    export_outlier_mode(str(tmp_path), mode, drop_oo)
-    got_mode, got_drop = read_outlier_mode(str(tmp_path / "outlier_mode.txt"))
-    assert got_mode == mode
-    assert got_drop is drop_oo
-
-
-def test_read_outlier_mode_rejects_malformed(tmp_path):
-    p = tmp_path / "outlier_mode.txt"
-    p.write_text("onlyoneline\n")
-    with pytest.raises(ValueError, match="2 non-empty lines"):
-        read_outlier_mode(str(p))
-
-    p.write_text("bogus\nfalse\n")
-    with pytest.raises(ValueError, match="unknown mode"):
-        read_outlier_mode(str(p))
-
-    p.write_text("excluded\nmaybe\n")
-    with pytest.raises(ValueError, match="true/false"):
-        read_outlier_mode(str(p))
 
 
 # ---------------------------------------------------------------------------

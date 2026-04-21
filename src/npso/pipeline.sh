@@ -47,7 +47,7 @@ SETUP="${OUTPUT_DIR}/.state/setup"
 
 GEN_NAME="npso"
 GEN_SCRIPT_DIR="${SCRIPT_DIR}"
-GEN_PROFILE_OUTPUTS=(degree.csv cluster_sizes.csv outlier_mode.txt)
+GEN_PROFILE_OUTPUTS=(degree.csv cluster_sizes.csv params.txt)
 # npso also reads the original edgelist at stage 2 (for the clustering-coeff
 # computation); declare it so stage-2 cache tracks that input.
 GEN_EXTRA_STAGE2_INPUTS="${INPUT_EDGELIST}"

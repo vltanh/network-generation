@@ -115,7 +115,7 @@ mkdir -p "${STG_PROFILE_DIR}" "${STG_GEN_CLUSTERED_DIR}" \
 echo "=== Starting Stage 1: Profile ==="
 
 IN_PROFILE="${INPUT_EDGELIST} ${INPUT_CLUSTERING}"
-OUT_PROFILE="${STG_PROFILE_DIR}/node_id.csv ${STG_PROFILE_DIR}/cluster_id.csv ${STG_PROFILE_DIR}/assignment.csv ${STG_PROFILE_DIR}/degree.csv ${STG_PROFILE_DIR}/mincut.csv ${STG_PROFILE_DIR}/edge_counts.csv ${STG_PROFILE_DIR}/com.csv ${STG_PROFILE_DIR}/outlier_mode.txt"
+OUT_PROFILE="${STG_PROFILE_DIR}/node_id.csv ${STG_PROFILE_DIR}/cluster_id.csv ${STG_PROFILE_DIR}/assignment.csv ${STG_PROFILE_DIR}/degree.csv ${STG_PROFILE_DIR}/mincut.csv ${STG_PROFILE_DIR}/edge_counts.csv ${STG_PROFILE_DIR}/com.csv ${STG_PROFILE_DIR}/params.txt"
 
 if ! is_step_done "${STG_PROFILE_DIR}/done" "${OUT_PROFILE}"; then
     run_stage "${STG_PROFILE_DIR}/time_and_err.log" \

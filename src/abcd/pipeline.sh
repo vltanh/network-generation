@@ -48,7 +48,7 @@ SETUP="${OUTPUT_DIR}/.state/setup"
 
 GEN_NAME="abcd"
 GEN_SCRIPT_DIR="${SCRIPT_DIR}"
-GEN_PROFILE_OUTPUTS=(degree.csv cluster_sizes.csv mixing_parameter.txt outlier_mode.txt)
+GEN_PROFILE_OUTPUTS=(degree.csv cluster_sizes.csv mixing_parameter.txt params.txt)
 # shellcheck disable=SC2034
 GEN_PROFILE_CLI_ARGS=(--outlier-mode "${OUTLIER_MODE}")
 if [ -n "${DROP_OO}" ]; then
