@@ -196,7 +196,7 @@ OUT_GEN_OUTLIER_COMBINE="${STG_GEN_OUTLIER_DIR}/edge.csv ${STG_GEN_OUTLIER_DIR}/
 
 if ! is_step_done "${STG_GEN_OUTLIER_DIR}/done" "${OUT_GEN_OUTLIER_COMBINE}"; then
     run_stage "${STG_GEN_OUTLIER_DIR}/time_and_err.log" \
-        python "${COMMON_DIR}/combine_edgelists.py" \
+        python "${SRC_DIR}/combine_edgelists.py" \
         --edgelist-1 "${STG_GEN_CLUSTERED_DIR}/edge.csv" \
         --name-1 "clustered" \
         --edgelist-2 "${STG_GEN_OUTLIER_EDGES_DIR}/edge_outlier.csv" \
@@ -244,7 +244,7 @@ OUT_MATCH_DEGREE_COMBINE="${OUTPUT_DIR}/edge.csv ${OUTPUT_DIR}/sources.json"
 
 if ! is_step_done "${STG_MATCH_DEGREE_DIR}/done" "${OUT_MATCH_DEGREE_COMBINE}"; then
     run_stage "${STG_MATCH_DEGREE_DIR}/time_and_err.log" \
-        python "${COMMON_DIR}/combine_edgelists.py" \
+        python "${SRC_DIR}/combine_edgelists.py" \
         --edgelist-1 "${STG_GEN_OUTLIER_DIR}/edge.csv" \
         --json-1 "${STG_GEN_OUTLIER_DIR}/sources.json" \
         --edgelist-2 "${STG_MATCH_DEGREE_EDGES_DIR}/degree_matching_edge.csv" \
