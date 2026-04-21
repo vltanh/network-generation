@@ -62,19 +62,19 @@ see a clustered graph with no "unclustered" nodes.
 | Generator       | Extracts from G                                              | Default outlier policy |
 | --------------- | ------------------------------------------------------------ | ---------------------- |
 | `sbm`           | N, cluster sizes, per-node degrees, inter-cluster edge-count matrix | `combined`, keep OO |
-| `ec-sbm-v1`     | sbm's outputs + per-cluster min edge cut + `com.csv`         | `excluded` (hard-enforced in pipeline); OO keep/drop is a no-op under excluded |
-| `ec-sbm-v2`     | same as v1                                                   | `excluded`, keep OO (but any outlier mode is legal) |
+| `ec-sbm-v1`     | sbm's outputs + per-cluster min edge cut + `com.csv`         | `excluded` (pipeline-forced) |
+| `ec-sbm-v2`     | same as v1                                                   | `excluded`, keep OO |
 | `abcd`          | N, cluster sizes, per-node degrees, mixing parameter ξ (global) | `singleton`, keep OO |
-| `abcd+o`        | abcd's outputs + n_outliers                                  | `singleton`, **drop OO** (the Julia sampler cannot emit OO edges anyway) |
+| `abcd+o`        | abcd's outputs + n_outliers                                  | `singleton`, **drop OO** (sampler can't emit OO edges) |
 | `lfr`           | N, cluster sizes, per-node degrees, mixing parameter μ (mean) | `singleton`, keep OO |
-| `npso`          | N, cluster sizes, per-node degrees (global clustering coefficient is measured at stage 2, directly on the edge list) | `singleton`, keep OO |
+| `npso`          | N, cluster sizes, per-node degrees (ccoeff is measured at stage 2) | `singleton`, keep OO |
 
 Two mixing parameters appear:
 
 - **Global ξ** (ABCD family) = Σ out-edges / Σ total half-edges. The fraction
   of half-edges that cross cluster boundaries.
-- **Mean μ** (LFR) = mean over nodes of per-node (out / total). Weights
-  small-degree nodes the same as hubs.
+- **Mean μ** (LFR) = mean over nodes of per-node (out / total), skipping
+  zero-degree nodes. Weights small-degree nodes the same as hubs.
 
 Both are computed by
 [compute_mixing_parameter](../src/profile_common.py#L229); the choice of
@@ -98,23 +98,15 @@ graph-tool's sampler from its canonical (macro) ensemble to the micro
 ensemble: sampled graphs have the **exact** out-degree sequence from the
 profile AND the **exact** inter-block edge count matrix.
 
-**Guarantees (as a multigraph):**
+**Guarantees:**
 - **N exactly**: number of input nodes (post outlier transform).
-- **Degree sequence exactly**: every node v has `deg_G'(v) = deg_G(v)`,
-  where each self-loop counts as 2 and each parallel edge contributes +1
-  per copy.
 - **Block structure exactly**: each node stays in its input-assigned
-  block, and inter-block edge counts `e_{r,s}` match G's.
-- **Number of edges exactly**: follows from the two above.
-
-**Simple-graph caveat.** `src/sbm/gen.py` does *not* call
-`remove_parallel_edges` or `remove_self_loops`, so the raw `edge.csv`
-can contain self-loops (where the block matrix diagonal allows) and
-parallel edges. Self-loops entered the profile at count 0 because
-`read_edgelist` filters them upstream, but the micro-SBM sampler can
-still emit them. If downstream code treats `edge.csv` as a simple graph
-(dedups on read), degrees and inter-cluster counts are approximate,
-not exact.
+  block.
+- **Degree sequence and inter-block counts approximately**: the micro-SBM
+  sampler produces exact degrees and `e_{r,s}` on the multigraph, but
+  [gen.py:56-57](../src/sbm/gen.py#L56) calls `remove_parallel_edges` and
+  `remove_self_loops`, so the simple-graph `edge.csv` drops however many
+  loops/multi-edges the sampler emitted on the block matrix diagonal.
 
 **Not guaranteed:**
 - Clustering coefficient. Degree-corrected SBMs are known to produce
@@ -150,18 +142,22 @@ with mincut k:
 2. The top k+1 nodes form a complete subgraph K_{k+1}. This alone
    guarantees every cluster has edge connectivity ≥ k.
 3. Each remaining node attaches to the k highest-degree already-placed
-   nodes. If a degree or per-block budget would be exceeded,
-   `ensure_edge_capacity` inflates the budget by 1 rather than dropping
+   nodes; if that walk runs out of valid partners, the remainder is
+   sampled weighted by profile degree. Whenever a pick would exceed the
+   sampling budget, `ensure_edge_capacity` inflates both endpoints'
+   residual degree and the block pair's count by 1 rather than dropping
    the edge.
 
 **Stage 2b, outlier/residual wiring.** The two versions split here:
 
 - **v2** ([gen_outlier.py](../src/ec-sbm/v2/gen_outlier.py)) subtracts the
-  stage-2a edges (`--exist-edgelist`) from the per-node degree budget,
-  keeps the inter-block counts from the profile, and derives each
-  cluster's intra-block count `probs[k,k]` from the gap between residual
-  cluster degree sum and fixed inter-block counts. It then calls
-  `gt.generate_sbm` on that residual probs matrix with an assignment that
+  stage-2a edges (`--exist-edgelist`) from the per-node degree budget and
+  rebuilds the inter-block counts by iterating the original edgelist
+  (numerically equal to the profile's but recomputed here). Intra-block
+  `probs[k,k]` is set to the gap `D_k − E_inter_k`; if the gap is negative
+  the deficit is added back to `out_degs` and `probs[k,k]=0`; odd gaps are
+  bumped to even with one extra stub on `nodes_in_k[0]`. `gt.generate_sbm`
+  then samples on that residual probs matrix with an assignment that
   extends the profile's clusters with outlier blocks (one mega-block under
   the default `--gen-outlier-mode combined`, one singleton per outlier
   under `singleton`; independent of the profile-stage mode).
@@ -204,21 +200,22 @@ SBM, block-preserving rewire, matcher menu); the small shared surface
 lives under [common/](../src/ec-sbm/common/), and v2's extra helpers are
 in [utils.py](../src/ec-sbm/v2/utils.py).
 
-**Guarantees (both versions).** N exactly; per-cluster edge connectivity
-≥ k by construction (top-k+1 clique); block structure exactly (input
-partition after the outlier transform); degree sequence *targeted but not
-exact* (constructive inflation raises some nodes' degrees above profile;
-parallel-edge removal and rewire gridlock can leave some stubs unmatched,
-usually very close); inter-cluster edge-count matrix approximately (v1
-samples the full probs and overlays, so counts are perturbed by the
-overlay and dedup; v2 targets the residual, so counts track the profile up
-to rewire gridlock and match-degree top-up).
+**Guarantees (both versions).**
+- **N exactly.**
+- **Per-cluster edge connectivity ≥ k** by construction.
+- **Block structure exactly** (input partition after the outlier transform).
+- **Degree sequence targeted, not exact**: constructive inflation can raise
+  degrees above profile; dedup and rewire gridlock can leave stubs unmatched.
+- **Inter-cluster edge counts approximately**: v1 samples full probs and
+  overlays, so counts are perturbed by overlay + dedup; v2 targets the
+  residual, so counts track the profile up to rewire and top-up slack.
 
 **Failure mode.** Stage 2c can gridlock when a node has residual stubs but
 no valid partner (all non-neighbors exhausted). Gridlocked stubs are
-dropped with a WARN log. v2's `hybrid` matcher reduces this because its
-rewire phase is order-insensitive and its greedy fallback handles whatever
-rewire couldn't place.
+dropped: v2's `random_greedy`, `true_greedy`, and `rewire` emit a WARN; v1
+and v2 `greedy` drop silently. v2's `hybrid` matcher reduces the residual
+because its rewire phase is order-insensitive and `true_greedy` handles
+whatever rewire couldn't place.
 
 **Not guaranteed.** Exact degree sequence (see above); clustering
 coefficient (emergent, not targeted); path lengths and motif counts.
@@ -237,16 +234,11 @@ a Julia implementation of Kamiński, Prałat, & Théberge's ABCD model. Stage
 Stage 2 ([gen.py](../src/abcd/gen.py#L11)) shells out to
 `externals/abcd/utils/graph_sampler.jl` with those three inputs.
 
-ABCD's generative model:
-
-1. Fix degree sequence `d` and cluster sizes `s` (both from the profile).
-2. Each node's degree is split into an *internal* component (stays in its
-   cluster) and an *external* component (crosses), with the split governed
-   by ξ: `d_i^ext = ξ · d_i`, rounded. A configuration model is then
-   sampled inside each cluster on its internal stubs; a second
-   configuration model is sampled globally on the external stubs with a
-   tilting that keeps cross-cluster edges roughly uniform.
-3. Collisions (loops / parallel edges) are resolved by rewiring.
+ABCD fixes degree sequence `d` and cluster sizes `s` from the profile,
+splits each node's degree into internal/external stubs at ratio ξ (as
+`d_i^ext = ⌊ξ · d_i⌉`), runs a configuration model inside each cluster
+on the internal stubs and another one globally on the external stubs,
+and rewires collisions.
 
 **Guarantees:**
 - **N exactly.**
@@ -265,8 +257,8 @@ ABCD's generative model:
 **Determinism.** Julia's `Random.seed!(parse(Int, ARGS[9]))` is the only
 RNG; Julia's `Dict` iteration is insertion-ordered so no hash-seed knob
 is needed Julia-side. `PYTHONHASHSEED=0` is still pinned upstream in
-[pipeline.sh](../src/abcd/pipeline.sh#L43) to keep stage-1 Python-side
-outputs deterministic.
+[pipeline.sh](../src/abcd/pipeline.sh#L43) as a defensive default for
+stage-1.
 
 ---
 
@@ -314,19 +306,14 @@ from the profile's `degree.csv` and `cluster_sizes.csv`:
 It also computes mean degree `k`, max degree `maxk`, and min/max cluster
 sizes from those same profile arrays, and reads mixing parameter μ (mean
 reduction) from `mixing_parameter.txt`. It writes `time_seed.dat` (the
-C++ binary reads this) and invokes `./benchmark` with all 9 parameters.
+C++ binary reads this) and invokes `./benchmark` with those eight flags
+(`-N -k -maxk -minc -maxc -mu -t1 -t2`).
 
-LFR's sampling:
-
-1. Sample N degrees from a power-law with exponent t1, bounded above by
-   maxk (and implicitly below by the benchmark's internal floor).
-2. Sample cluster sizes from a power-law with exponent t2, cut to
-   [minc, maxc].
-3. Assign each node to a cluster respecting both degree and cluster-size
-   constraints.
-4. Split each node's degree into internal + external with ratio (1-μ) / μ.
-5. Configuration model per cluster, then globally for externals.
-6. Rewire duplicates / loops.
+LFR samples degrees and cluster sizes from the two power-laws, assigns
+nodes to clusters respecting both, splits each node's degree at ratio
+(1−μ) / μ into internal/external stubs, runs a configuration model per
+cluster then globally on the externals, and rewires duplicates and
+loops.
 
 **Guarantees:**
 - **N exactly** (CLI arg).
@@ -361,23 +348,26 @@ hyperbolic disk under a temperature T that controls clustering, draws
 edges by hyperbolic distance, then assigns clusters by angular sector.
 
 Four model knobs come straight from the profile: N, average degree m =
-⟨k⟩/2, γ (power-law exponent, floor 2.0), c (number of clusters). The
-temperature T is *not* in the profile; stage 2 searches it to match the
-**global clustering coefficient** of G:
+`round(⟨k⟩/2)` (integer), γ (power-law exponent, floor 2.0), c (number
+of clusters). The temperature T is *not* in the profile; stage 2
+searches it to match the **global clustering coefficient** of G:
 
 1. Compute the exact global clustering coefficient of the input edge list
    via networkit (`ClusteringCoefficient.exactGlobal`).
 2. Run nPSO at T ∈ (0, 1). Clustering coefficient decreases monotonically
    in T over (0,1) so a root of f(T) = ccoeff(T) − target exists.
-3. Secant with bisection fallback (see
-   [_next_T](../src/npso/gen.py#L406)); up to 100 iters; stop when
-   best |f(T)| < 0.005 or the between-iter change in ccoeff is < 0.0001.
+3. Secant when both endpoint residuals are known with opposite signs,
+   otherwise midpoint; a 5%-of-bracket margin guard ([_next_T](../src/npso/gen.py#L406))
+   forces midpoint when secant would land too close to either endpoint.
+   Up to 100 iters; stop when best |f(T)| < 0.005 or the between-iter
+   change in ccoeff is < 0.0001.
 4. The best-seen (T, edges, com) is kept and written out.
 
 The search is resumable: each iteration's (T, ccoeff) is appended to
 `search_log.json` (atomic write via os.replace), keyed by a sha256 of
 the four model knobs + target + seed. On rerun with the same knobs, the
-log replays until divergence or convergence.
+log replays until divergence or convergence, then re-runs `best_T` once
+to restore the in-memory edge/com matrices.
 
 **Guarantees:**
 - **N exactly.**
@@ -394,7 +384,7 @@ log replays until divergence or convergence.
   profile's cluster-size distribution.
 - Block structure: cluster_ids are generator-output, not profile
   passthrough. Cluster_id=1 in nPSO is the outlier bucket and is stripped
-  from `com.csv` ([gen.py:353](../src/npso/gen.py#L352)).
+  from `com.csv` ([gen.py:353](../src/npso/gen.py#L353)).
 
 **Determinism.** The MATLAB wrapper at [src/npso/matlab/run_npso.m](../src/npso/matlab/run_npso.m#L3)
 calls `rng(seed)` before `nPSO_model`; MATLAB is pinned single-threaded
@@ -424,26 +414,28 @@ global clustering coefficient.
 | Mean per-node mixing parameter μ        | —    | —         | —         | —    | —      | ≈    | —    |
 | Global clustering coefficient           | —    | —         | —         | —    | —      | —    | ≈    |
 | *Outliers*                              |      |           |           |      |        |      |      |
-| Explicit outlier nodes                  | —    | ≈         | ≈         | —    | ✓      | —    | ≈    |
+| Outlier count from G preserved          | ✓    | —         | —         | ✓    | ✓      | ✓    | ✓    |
+| Outliers are identifiable in output     | —    | —         | —         | —    | ✓      | —    | ✓    |
 | *Reproducibility*                       |      |           |           |      |        |      |      |
 | Byte-reproducible from `--seed`         | ✓    | ✓         | ✓         | ✓    | ✓      | ✓    | ✓    |
 
 ✓ = preserved exactly (deterministic function of the profile).
 ≈ = targeted but perturbed by internal rewiring, post-hoc dedup of
 self-loops / parallel edges, degree-matching residual, or search
-tolerance. — = not a model parameter.
+tolerance. — = not a model parameter. Rows reflect each generator's
+*default* flags; `ec-sbm` defaults to `excluded`, which drops outliers.
+`abcd+o`'s cluster-size list includes a prepended outlier block of size
+n_outliers.
 
-**Self-loops and parallel edges.** `sbm` does not strip them from the
-sampled multigraph, so the raw `edge.csv` can contain both; degrees and
-inter-cluster counts are exact *as a multigraph* but approximate when
-read as a simple graph. `ec-sbm-v1` / `ec-sbm-v2` call
-`remove_parallel_edges` + `remove_self_loops` in the SBM stages and
-`drop_duplicates` in the combine stage, so `edge.csv` is simple. `abcd`
-/ `abcd+o` / `lfr` resolve loops and duplicates inside their external
-samplers via rewiring; `lfr`'s Python wrapper also drops the duplicate
-each-edge-twice rows the C++ binary emits. `npso` reads edges from a
-MATLAB {0,1} adjacency via `triu(adj, 1)` / `find(adj==1)`, so by
-construction no self-loops or parallels reach `edge.csv`.
+**Self-loops and parallel edges.** All seven generators emit simple
+graphs. `sbm`, `ec-sbm-v1`, and `ec-sbm-v2` call `remove_parallel_edges`
++ `remove_self_loops` after `gt.generate_sbm`; the ec-sbm pipelines
+additionally `drop_duplicates` in the combine stage. `abcd` / `abcd+o`
+/ `lfr` resolve loops and duplicates inside their external samplers via
+rewiring; `lfr`'s Python wrapper additionally dedups the C++ binary's
+undirected double-listing. `npso` reads edges from a MATLAB {0,1}
+adjacency via `triu(adj, 1)` / `find(adj==1)`, so by construction no
+self-loops or parallels reach `edge.csv`.
 
 ## Which generator should I use?
 
@@ -478,7 +470,7 @@ All seven generators are byte-reproducible end-to-end under a fixed
 
 | Gen        | `edge.csv` (first 12 chars) | `com.csv` (first 12 chars) |
 | ---------- | --------------------------- | -------------------------- |
-| sbm        | `72e585fd96ae`              | `e240ae23f3ea`             |
+| sbm        | `a55621c176bf`              | `e240ae23f3ea`             |
 | ec-sbm-v1  | `e2b5a6914b12`              | `e240ae23f3ea`             |
 | ec-sbm-v2  | `f0b255d97b90`              | `e240ae23f3ea`             |
 | abcd       | `057a8ef26ebc`              | `55c19725f859`             |
@@ -495,26 +487,34 @@ Trap: `--seed 0` silently disables graph-tool's PRNG (documented as
 The default is `--seed 1` everywhere; if you need `0`-equivalent
 behaviour, use `1` and live with it.
 
-### Runtime (dnc network, seed=1, cold + warm)
+### Runtime (dnc network, seeds 1-10)
 
-Measured end-to-end wall-clock, single-threaded, on a login host. Two
-back-to-back runs per generator; run 1 is a cold cache, run 2 is warm.
-All 7 produce byte-identical `edge.csv` across runs.
+Measured via [scripts/benchmark/bench_gens.sh](../scripts/benchmark/bench_gens.sh):
+per generator, 2 warmup + 10 kept runs per seed across seeds 1-10, all
+inside a single shell per gen so interpreter, graph-tool / MATLAB engine,
+and NFS caches are amortised. All 7 gens produce byte-identical
+`edge.csv` within each (gen, seed).
 
-| Generator   | Run 1 (cold) | Run 2 (warm) |
-| ----------- | -----------: | -----------: |
-| sbm         |   42.81 s    |    3.92 s    |
-| ec-sbm-v1   |    9.43 s    |    9.57 s    |
-| ec-sbm-v2   |    7.86 s    |    7.99 s    |
-| abcd        |    6.91 s    |    6.85 s    |
-| abcd+o      |    6.50 s    |    6.53 s    |
-| lfr         |    4.28 s    |    4.07 s    |
-| npso        |  150.14 s    |   14.59 s    |
+| Generator   | kept mean (s) | kept std (s) | cold (seed 1, run 1) |
+| ----------- | ------------: | -----------: | -------------------: |
+| sbm         |      3.97     |     0.24     |      21.11 s         |
+| lfr         |      4.04     |     0.17     |       7.31 s         |
+| abcd        |      6.48     |     0.26     |       6.43 s         |
+| abcd+o      |      6.59     |     0.17     |       6.82 s         |
+| ec-sbm-v2   |      8.11     |     1.02     |       8.50 s         |
+| ec-sbm-v1   |      9.75     |     0.42     |      10.68 s         |
+| npso        |     13.17     |     0.48     |      69.26 s         |
 
-Takeaways: `sbm`'s cold run is dominated by graph-tool import; once the
-interpreter has warmed the cache it's the fastest. `npso`'s cold run
-includes MATLAB engine startup; its warm run is still the slowest because
-it re-runs the temperature secant search (~10 iters). ABCD / LFR are
-spawning external processes so their cold/warm gap is small. The ec-sbm
-family is dominated by the constructive stage and is largely
-cache-insensitive.
+**Host:** AMD EPYC-Genoa (32 cores, single-thread pinned for the
+benchmark), 125 GiB RAM, RHEL 9.6, NFS-mounted workspace, Python 3.14,
+graph-tool 2.98, Julia 1.11.6, MATLAB R2024a. Absolute wall-clock has
+noise from a shared login host; ordering and byte-identity are the
+load-independent signals.
+
+Takeaways: `sbm` and `npso` pay a large cold cost (graph-tool import,
+MATLAB engine start) that disappears after the first run in a shell.
+`ec-sbm-v2`'s std is dominated by one NFS-contention outlier across the
+100 kept runs (14.98 s max vs. 7.42 s min on seed=4); the median of
+every seed's kept runs falls in the 7.5-8.8 s band. ABCD/ABCD+o/LFR are
+external-process bound so their cold/warm gap is small. nPSO's warm cost
+is the 10-iter temperature secant search itself, not startup.

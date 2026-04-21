@@ -1,6 +1,6 @@
-2026-04-21 00:01:49,155 - INFO - --- Starting Stage 6: Degree Matching ---
-2026-04-21 00:01:49,170 - INFO - Loaded reference topologies elapsed: 0.0140 seconds
-2026-04-21 00:01:49,177 - INFO - Subtracted existing edges elapsed: 0.0071 seconds
-2026-04-21 00:01:49,178 - INFO - Added 2120 edges
-2026-04-21 00:01:49,178 - INFO - Degree matching elapsed: 0.0016 seconds
-2026-04-21 00:01:49,184 - INFO - Exported edgelist elapsed: 0.0061 seconds
+2026-04-21 12:43:17,921 - INFO - --- Starting Stage 6: Degree Matching ---
+2026-04-21 12:43:17,936 - INFO - Loaded reference topologies elapsed: 0.0145 seconds
+2026-04-21 12:43:17,943 - INFO - Subtracted existing edges elapsed: 0.0071 seconds
+2026-04-21 12:43:17,944 - INFO - Added 2120 edges
+2026-04-21 12:43:17,944 - INFO - Degree matching elapsed: 0.0016 seconds
+2026-04-21 12:43:17,953 - INFO - Exported edgelist elapsed: 0.0081 seconds

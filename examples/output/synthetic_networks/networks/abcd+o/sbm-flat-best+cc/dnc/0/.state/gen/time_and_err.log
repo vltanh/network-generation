@@ -1,19 +1,19 @@
-=== 2026-04-21T05:01:28Z | pid=2671337 | host=cc-login2.campuscluster.illinois.edu | EXECUTED ===
-	Command being timed: "python /path/to/network-generation/src/abcd+o/gen.py --degree examples/output/synthetic_networks/networks/abcd+o/sbm-flat-best+cc/dnc/0/.state/setup/degree.csv --cluster-sizes examples/output/synthetic_networks/networks/abcd+o/sbm-flat-best+cc/dnc/0/.state/setup/cluster_sizes.csv --mixing-parameter examples/output/synthetic_networks/networks/abcd+o/sbm-flat-best+cc/dnc/0/.state/setup/mixing_parameter.txt --n-outliers examples/output/synthetic_networks/networks/abcd+o/sbm-flat-best+cc/dnc/0/.state/setup/n_outliers.txt --abcd-dir /path/to/network-generation/externals/abcd --output-folder examples/output/synthetic_networks/networks/abcd+o/sbm-flat-best+cc/dnc/0/.state/gen --seed 1"
-	User time (seconds): 4.55
-	System time (seconds): 0.40
-	Percent of CPU this job got: 90%
-	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:05.50
+=== 2026-04-21T17:42:57Z | pid=2250324 | host=cc-login2.campuscluster.illinois.edu | EXECUTED ===
+	Command being timed: "python /u/vltanh/ecsbmv2/network-generation/src/abcd+o/gen.py --degree examples/output/synthetic_networks/networks/abcd+o/sbm-flat-best+cc/dnc/0/.state/setup/degree.csv --cluster-sizes examples/output/synthetic_networks/networks/abcd+o/sbm-flat-best+cc/dnc/0/.state/setup/cluster_sizes.csv --mixing-parameter examples/output/synthetic_networks/networks/abcd+o/sbm-flat-best+cc/dnc/0/.state/setup/mixing_parameter.txt --n-outliers examples/output/synthetic_networks/networks/abcd+o/sbm-flat-best+cc/dnc/0/.state/setup/n_outliers.txt --abcd-dir /u/vltanh/ecsbmv2/network-generation/externals/abcd --output-folder examples/output/synthetic_networks/networks/abcd+o/sbm-flat-best+cc/dnc/0/.state/gen --seed 1"
+	User time (seconds): 4.71
+	System time (seconds): 0.37
+	Percent of CPU this job got: 89%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:05.68
 	Average shared text size (kbytes): 0
 	Average unshared data size (kbytes): 0
 	Average stack size (kbytes): 0
 	Average total size (kbytes): 0
-	Maximum resident set size (kbytes): 372740
+	Maximum resident set size (kbytes): 373980
 	Average resident set size (kbytes): 0
 	Major (requiring I/O) page faults: 0
-	Minor (reclaiming a frame) page faults: 83637
-	Voluntary context switches: 2308
-	Involuntary context switches: 336
+	Minor (reclaiming a frame) page faults: 83177
+	Voluntary context switches: 2791
+	Involuntary context switches: 32
 	Swaps: 0
 	File system inputs: 96
 	File system outputs: 368

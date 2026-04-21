@@ -25,7 +25,7 @@ from .conftest import (
 pytestmark = pytest.mark.slow
 
 
-USER_FACING_FILES = {"edge.csv", "com.csv", "done", "run.log"}
+USER_FACING_FILES = {"edge.csv", "com.csv", "done", "run.log", "params.txt"}
 SIMPLE_STAGES = ("1 (profile)", "2 (gen)")
 
 

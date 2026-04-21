@@ -1,18 +1,18 @@
-	Command being timed: "python /path/to/network-generation/network_evaluation/network_stats/compute_network_stats.py --network examples/output/synthetic_networks/networks/abcd+o/sbm-flat-best+cc/dnc/0/edge.csv --outdir examples/output/synthetic_networks/stats/abcd+o/sbm-flat-best+cc/dnc/0/network"
-	User time (seconds): 1.12
-	System time (seconds): 0.72
-	Percent of CPU this job got: 61%
-	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:02.99
+	Command being timed: "python /u/vltanh/ecsbmv2/network-generation/network_evaluation/network_stats/compute_network_stats.py --network examples/output/synthetic_networks/networks/abcd+o/sbm-flat-best+cc/dnc/0/edge.csv --outdir examples/output/synthetic_networks/stats/abcd+o/sbm-flat-best+cc/dnc/0/network"
+	User time (seconds): 1.15
+	System time (seconds): 0.71
+	Percent of CPU this job got: 64%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:02.89
 	Average shared text size (kbytes): 0
 	Average unshared data size (kbytes): 0
 	Average stack size (kbytes): 0
 	Average total size (kbytes): 0
-	Maximum resident set size (kbytes): 210944
+	Maximum resident set size (kbytes): 209920
 	Average resident set size (kbytes): 0
 	Major (requiring I/O) page faults: 0
-	Minor (reclaiming a frame) page faults: 77018
-	Voluntary context switches: 4008
-	Involuntary context switches: 284
+	Minor (reclaiming a frame) page faults: 77038
+	Voluntary context switches: 4032
+	Involuntary context switches: 58
 	Swaps: 0
 	File system inputs: 0
 	File system outputs: 512

@@ -3,3 +3,9 @@ __pycache__
 
 # Runtime artifacts
 complete.log
+
+# Benchmark output (reproducible via scripts/benchmark/bench_gens.sh)
+scripts/benchmark/results.csv
+
+# Claude Code local state
+.claude/

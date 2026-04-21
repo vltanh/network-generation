@@ -74,6 +74,7 @@ def main():
 
         df_combined["u"] = u
         df_combined["v"] = v
+        df_combined = df_combined[df_combined["u"] != df_combined["v"]]
         df_combined = df_combined.drop_duplicates(subset=["u", "v"], keep="first").drop(
             columns=["u", "v"]
         )

@@ -1,18 +1,18 @@
-	Command being timed: "python /path/to/network-generation/network_evaluation/compare/compare_pair.py --cluster-1-folder examples/output/synthetic_networks/stats/npso/sbm-flat-best+cc/dnc/0/cluster --cluster-2-folder examples/input/reference_clusterings/stats/sbm-flat-best+cc/dnc --network-1-folder examples/output/synthetic_networks/stats/npso/sbm-flat-best+cc/dnc/0/network --network-2-folder examples/input/empirical_networks/stats/dnc --output-file examples/output/synthetic_networks/stats/npso/sbm-flat-best+cc/dnc/0/comparison.csv --is-compare-sequence"
+	Command being timed: "python /u/vltanh/ecsbmv2/network-generation/network_evaluation/compare/compare_pair.py --cluster-1-folder examples/output/synthetic_networks/stats/npso/sbm-flat-best+cc/dnc/0/cluster --cluster-2-folder examples/input/reference_clusterings/stats/sbm-flat-best+cc/dnc --network-1-folder examples/output/synthetic_networks/stats/npso/sbm-flat-best+cc/dnc/0/network --network-2-folder examples/input/empirical_networks/stats/dnc --output-file examples/output/synthetic_networks/stats/npso/sbm-flat-best+cc/dnc/0/comparison.csv --is-compare-sequence"
 	User time (seconds): 0.74
-	System time (seconds): 0.43
-	Percent of CPU this job got: 41%
-	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:02.85
+	System time (seconds): 0.40
+	Percent of CPU this job got: 51%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:02.23
 	Average shared text size (kbytes): 0
 	Average unshared data size (kbytes): 0
 	Average stack size (kbytes): 0
 	Average total size (kbytes): 0
-	Maximum resident set size (kbytes): 111104
+	Maximum resident set size (kbytes): 110848
 	Average resident set size (kbytes): 0
 	Major (requiring I/O) page faults: 12
-	Minor (reclaiming a frame) page faults: 28477
-	Voluntary context switches: 3516
-	Involuntary context switches: 14
+	Minor (reclaiming a frame) page faults: 28516
+	Voluntary context switches: 3407
+	Involuntary context switches: 5
 	Swaps: 0
 	File system inputs: 344
 	File system outputs: 16

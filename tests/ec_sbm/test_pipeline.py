@@ -23,7 +23,7 @@ from .conftest import (
 pytestmark = pytest.mark.slow
 
 
-USER_FACING_FILES = {"edge.csv", "com.csv", "sources.json", "done", "run.log"}
+USER_FACING_FILES = {"edge.csv", "com.csv", "sources.json", "done", "run.log", "params.txt"}
 EC_SBM_STAGES = (
     "1 (profile)",
     "2 (gen_clustered)",
@@ -40,7 +40,7 @@ EC_SBM_STAGES = (
 
 def test_fresh_run_produces_final_artifacts(fresh_run, generator):
     out, _ = fresh_run
-    for name in ("edge.csv", "com.csv", "sources.json", "done", "run.log"):
+    for name in USER_FACING_FILES:
         assert (out / name).is_file(), f"{generator}: missing {name}"
 
 
