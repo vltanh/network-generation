@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>EC-SBM v1: four-stage walkthrough</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..900,30..100;1,9..144,300..900,30..100&family=Figtree:ital,wght@0,300..900;1,300..900&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/d3@7/dist/d3.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#0b1120; --ink-2:#121a36; --ink-3:#1a2448;
+  --paper:#f4f6fb; --paper-2:#c0cceb; --paper-3:#8494be; --paper-4:#4e5f8a;
+  --rule:#263764; --rule-2:#354d80;
+  --azure:#78b4ff; --azure-2:#a0ccff; --azure-3:#5090ff; --cobalt:#3a66cc;
+  --signal:#ff6b7a; --amber:#ffc66b; --mint:#6bffc9; --orchid:#c38bff;
+}
+html{scroll-behavior:smooth}
+body{
+  background:var(--ink); color:var(--paper);
+  font-family:'Figtree',system-ui,-apple-system,sans-serif;
+  font-size:17px; line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+  background-image:
+    radial-gradient(ellipse 80% 60% at 20% 10%, rgba(58,102,204,.08) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 80% 85%, rgba(120,180,255,.05) 0%, transparent 55%);
+  background-attachment:fixed;
+  min-height:100vh;
+}
+a{color:var(--azure);text-decoration-thickness:1px;text-underline-offset:3px}
+a:hover{color:var(--paper)}
+.page{max-width:1180px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+
+header{margin-bottom:1.75rem;border-bottom:1px solid var(--rule);padding-bottom:1.25rem}
+header .back{font-family:'JetBrains Mono',monospace;font-size:.72rem;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--paper-3);text-decoration:none}
+header .back:hover{color:var(--azure)}
+header h1{font-family:'Fraunces',serif;font-weight:700;font-size:clamp(2rem,4.5vw,3rem);
+  line-height:1.05;letter-spacing:-.02em;margin:.9rem 0 .35rem;color:var(--paper);
+  font-variation-settings:"opsz" 96,"SOFT" 30}
+header .subtitle{font-family:'Fraunces',serif;font-style:italic;font-weight:400;
+  font-size:1.05rem;color:var(--paper-2);max-width:60ch}
+
+.intro{margin-bottom:2rem}
+.intro p{color:var(--paper-2);max-width:68ch}
+
+.controls{
+  display:flex;align-items:center;flex-wrap:wrap;gap:.55rem;
+  padding:.85rem 1rem;margin-bottom:1.25rem;
+  background:var(--ink-2);border:1px solid var(--rule);border-radius:3px;
+}
+.controls button{
+  font-family:'JetBrains Mono',monospace;font-size:.72rem;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--paper);
+  background:var(--ink-3);border:1px solid var(--rule-2);
+  padding:.45rem .9rem;cursor:pointer;border-radius:3px;
+  transition:background .18s,border-color .18s,color .18s;
+}
+.controls button:hover{background:var(--cobalt);border-color:var(--azure-3)}
+.controls button:disabled{opacity:.4;cursor:not-allowed}
+.controls button.primary{background:var(--cobalt);border-color:var(--cobalt)}
+.controls button.primary:hover{background:var(--azure-3);border-color:var(--azure-3)}
+.step-indicator{
+  font-family:'JetBrains Mono',monospace;font-size:.72rem;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--paper-3);margin-left:.4rem;
+}
+.step-indicator span{color:var(--paper)}
+.step-title{
+  font-family:'Fraunces',serif;font-style:italic;font-size:1rem;
+  color:var(--paper-2);margin-left:auto;
+}
+
+.viz-grid{display:grid;grid-template-columns:1.35fr 1fr;gap:1.25rem}
+@media(max-width:900px){.viz-grid{grid-template-columns:1fr}}
+
+.viz-main{
+  background:var(--ink-2);border:1px solid var(--rule);border-radius:3px;
+  padding:.75rem;position:relative;
+}
+.viz-main svg{display:block;width:100%;height:auto;max-height:520px}
+.viz-side{display:flex;flex-direction:column;gap:1rem}
+
+.panel{
+  background:var(--ink-2);border:1px solid var(--rule);border-radius:3px;
+  padding:1rem 1.1rem;
+}
+.panel h3{
+  font-family:'JetBrains Mono',monospace;font-size:.7rem;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--paper-3);font-weight:600;margin-bottom:.65rem;
+}
+.panel p{font-size:.93rem;color:var(--paper-2)}
+.panel code{
+  font-family:'JetBrains Mono',monospace;font-size:.84rem;
+  color:var(--azure-2);background:rgba(120,180,255,.06);
+  padding:.05rem .3rem;border-radius:2px;
+}
+.panel pre{
+  font-family:'JetBrains Mono',monospace;font-size:.78rem;line-height:1.45;
+  color:var(--paper-2);background:var(--ink);
+  border:1px solid var(--rule);border-radius:3px;
+  padding:.65rem .8rem;margin-top:.55rem;overflow-x:auto;
+  white-space:pre-wrap;word-break:break-word;
+}
+.panel .kv{display:grid;grid-template-columns:auto 1fr;gap:.35rem .85rem;
+  font-family:'JetBrains Mono',monospace;font-size:.82rem;margin-top:.4rem}
+.panel .kv .k{color:var(--paper-3)}
+.panel .kv .v{color:var(--paper)}
+.panel .badge-row{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.55rem}
+.panel .mc-badge{
+  font-family:'JetBrains Mono',monospace;font-size:.7rem;letter-spacing:.05em;
+  padding:.25rem .55rem;border-radius:2px;border:1px solid;
+}
+.panel .mc-badge.c1{color:var(--azure);border-color:var(--azure)}
+.panel .mc-badge.c2{color:var(--amber);border-color:var(--amber)}
+.panel .mc-badge.c3{color:var(--mint);border-color:var(--mint)}
+
+.legend{display:flex;flex-wrap:wrap;gap:.6rem 1rem;margin-top:.55rem;
+  font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--paper-3)}
+.legend .sw{display:inline-block;width:22px;height:2px;vertical-align:middle;margin-right:.4rem}
+
+footer{margin-top:3rem;padding-top:1.25rem;border-top:1px solid var(--rule);
+  color:var(--paper-3);font-size:.88rem;text-align:center}
+
+.node-label{
+  font-family:'JetBrains Mono',monospace;font-size:9px;fill:var(--ink);
+  font-weight:600;text-anchor:middle;dominant-baseline:central;pointer-events:none;
+}
+.collide-x{fill:var(--signal);font-family:'JetBrains Mono',monospace;
+  font-size:12px;font-weight:700;text-anchor:middle;dominant-baseline:central}
+.inflate-label{font-family:'JetBrains Mono',monospace;font-size:10px;
+  fill:var(--signal);text-anchor:middle}
+</style>
+</head>
+<body>
+<div class="page">
+
+<header>
+  <a class="back" href="../algorithms.md">&larr; all generators</a>
+  <h1>EC-SBM v1</h1>
+  <p class="subtitle">A four-stage walkthrough at default settings: outlier mode forced to excluded, match-degree algorithm greedy.</p>
+</header>
+
+<section class="intro">
+  <p>EC-SBM v1 lifts plain SBM so every output cluster stays at least as edge-connected as the input. It runs four stages with seed offsets <code>seed</code> / <code>seed+1</code> / <code>seed+2</code>: a profile that forces the excluded outlier transform, a clustered SBM with a K_{k+1} core, a separate outlier SBM, and a heap-greedy match-degree pass. The stepper below walks through a 20-node synthetic at default settings.</p>
+</section>
+
+<section class="controls">
+  <button id="btn-prev">&larr; back</button>
+  <button id="btn-play" class="primary">play</button>
+  <button id="btn-next">next &rarr;</button>
+  <button id="btn-reset">reset</button>
+  <div class="step-indicator">step <span id="step-num">0</span> / <span id="step-total">11</span></div>
+  <div class="step-title" id="step-title">input network</div>
+</section>
+
+<section class="viz-grid">
+  <div class="viz-main">
+    <svg id="graph" viewBox="-380 -140 760 400" preserveAspectRatio="xMidYMid meet"></svg>
+    <div class="legend">
+      <span><span class="sw" style="background:var(--azure-2)"></span>stage 2 (clustered)</span>
+      <span><span class="sw" style="background:var(--orchid)"></span>stage 3 (outlier SBM)</span>
+      <span><span class="sw" style="background:var(--paper-3)"></span>stage 4 (match_degree)</span>
+      <span><span class="sw" style="background:var(--paper-4)"></span>input / faded</span>
+    </div>
+  </div>
+  <aside class="viz-side">
+    <div class="panel" id="step-description">
+      <h3>what's happening</h3>
+      <p id="step-description-body">Input network with 20 nodes and 33 edges.</p>
+    </div>
+    <div class="panel" id="state-panel">
+      <h3>state</h3>
+      <div id="state-panel-body"></div>
+    </div>
+  </aside>
+</section>
+
+<footer>
+  <p>
+    <a href="./ec-sbm-v1.md">read the algorithm notes</a> &middot;
+    <a href="../algorithms.md">back to index</a>
+  </p>
+</footer>
+
+</div>
+
+<script>
+// ────────────────────────────────────────────────────────────────────────────
+// Shared synthetic data
+// ────────────────────────────────────────────────────────────────────────────
+const POSITIONS = {
+  1:{x:-220,y:-40}, 2:{x:-260,y:20}, 3:{x:-180,y:40}, 4:{x:-160,y:-40},
+  5:{x:-280,y:-80}, 6:{x:-300,y:0}, 7:{x:-200,y:100}, 8:{x:-120,y:0},
+  9:{x:200,y:-40}, 10:{x:240,y:20}, 11:{x:160,y:40}, 12:{x:280,y:-60},
+  13:{x:220,y:80}, 14:{x:140,y:0},
+  15:{x:-40,y:140}, 16:{x:40,y:160}, 17:{x:-80,y:200}, 18:{x:80,y:220},
+  19:{x:-340,y:160}, 20:{x:340,y:160},
+};
+const CLUSTER_OF = {
+  1:1,2:1,3:1,4:1,5:1,6:1,7:1,8:1,
+  9:2,10:2,11:2,12:2,13:2,14:2,
+  15:3,16:3,17:3,18:3,
+  19:0,20:0,
+};
+const CLUSTER_COLOR = {0:'var(--signal)', 1:'var(--azure)', 2:'var(--amber)', 3:'var(--mint)'};
+const INPUT_EDGES = [
+  [1,2],[1,3],[1,4],[2,3],[2,4],[3,4],[1,5],[2,6],[3,7],[4,8],[5,6],[7,8],
+  [9,10],[9,11],[10,11],[9,12],[10,13],[11,14],[12,14],
+  [15,16],[15,17],[16,18],
+  [1,9],[2,10],[5,12],
+  [9,15],[11,16],
+  [1,15],[4,17],
+  [19,3],[19,10],[20,16],[20,5],
+];
+const OUTLIER_NODES = new Set([19,20]);
+const OUTLIER_EDGES_SET = new Set(['3-19','10-19','5-20','16-20']);
+const key = (u,v) => u<v ? `${u}-${v}` : `${v}-${u}`;
+
+// ────────────────────────────────────────────────────────────────────────────
+// Authored stage 2 constructive edges: K_{k+1} cores + phase-2 attachments.
+// The budget-inflation marker fires once, on node 6 attaching inside C1.
+// ────────────────────────────────────────────────────────────────────────────
+const C1_CORE = [[1,2],[1,3],[1,4],[2,3],[2,4],[3,4]];
+const C2_CORE = [[9,10],[9,11],[10,11]];
+const C3_CORE = [[15,16]];
+const C1_ATTACH = [[5,1],[6,1],[7,1],[8,1]];
+const C2_ATTACH = [[12,9],[13,9],[14,9]];
+const C3_ATTACH = [[17,15],[18,16]];
+const STAGE2_CONSTRUCTIVE = [...C1_CORE, ...C2_CORE, ...C3_CORE,
+                             ...C1_ATTACH, ...C2_ATTACH, ...C3_ATTACH];
+// Authored SBM overlay additions (new, non-constructive cells, residual-driven).
+const STAGE2_OVERLAY_NEW = [[2,5],[3,8],[4,6],[7,2],[10,12],[11,13],[2,9],[3,10]];
+// Authored overlay collisions (get dropped by remove_parallel_edges).
+const STAGE2_OVERLAY_COLLIDE = [[1,2],[9,11]];
+// Stage-2 final set = constructive + non-colliding overlay.
+const STAGE2_FINAL = [...STAGE2_CONSTRUCTIVE, ...STAGE2_OVERLAY_NEW];
+
+// Stage 3a: outlier SBM. Size-1 blocks for 19 and 20; sampled on the 4
+// outlier-incident input edges' block-pair cells. Authored result re-samples
+// 3 of 4 input-like incidences plus one relocation.
+const STAGE3_OUTLIER = [[19,3],[19,10],[20,16],[20,1]];
+
+// Stage 4a: heap-greedy match_degree. Residual targets = input degree minus
+// stage-2+3 outcome. Authored pick of two top-ups filling the biggest gaps.
+const STAGE4_MATCH = [[5,8],[6,7]];
+
+// ────────────────────────────────────────────────────────────────────────────
+// Step script. Each step lists which edges to show + how to render them.
+// ────────────────────────────────────────────────────────────────────────────
+const STEPS = [];
+
+function mkEdges(spec){ return spec.map(([u,v,stage,extra]) => ({u,v,stage,...(extra||{})})); }
+
+// Step 0: input
+STEPS.push({
+  title:'input network',
+  desc:`20 nodes, 33 edges, three clusters plus two outliers. C1 is the azure cluster on the left, C2 amber on the right, C3 mint at the bottom, and nodes 19 and 20 are outliers in signal red.`,
+  nodes: id => ({opacity:1, outline:OUTLIER_NODES.has(id)?'dashed':'solid'}),
+  edges: INPUT_EDGES.map(([u,v])=>({u,v,stage:'input'})),
+  side: `<div class="kv">
+    <span class="k">N</span><span class="v">20</span>
+    <span class="k">|E|</span><span class="v">33</span>
+    <span class="k">clusters</span><span class="v">C1(8) C2(6) C3(4)</span>
+    <span class="k">outliers</span><span class="v">{19, 20}</span>
+    <span class="k">mean degree</span><span class="v">3.3</span>
+  </div>`,
+});
+
+// Step 1: profile excluded
+STEPS.push({
+  title:'stage 1 profile: excluded transform',
+  desc:`v1 forces --outlier-mode excluded. Outliers 19 and 20 and the four edges incident to them fade out entirely. Per-cluster mincut is computed by pymincut's Nagamochi-Ibaraki: C1 is 3-edge-connected, C2 is 2-edge-connected, C3 is 1-edge-connected.`,
+  nodes: id => OUTLIER_NODES.has(id) ? {opacity:.15} : {opacity:1},
+  edges: INPUT_EDGES.map(([u,v])=>{
+    const isOut = OUTLIER_EDGES_SET.has(key(u,v));
+    return {u,v,stage:'input',faded:isOut};
+  }),
+  side: `<p>Per-cluster edge-connectivity on the induced subgraph:</p>
+    <div class="badge-row">
+      <span class="mc-badge c1">C1 k=3</span>
+      <span class="mc-badge c2">C2 k=2</span>
+      <span class="mc-badge c3">C3 k=1</span>
+    </div>
+    <pre>profile/
+  assignment.csv
+  degree.csv
+  mincut.csv  (k per cluster)
+  edge_counts.csv  (probs matrix)
+  com.csv     (outliers dropped)</pre>`,
+});
+
+// Step 2: stage 2a, K4 for C1
+STEPS.push({
+  title:'stage 2a: K_{k+1} core for C1 (k=3)',
+  desc:`Take the top four nodes by degree in C1, which are 1, 2, 3, 4 with degrees 6, 5, 5, 5. Wire them into K_4, a 3-edge-connected graph. Those 6 edges guarantee C1's output is at least 3-edge-connected.`,
+  nodes: id => {
+    if (OUTLIER_NODES.has(id)) return {opacity:.1};
+    if ([1,2,3,4].includes(id)) return {opacity:1, halo:'var(--azure)'};
+    return {opacity:.55};
+  },
+  edges: [
+    ...INPUT_EDGES.map(([u,v])=>({u,v,stage:'input',faded:true,hidden:OUTLIER_EDGES_SET.has(key(u,v))})),
+    ...C1_CORE.map(([u,v])=>({u,v,stage:'stage2',highlight:true})),
+  ],
+  side: `<p>K_4 is 3-edge-connected. After this pass, cluster C1 has edge-connectivity at least 3.</p>
+    <div class="kv">
+      <span class="k">top-4 by deg</span><span class="v">1(6) 2(5) 3(5) 4(5)</span>
+      <span class="k">edges added</span><span class="v">6</span>
+      <span class="k">formula</span><span class="v">k(k+1)/2 = 6</span>
+    </div>`,
+});
+
+// Step 3: stage 2b, K3 for C2
+STEPS.push({
+  title:'stage 2b: K_{k+1} core for C2 (k=2)',
+  desc:`Top three nodes in C2 are 9, 10, 11 at degrees 5, 5, 4. Wire them into K_3 for 3 edges. K_3 is 2-edge-connected so C2's output is at least 2-edge-connected.`,
+  nodes: id => {
+    if (OUTLIER_NODES.has(id)) return {opacity:.1};
+    if ([9,10,11].includes(id)) return {opacity:1, halo:'var(--amber)'};
+    if ([1,2,3,4].includes(id)) return {opacity:.65};
+    return {opacity:.55};
+  },
+  edges: [
+    ...INPUT_EDGES.map(([u,v])=>({u,v,stage:'input',faded:true,hidden:OUTLIER_EDGES_SET.has(key(u,v))})),
+    ...C1_CORE.map(([u,v])=>({u,v,stage:'stage2'})),
+    ...C2_CORE.map(([u,v])=>({u,v,stage:'stage2',highlight:true})),
+  ],
+  side: `<p>K_3 is 2-edge-connected. C2 now has edge-connectivity at least 2.</p>
+    <div class="kv">
+      <span class="k">top-3 by deg</span><span class="v">9(5) 10(5) 11(4)</span>
+      <span class="k">edges added</span><span class="v">3</span>
+    </div>`,
+});
+
+// Step 4: stage 2c, K2 for C3
+STEPS.push({
+  title:'stage 2c: K_{k+1} core for C3 (k=1)',
+  desc:`Top two in C3 are 15 and 16, both at degree 4. K_2 is a single edge and is 1-edge-connected, which meets the cluster's edge-connectivity floor.`,
+  nodes: id => {
+    if (OUTLIER_NODES.has(id)) return {opacity:.1};
+    if ([15,16].includes(id)) return {opacity:1, halo:'var(--mint)'};
+    if ([1,2,3,4,9,10,11].includes(id)) return {opacity:.65};
+    return {opacity:.55};
+  },
+  edges: [
+    ...INPUT_EDGES.map(([u,v])=>({u,v,stage:'input',faded:true,hidden:OUTLIER_EDGES_SET.has(key(u,v))})),
+    ...C1_CORE.map(([u,v])=>({u,v,stage:'stage2'})),
+    ...C2_CORE.map(([u,v])=>({u,v,stage:'stage2'})),
+    ...C3_CORE.map(([u,v])=>({u,v,stage:'stage2',highlight:true})),
+  ],
+  side: `<p>K_2 is 1-edge-connected. C3's floor is the lowest of the three clusters, so the core is a single edge.</p>
+    <div class="kv">
+      <span class="k">top-2 by deg</span><span class="v">15(4) 16(4)</span>
+      <span class="k">edges added</span><span class="v">1</span>
+    </div>`,
+});
+
+// Step 5: stage 2d, phase 2 attach
+STEPS.push({
+  title:'stage 2d: phase 2, attach remaining nodes',
+  desc:`Walk the non-core nodes in descending-degree order. For each new node u, wire it to the top-k already-processed partners, skipping any whose residual degree is zero. When the block-pair budget or a partner's residual would block a required edge, ensure_edge_capacity fires and inflates the budget by 1. Here the inflation shows up once, when node 6 attaches in C1.`,
+  nodes: id => {
+    if (OUTLIER_NODES.has(id)) return {opacity:.1};
+    return {opacity:1};
+  },
+  edges: [
+    ...INPUT_EDGES.map(([u,v])=>({u,v,stage:'input',faded:true,hidden:OUTLIER_EDGES_SET.has(key(u,v))})),
+    ...STAGE2_CONSTRUCTIVE.map(([u,v])=>({u,v,stage:'stage2',highlight:true})),
+  ],
+  marker: 'inflate',
+  side: `<p>Residual degree tracks stubs left after each attachment. Probs keeps the block-pair budget.</p>
+    <div class="kv">
+      <span class="k">C1 attach</span><span class="v">5 &rarr; 1, 6 &rarr; 1*, 7 &rarr; 1, 8 &rarr; 1</span>
+      <span class="k">C2 attach</span><span class="v">12 &rarr; 9, 13 &rarr; 9, 14 &rarr; 9</span>
+      <span class="k">C3 attach</span><span class="v">17 &rarr; 15, 18 &rarr; 16</span>
+    </div>
+    <p style="margin-top:.7rem;color:var(--signal);font-size:.85rem">* budget inflation: probs[C1,C1] hits 0 but an edge is required, so int_deg[6]+=1 and probs[C1,C1]+=1.</p>`,
+});
+
+// Step 6: stage 2e, SBM overlay
+STEPS.push({
+  title:'stage 2e: SBM overlay on mutated probs',
+  desc:`gt.generate_sbm runs on the residual probs and residual degree array, which have been decremented and sometimes inflated by the constructive phase. New edges land in cells the constructive phase did not fill. Some overlay samples collide with constructive edges and get flagged for dedup.`,
+  nodes: id => {
+    if (OUTLIER_NODES.has(id)) return {opacity:.1};
+    return {opacity:1};
+  },
+  edges: [
+    ...INPUT_EDGES.map(([u,v])=>({u,v,stage:'input',faded:true,hidden:OUTLIER_EDGES_SET.has(key(u,v))})),
+    ...STAGE2_CONSTRUCTIVE.map(([u,v])=>({u,v,stage:'stage2'})),
+    ...STAGE2_OVERLAY_NEW.map(([u,v])=>({u,v,stage:'stage2-overlay',highlight:true})),
+    ...STAGE2_OVERLAY_COLLIDE.map(([u,v])=>({u,v,stage:'stage2-overlay',collide:true})),
+  ],
+  side: `<pre>g = gt.generate_sbm(
+    b, probs.tocsr(),
+    out_degs=deg,
+    micro_ers=True,
+    micro_degs=True,
+    directed=False,
+)
+g.add_edge_list(edges)</pre>
+    <p style="margin-top:.55rem">Collisions (red x) will be dropped next.</p>`,
+});
+
+// Step 7: stage 2f, remove parallel
+STEPS.push({
+  title:'stage 2f: remove_parallel_edges + remove_self_loops',
+  desc:`Dedup drops any overlay edge that collided with a constructive edge, and any self-loop. The remaining graph is written to the stage-2 edge.csv in the .state/gen_clustered/ cache.`,
+  nodes: id => {
+    if (OUTLIER_NODES.has(id)) return {opacity:.1};
+    return {opacity:1};
+  },
+  edges: [
+    ...INPUT_EDGES.map(([u,v])=>({u,v,stage:'input',faded:true,hidden:OUTLIER_EDGES_SET.has(key(u,v))})),
+    ...STAGE2_FINAL.map(([u,v])=>({u,v,stage:'stage2'})),
+  ],
+  side: `<div class="kv">
+      <span class="k">constructive</span><span class="v">${STAGE2_CONSTRUCTIVE.length}</span>
+      <span class="k">overlay kept</span><span class="v">${STAGE2_OVERLAY_NEW.length}</span>
+      <span class="k">overlay dropped</span><span class="v">${STAGE2_OVERLAY_COLLIDE.length}</span>
+      <span class="k">stage-2 total</span><span class="v">${STAGE2_FINAL.length}</span>
+    </div>
+    <pre>written: .state/gen_clustered/edge.csv</pre>`,
+});
+
+// Step 8: stage 3a, outlier SBM
+STEPS.push({
+  title:'stage 3a: outlier-only SBM (seed + 1)',
+  desc:`Outliers 19 and 20 return. Each outlier is its own size-1 block. gen_outlier.py re-reads the input, identifies outlier-incident edges, builds the probs matrix over just those cells, and runs gt.generate_sbm with seed + 1. Non-outlier-incident input edges are not touched here.`,
+  nodes: id => ({opacity:1, halo: OUTLIER_NODES.has(id)?'var(--signal)':null}),
+  edges: [
+    ...STAGE2_FINAL.map(([u,v])=>({u,v,stage:'stage2'})),
+    ...STAGE3_OUTLIER.map(([u,v])=>({u,v,stage:'stage3',highlight:true})),
+  ],
+  side: `<div class="kv">
+      <span class="k">outliers</span><span class="v">{19, 20}</span>
+      <span class="k">block count</span><span class="v">5 (3 clusters + 2 singletons)</span>
+      <span class="k">outlier-incident</span><span class="v">4 input edges</span>
+      <span class="k">seed</span><span class="v">seed + 1</span>
+    </div>
+    <pre>written: .state/gen_outlier/edges/edge_outlier.csv</pre>`,
+});
+
+// Step 9: stage 3b, combine
+STEPS.push({
+  title:'stage 3b: combine stage 2 + stage 3a',
+  desc:`combine_edgelists.py concatenates the two edgelists, undirected-dedups with first-seen wins so stage 2 takes priority, and emits edge.csv plus sources.json with inclusive 1-based row ranges per provenance band.`,
+  nodes: id => ({opacity:1}),
+  edges: [
+    ...STAGE2_FINAL.map(([u,v])=>({u,v,stage:'stage2'})),
+    ...STAGE3_OUTLIER.map(([u,v])=>({u,v,stage:'stage3'})),
+  ],
+  side: `<pre>{
+  "clustered":    [1, ${STAGE2_FINAL.length}],
+  "outlier":      [${STAGE2_FINAL.length+1}, ${STAGE2_FINAL.length+STAGE3_OUTLIER.length}]
+}</pre>
+    <div class="kv" style="margin-top:.55rem">
+      <span class="k">stage-2 band</span><span class="v">${STAGE2_FINAL.length} edges</span>
+      <span class="k">stage-3 band</span><span class="v">${STAGE3_OUTLIER.length} edges</span>
+      <span class="k">combined</span><span class="v">${STAGE2_FINAL.length+STAGE3_OUTLIER.length} edges</span>
+    </div>`,
+});
+
+// Step 10: stage 4a, match_degree greedy
+STEPS.push({
+  title:'stage 4a: heap-greedy match_degree (seed + 2)',
+  desc:`Residual degree per node = input target minus current output count. Build a max-heap keyed on (-residual, node). Pop u, take partners via set.pop() from u's available non-neighbours, add edges in paper-3 grey. v1 hardcodes --match-degree-algorithm greedy. If a node exits the heap with residual greater than zero, its stubs drop silently; v1 does not log this.`,
+  nodes: id => ({opacity:1}),
+  edges: [
+    ...STAGE2_FINAL.map(([u,v])=>({u,v,stage:'stage2'})),
+    ...STAGE3_OUTLIER.map(([u,v])=>({u,v,stage:'stage3'})),
+    ...STAGE4_MATCH.map(([u,v])=>({u,v,stage:'stage4',highlight:true})),
+  ],
+  side: `<pre>max_heap = [(-res_deg[i], i)
+            for i in range(N) if res_deg[i] > 0]
+heapq.heapify(max_heap)
+while max_heap:
+    _, u = heappop(...)
+    for _ in range(min(res_u, len(cands))):
+        v = cands.pop()
+        edges.add((u, v))</pre>
+    <p style="margin-top:.55rem;color:var(--paper-3);font-size:.84rem">silent gridlock: stubs dropped when candidates exhaust before residual hits zero. PYTHONHASHSEED=0 pins set.pop() order.</p>`,
+});
+
+// Step 11: stage 4b, final combine
+STEPS.push({
+  title:'stage 4b: final combine',
+  desc:`combine_edgelists.py merges stage-3b's edge.csv with stage-4a's degree_matching_edge.csv, passing stage-3b's sources.json as --json-1 so all three provenance bands land in the final sources.json. edge.csv, sources.json, and com.csv sit at the top-level output directory.`,
+  nodes: id => ({opacity:1}),
+  edges: [
+    ...STAGE2_FINAL.map(([u,v])=>({u,v,stage:'stage2'})),
+    ...STAGE3_OUTLIER.map(([u,v])=>({u,v,stage:'stage3'})),
+    ...STAGE4_MATCH.map(([u,v])=>({u,v,stage:'stage4'})),
+  ],
+  side: (() => {
+    const s2 = STAGE2_FINAL.length;
+    const s3 = STAGE3_OUTLIER.length;
+    const s4 = STAGE4_MATCH.length;
+    return `<pre>output/
+  edge.csv         (${s2+s3+s4} edges)
+  sources.json
+  com.csv          (stage-1 passthrough)
+
+sources.json:
+{
+  "clustered":    [1, ${s2}],
+  "outlier":      [${s2+1}, ${s2+s3}],
+  "match_degree": [${s2+s3+1}, ${s2+s3+s4}]
+}</pre>
+    <div class="kv" style="margin-top:.55rem">
+      <span class="k">N</span><span class="v">20</span>
+      <span class="k">|E| target</span><span class="v">33</span>
+      <span class="k">|E| output</span><span class="v">${s2+s3+s4}</span>
+      <span class="k">k(C1) out</span><span class="v">&ge; 3</span>
+      <span class="k">k(C2) out</span><span class="v">&ge; 2</span>
+      <span class="k">k(C3) out</span><span class="v">&ge; 1</span>
+    </div>`;
+  })(),
+});
+
+// ────────────────────────────────────────────────────────────────────────────
+// Renderer
+// ────────────────────────────────────────────────────────────────────────────
+const STAGE_COLOR = {
+  'input': 'var(--paper-4)',
+  'stage2': 'var(--azure-2)',
+  'stage2-overlay': '#c5e0ff',
+  'stage3': 'var(--orchid)',
+  'stage4': 'var(--paper-3)',
+};
+const svg = d3.select('#graph');
+const gEdges = svg.append('g').attr('class','edges');
+const gMarkers = svg.append('g').attr('class','markers');
+const gNodes = svg.append('g').attr('class','nodes');
+
+let current = 0;
+let playing = false;
+let playTimer = null;
+
+function midpoint(u, v){
+  const a = POSITIONS[u], b = POSITIONS[v];
+  return {x:(a.x+b.x)/2, y:(a.y+b.y)/2};
+}
+
+function render(stepIdx){
+  const step = STEPS[stepIdx];
+
+  // Deduplicate edges: if the same pair appears with different stages,
+  // the later entry wins (this matches how collisions and highlights layer).
+  const edgeMap = new Map();
+  for (const e of step.edges || []){
+    if (e.hidden) continue;
+    edgeMap.set(key(e.u,e.v), e);
+  }
+  const edgeList = [...edgeMap.values()];
+
+  // Edges
+  const edgeSel = gEdges.selectAll('line.edge').data(edgeList, d => key(d.u,d.v));
+  edgeSel.exit().transition().duration(220).attr('opacity',0).remove();
+
+  const edgeEnter = edgeSel.enter().append('line').attr('class','edge')
+    .attr('x1', d => POSITIONS[d.u].x).attr('y1', d => POSITIONS[d.u].y)
+    .attr('x2', d => POSITIONS[d.v].x).attr('y2', d => POSITIONS[d.v].y)
+    .attr('opacity', 0);
+
+  edgeEnter.merge(edgeSel)
+    .transition().duration(250).ease(d3.easeCubicInOut)
+    .attr('x1', d => POSITIONS[d.u].x).attr('y1', d => POSITIONS[d.u].y)
+    .attr('x2', d => POSITIONS[d.v].x).attr('y2', d => POSITIONS[d.v].y)
+    .attr('stroke', d => STAGE_COLOR[d.stage] || 'var(--paper-4)')
+    .attr('stroke-width', d => d.highlight ? 2.4 : (d.collide ? 2 : 1.3))
+    .attr('stroke-dasharray', d => d.collide ? '3 2' : null)
+    .attr('opacity', d => {
+      if (d.collide) return .75;
+      if (d.faded) return .22;
+      return d.highlight ? 1 : .7;
+    });
+
+  // Collision x-markers
+  const collisions = edgeList.filter(e => e.collide);
+  const mSel = gMarkers.selectAll('text.collide-x').data(collisions, d => key(d.u,d.v));
+  mSel.exit().remove();
+  mSel.enter().append('text').attr('class','collide-x').text('✕')
+    .merge(mSel)
+    .attr('x', d => midpoint(d.u,d.v).x)
+    .attr('y', d => midpoint(d.u,d.v).y);
+
+  // Inflate marker (stage 2d only)
+  gMarkers.selectAll('text.inflate-label').remove();
+  if (step.marker === 'inflate'){
+    const mp = midpoint(6, 1);
+    gMarkers.append('text').attr('class','inflate-label')
+      .attr('x', mp.x - 10).attr('y', mp.y - 8)
+      .text('budget inflation');
+  }
+
+  // Nodes
+  const nodeIds = Object.keys(POSITIONS).map(Number);
+  const nodeSel = gNodes.selectAll('g.node').data(nodeIds, d => d);
+  const nodeEnter = nodeSel.enter().append('g').attr('class','node')
+    .attr('transform', d => `translate(${POSITIONS[d].x},${POSITIONS[d].y})`);
+  nodeEnter.append('circle').attr('class','halo').attr('r',13).attr('fill','none');
+  nodeEnter.append('circle').attr('class','body').attr('r',9);
+  nodeEnter.append('text').attr('class','node-label').text(d => d);
+
+  const merged = nodeEnter.merge(nodeSel);
+  merged.each(function(d){
+    const style = step.nodes ? step.nodes(d) : {opacity:1};
+    const sel = d3.select(this);
+    sel.transition().duration(250).ease(d3.easeCubicInOut)
+       .attr('opacity', style.opacity ?? 1);
+    sel.select('circle.body')
+       .attr('fill', CLUSTER_COLOR[CLUSTER_OF[d]])
+       .attr('stroke', 'var(--ink)')
+       .attr('stroke-width', 1.2)
+       .attr('stroke-dasharray', style.outline === 'dashed' ? '2 1.5' : null);
+    sel.select('circle.halo')
+       .attr('stroke', style.halo || 'none')
+       .attr('stroke-width', style.halo ? 2 : 0)
+       .attr('opacity', style.halo ? .85 : 0);
+  });
+
+  // Text panels
+  d3.select('#step-num').text(stepIdx);
+  d3.select('#step-total').text(STEPS.length - 1);
+  d3.select('#step-title').text(step.title);
+  d3.select('#step-description-body').html(step.desc);
+  d3.select('#state-panel-body').html(step.side || '');
+
+  // Controls
+  d3.select('#btn-prev').property('disabled', stepIdx === 0);
+  d3.select('#btn-next').property('disabled', stepIdx === STEPS.length - 1);
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Controls
+// ────────────────────────────────────────────────────────────────────────────
+function go(i){
+  current = Math.max(0, Math.min(STEPS.length - 1, i));
+  render(current);
+  if (playing && current === STEPS.length - 1) stopPlay();
+}
+function next(){ go(current + 1); }
+function prev(){ go(current - 1); }
+function reset(){ stopPlay(); go(0); }
+function startPlay(){
+  if (current === STEPS.length - 1) go(0);
+  playing = true;
+  d3.select('#btn-play').text('pause');
+  playTimer = setInterval(() => {
+    if (current >= STEPS.length - 1){ stopPlay(); return; }
+    next();
+  }, 1700);
+}
+function stopPlay(){
+  playing = false;
+  d3.select('#btn-play').text('play');
+  if (playTimer){ clearInterval(playTimer); playTimer = null; }
+}
+function togglePlay(){ playing ? stopPlay() : startPlay(); }
+
+d3.select('#btn-prev').on('click', prev);
+d3.select('#btn-next').on('click', next);
+d3.select('#btn-play').on('click', togglePlay);
+d3.select('#btn-reset').on('click', reset);
+
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.key === 'ArrowRight'){ e.preventDefault(); next(); }
+  else if (e.key === 'ArrowLeft'){ e.preventDefault(); prev(); }
+  else if (e.key === ' '){ e.preventDefault(); togglePlay(); }
+  else if (e.key === 'r' || e.key === 'R'){ e.preventDefault(); reset(); }
+});
+
+render(0);
+</script>
+</body>
+</html>
