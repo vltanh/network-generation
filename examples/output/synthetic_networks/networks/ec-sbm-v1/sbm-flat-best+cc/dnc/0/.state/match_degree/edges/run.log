@@ -1,0 +1,6 @@
+2026-04-20 18:38:41,868 - INFO - --- Starting Stage 6: Degree Matching ---
+2026-04-20 18:38:41,882 - INFO - Loaded reference topologies elapsed: 0.0143 seconds
+2026-04-20 18:38:41,889 - INFO - Subtracted existing edges elapsed: 0.0069 seconds
+2026-04-20 18:38:41,891 - INFO - Added 2120 edges
+2026-04-20 18:38:41,891 - INFO - Degree matching elapsed: 0.0016 seconds
+2026-04-20 18:38:41,897 - INFO - Exported edgelist elapsed: 0.0061 seconds

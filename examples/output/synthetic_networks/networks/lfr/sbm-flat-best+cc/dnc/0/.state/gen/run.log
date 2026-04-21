@@ -1,0 +1,7 @@
+2026-04-20 18:39:07,593 - INFO - Starting LFR Generation...
+2026-04-20 18:39:07,593 - INFO - Seed: 1
+2026-04-20 18:39:07,679 - INFO - N=906 k=23.02207505518764 maxk=368 minc=3 maxc=52 mu=0.6863056477467128 t1=1.4511398602847603 t2=2.0072259135452315
+2026-04-20 18:39:07,679 - INFO - Input loading + parameter computation elapsed: 0.0852 seconds
+2026-04-20 18:39:10,274 - INFO - Generation elapsed: 2.5944 seconds
+2026-04-20 18:39:10,298 - INFO - Export elapsed: 0.0247 seconds
+2026-04-20 18:39:10,298 - INFO - LFR generation complete.

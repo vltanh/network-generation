@@ -1,0 +1,5 @@
+48fd52339fb3e27849ea04c6ddbb974d1a5f9eb555e59e437e80b552c88d424e  examples/output/synthetic_networks/networks/abcd/sbm-flat-best+cc/dnc/0/.state/setup/degree.csv
+ce19257ae64910ba2de74ecb6c3306d5a9ebe156c31228014cbf5ba92950e2c7  examples/output/synthetic_networks/networks/abcd/sbm-flat-best+cc/dnc/0/.state/setup/cluster_sizes.csv
+d37d8a09a05a3de83d2625ba762aa65b0d21a41f84400ee7d239ab20381b55b2  examples/output/synthetic_networks/networks/abcd/sbm-flat-best+cc/dnc/0/.state/setup/mixing_parameter.txt
+057a8ef26ebc28c58d65be33f9d861004614ee2c316c0c16d5ec6aaca83f22df  examples/output/synthetic_networks/networks/abcd/sbm-flat-best+cc/dnc/0/.state/gen/edge.csv
+55c19725f8591fc309cd935646972051150cb09fc6f8c70bf512aaabc97a8914  examples/output/synthetic_networks/networks/abcd/sbm-flat-best+cc/dnc/0/.state/gen/com.csv

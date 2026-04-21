@@ -1,0 +1,18 @@
+2026-04-20 18:38:53,617 - INFO - Starting Residual SBM Generation...
+2026-04-20 18:38:53,618 - INFO - Correction Mode: rewire | Outlier Mode: combined
+2026-04-20 18:38:53,730 - INFO - Setup elapsed: 0.1117 seconds
+2026-04-20 18:38:53,743 - INFO - Initial bad edges before rewiring: 2120
+2026-04-20 18:38:53,813 - INFO - After attempt 1: 809 bad edges remain.
+2026-04-20 18:38:53,827 - INFO - After attempt 2: 788 bad edges remain.
+2026-04-20 18:38:53,830 - INFO - After attempt 3: 786 bad edges remain.
+2026-04-20 18:38:53,841 - INFO - After attempt 4: 770 bad edges remain.
+2026-04-20 18:38:53,842 - INFO - After attempt 5: 770 bad edges remain.
+2026-04-20 18:38:53,843 - INFO - After attempt 6: 770 bad edges remain.
+2026-04-20 18:38:53,847 - INFO - After attempt 7: 768 bad edges remain.
+2026-04-20 18:38:53,848 - INFO - After attempt 8: 768 bad edges remain.
+2026-04-20 18:38:53,852 - INFO - After attempt 9: 765 bad edges remain.
+2026-04-20 18:38:53,853 - INFO - After attempt 10: 765 bad edges remain.
+2026-04-20 18:38:53,853 - WARNING - Finished 10 retries. 765 bad edges remain unresolved and will be dropped.
+2026-04-20 18:38:53,862 - INFO - Generation of residual subgraph elapsed: 0.1319 seconds
+2026-04-20 18:38:53,870 - INFO - Export elapsed: 0.0077 seconds
+2026-04-20 18:38:53,870 - INFO - Complete.

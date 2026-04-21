@@ -1,0 +1,35 @@
+2026-04-20 19:02:18,469 - INFO - Starting nPSO Generation...
+2026-04-20 19:02:18,469 - INFO - Seed: 1 n_threads: 1
+2026-04-20 19:02:18,586 - INFO - N=906 m=12 gamma=2.0 c=442 target_ccoeff=0.5482011904886444
+2026-04-20 19:02:18,586 - INFO - Input loading + parameter computation elapsed: 0.1160 seconds
+2026-04-20 19:02:18,587 - INFO - Starting persistent MATLAB engine session...
+2026-04-20 19:03:03,699 - INFO - [iter 0] T=0.5
+2026-04-20 19:03:04,892 - INFO - Generation elapsed: 1.1929 seconds
+2026-04-20 19:03:05,331 - INFO - Global clustering coefficient: 0.0959388453563607
+2026-04-20 19:03:05,335 - INFO - Step: 2.0  Best T: 0.5  Best ccoeff: 0.0959388453563607  Best diff: 0.45226234513228364
+2026-04-20 19:03:05,335 - INFO - [iter 1] T=0.25
+2026-04-20 19:03:05,965 - INFO - Generation elapsed: 0.6300 seconds
+2026-04-20 19:03:05,970 - INFO - Global clustering coefficient: 0.09685808314685139
+2026-04-20 19:03:05,975 - INFO - Step: 0.0009192377904906901  Best T: 0.25  Best ccoeff: 0.09685808314685139  Best diff: 0.45134310734179295
+2026-04-20 19:03:05,975 - INFO - [iter 2] T=0.125
+2026-04-20 19:03:06,280 - INFO - Generation elapsed: 0.3052 seconds
+2026-04-20 19:03:06,286 - INFO - Global clustering coefficient: 0.09769032821139921
+2026-04-20 19:03:06,290 - INFO - Step: 0.0008322450645478208  Best T: 0.125  Best ccoeff: 0.09769032821139921  Best diff: 0.4505108622772451
+2026-04-20 19:03:06,290 - INFO - [iter 3] T=0.0625
+2026-04-20 19:03:06,581 - INFO - Generation elapsed: 0.2908 seconds
+2026-04-20 19:03:06,587 - INFO - Global clustering coefficient: 0.0988167930129827
+2026-04-20 19:03:06,591 - INFO - Step: 0.0011264648015834877  Best T: 0.0625  Best ccoeff: 0.0988167930129827  Best diff: 0.44938439747566167
+2026-04-20 19:03:06,591 - INFO - [iter 4] T=0.03125
+2026-04-20 19:03:06,932 - INFO - Generation elapsed: 0.3411 seconds
+2026-04-20 19:03:06,938 - INFO - Global clustering coefficient: 0.09830969689168513
+2026-04-20 19:03:06,942 - INFO - Step: 0.0005070961212975678  Best T: 0.0625  Best ccoeff: 0.0988167930129827  Best diff: 0.44938439747566167
+2026-04-20 19:03:06,942 - INFO - [iter 5] T=0.015625
+2026-04-20 19:03:07,208 - INFO - Generation elapsed: 0.2655 seconds
+2026-04-20 19:03:07,214 - INFO - Global clustering coefficient: 0.09804844048476406
+2026-04-20 19:03:07,218 - INFO - Step: 0.00026125640692106766  Best T: 0.0625  Best ccoeff: 0.0988167930129827  Best diff: 0.44938439747566167
+2026-04-20 19:03:07,218 - INFO - [iter 6] T=0.0078125
+2026-04-20 19:03:07,478 - INFO - Generation elapsed: 0.2594 seconds
+2026-04-20 19:03:07,484 - INFO - Global clustering coefficient: 0.09797572720239264
+2026-04-20 19:03:07,488 - INFO - Step: 7.271328237141994e-05  Best T: 0.0625  Best ccoeff: 0.0988167930129827  Best diff: 0.44938439747566167
+2026-04-20 19:03:07,826 - INFO - Dropping 124 singleton cluster(s) from com.csv
+2026-04-20 19:03:07,837 - INFO - nPSO generation complete.
