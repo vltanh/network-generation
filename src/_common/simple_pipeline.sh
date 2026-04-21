@@ -65,6 +65,22 @@ if ! declare -p GEN_PROFILE_CLI_ARGS >/dev/null 2>&1; then
     GEN_PROFILE_CLI_ARGS=()
 fi
 
+# Per-stage params.txt contents. These are pre-rendered key=value strings
+# that the pipeline writes into each stage dir as a cache fingerprint before
+# is_step_done runs. The wrapper populates them; simple_pipeline.sh writes
+# them and threads them into the stage's IN list.
+#
+#   GEN_TOPLEVEL_PARAMS   — applied to ${OUTPUT_DIR}/params.txt (e.g. seed,
+#                           n_threads, outlier_mode, drop_outlier_outlier_edges).
+#   GEN_PROFILE_PARAMS    — applied to stage-1 params.txt.
+#   GEN_STAGE2_PARAMS     — applied to stage-2 params.txt.
+for _v in GEN_TOPLEVEL_PARAMS GEN_PROFILE_PARAMS GEN_STAGE2_PARAMS; do
+    if ! declare -p "${_v}" >/dev/null 2>&1; then
+        eval "${_v}=()"
+    fi
+done
+unset _v
+
 SHARED_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 SRC_DIR="$( cd "${SHARED_DIR}/.." && pwd )"
 export PYTHONPATH="${SRC_DIR}${PYTHONPATH:+:${PYTHONPATH}}"
@@ -81,11 +97,16 @@ source "${SHARED_DIR}/state.sh"
 # Top-level short-circuit
 # ==========================================
 FINAL_DONE="${OUTPUT_DIR}/done"
-FINAL_IN="${INPUT_EDGELIST} ${INPUT_CLUSTERING}"
+FINAL_PARAMS="${OUTPUT_DIR}/params.txt"
+FINAL_IN="${INPUT_EDGELIST} ${INPUT_CLUSTERING} ${FINAL_PARAMS}"
 FINAL_OUT="${OUTPUT_DIR}/edge.csv ${OUTPUT_DIR}/com.csv"
 FINAL_LOG="${OUTPUT_DIR}/run.log"
 
 mkdir -p "${OUTPUT_DIR}"
+
+# Write top-level params.txt first — changes to any user-facing knob
+# invalidate the top-level done-file (FINAL_IN includes FINAL_PARAMS).
+write_params_file "${FINAL_PARAMS}" "${GEN_TOPLEVEL_PARAMS[@]}"
 
 log_invocation_header "${FINAL_LOG}" "${SEED}" "${KEEP_STATE}"
 
@@ -127,7 +148,12 @@ mkdir -p "${STG1_SETUP_DIR}" "${STG2_DIR}"
 # ==========================================
 echo "=== Starting Stage 1: Profile (${GEN_NAME}) ==="
 
-IN_1="${INPUT_EDGELIST} ${INPUT_CLUSTERING}"
+# Write stage 1 params.txt before is_step_done checks: the file is part of
+# IN_1, so changing any profile-stage knob invalidates the cache.
+STG1_PARAMS="${STG1_SETUP_DIR}/params.txt"
+write_params_file "${STG1_PARAMS}" "${GEN_PROFILE_PARAMS[@]}"
+
+IN_1="${INPUT_EDGELIST} ${INPUT_CLUSTERING} ${STG1_PARAMS}"
 
 # Expand declared profile output basenames into absolute paths.
 OUT_1_PATHS=()
@@ -154,7 +180,10 @@ fi
 # ==========================================
 echo "=== Starting Stage 2: Gen (${GEN_NAME}) ==="
 
-IN_2="${OUT_1} ${GEN_EXTRA_STAGE2_INPUTS}"
+STG2_PARAMS="${STG2_DIR}/params.txt"
+write_params_file "${STG2_PARAMS}" "${GEN_STAGE2_PARAMS[@]}"
+
+IN_2="${OUT_1} ${STG2_PARAMS} ${GEN_EXTRA_STAGE2_INPUTS}"
 OUT_2="${STG2_DIR}/edge.csv ${STG2_DIR}/com.csv"
 
 if ! is_step_done "${STG2_DIR}/done" "${OUT_2}"; then

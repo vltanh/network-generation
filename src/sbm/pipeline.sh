@@ -15,7 +15,7 @@ KEEP_STATE=0
 # edge (including outlier-outlier and clustered-outlier) routes through the
 # same block structure; keep OO edges.
 OUTLIER_MODE="combined"
-DROP_OO=""
+DROP_OO_BOOL="false"
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -27,8 +27,8 @@ while [[ "$#" -gt 0 ]]; do
         --n-threads) N_THREADS="$2"; shift ;;
         --keep-state) KEEP_STATE=1 ;;
         --outlier-mode) OUTLIER_MODE="$2"; shift ;;
-        --drop-outlier-outlier-edges) DROP_OO="--drop-outlier-outlier-edges" ;;
-        --keep-outlier-outlier-edges) DROP_OO="--keep-outlier-outlier-edges" ;;
+        --drop-outlier-outlier-edges) DROP_OO_BOOL="true" ;;
+        --keep-outlier-outlier-edges) DROP_OO_BOOL="false" ;;
         *) echo "Unknown parameter passed: $1"; exit 1 ;;
     esac
     shift
@@ -41,15 +41,15 @@ export PYTHONHASHSEED=0
 
 # Must match STG1_SETUP_DIR in _common/simple_pipeline.sh.
 SETUP="${OUTPUT_DIR}/.state/setup"
+STG1_PARAMS_PATH="${SETUP}/params.txt"
 
 GEN_NAME="sbm"
 GEN_SCRIPT_DIR="${SCRIPT_DIR}"
-GEN_PROFILE_OUTPUTS=(node_id.csv cluster_id.csv assignment.csv degree.csv edge_counts.csv params.txt)
+GEN_PROFILE_OUTPUTS=(node_id.csv cluster_id.csv assignment.csv degree.csv edge_counts.csv)
+# Pipeline writes ${STG1_PARAMS_PATH} before profile.py runs; profile reads it
+# (CLI flags would override, but we pass none so the file is authoritative).
 # shellcheck disable=SC2034
-GEN_PROFILE_CLI_ARGS=(--outlier-mode "${OUTLIER_MODE}")
-if [ -n "${DROP_OO}" ]; then
-    GEN_PROFILE_CLI_ARGS+=("${DROP_OO}")
-fi
+GEN_PROFILE_CLI_ARGS=(--params-file "${STG1_PARAMS_PATH}")
 # shellcheck disable=SC2034
 GEN_CLI_ARGS=(
     --node-id          "${SETUP}/node_id.csv"
@@ -59,6 +59,26 @@ GEN_CLI_ARGS=(
     --edge-counts      "${SETUP}/edge_counts.csv"
     --input-clustering "${INPUT_CLUSTERING}"
     --n-threads        "${N_THREADS}"
+)
+
+# Per-stage params.txt contents — fingerprints output-affecting knobs so the
+# cache invalidates when they change. See _common/state.sh:write_params_file.
+# shellcheck disable=SC2034
+GEN_TOPLEVEL_PARAMS=(
+    "seed=${SEED}"
+    "n_threads=${N_THREADS}"
+    "outlier_mode=${OUTLIER_MODE}"
+    "drop_outlier_outlier_edges=${DROP_OO_BOOL}"
+)
+# shellcheck disable=SC2034
+GEN_PROFILE_PARAMS=(
+    "outlier_mode=${OUTLIER_MODE}"
+    "drop_outlier_outlier_edges=${DROP_OO_BOOL}"
+)
+# shellcheck disable=SC2034
+GEN_STAGE2_PARAMS=(
+    "seed=${SEED}"
+    "n_threads=${N_THREADS}"
 )
 
 # shellcheck disable=SC1091

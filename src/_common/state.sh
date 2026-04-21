@@ -42,6 +42,31 @@ is_step_done() {
     return 0 # True: State is identical
 }
 
+# Write a per-stage `params.txt` fingerprint from a list of key=value pairs.
+#
+# Pipeline contract: write this *before* is_step_done runs so the file
+# participates in the stage's IN-list hash. Changing any value invalidates
+# the cache and cascades downstream (via OUT reused in the next stage's IN).
+#
+# Format matches src/params_common.py: one `key=value` per line, keys sorted
+# alphabetically.  Values are passed through verbatim (no bool coercion —
+# callers must pre-render, e.g. `drop_oo=true`).
+#
+# Usage: write_params_file "path/to/params.txt" "key1=val1" "key2=val2" ...
+write_params_file() {
+    local out_file="$1"
+    shift
+    if [ "$#" -eq 0 ]; then
+        echo "Error [write_params_file]: at least one key=value required." >&2
+        exit 2
+    fi
+    mkdir -p "$(dirname "${out_file}")"
+    local tmp="${out_file}.tmp.$$"
+    printf '%s\n' "$@" | LC_ALL=C sort > "${tmp}"
+    mv "${tmp}" "${out_file}"
+}
+
+
 # Record that a pipeline stage has completed successfully.
 #
 # Verifies every output file exists and is non-empty, then writes a done-file

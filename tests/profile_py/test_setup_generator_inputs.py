@@ -36,29 +36,26 @@ _GENERATORS = {
 }
 
 
-# Expected output filenames per generator.  Every generator writes
-# params.txt post-migration so downstream stages and reproductions know
-# what policy/parameters shaped the other artifacts.  params.txt
-# replaces the narrower outlier_mode.txt.
+# Expected output filenames per generator.  profile.py no longer writes
+# params.txt — the pipeline writes it (into each stage dir) as a cache
+# fingerprint, separately from what profile.py produces.  Standalone
+# profile.py runs (as exercised by these tests) do not write params.txt.
 EXPECTED_OUTPUTS = {
     "sbm": {
         "node_id.csv", "cluster_id.csv", "assignment.csv",
-        "degree.csv", "edge_counts.csv", "params.txt",
+        "degree.csv", "edge_counts.csv",
     },
     "ecsbm": {
         "node_id.csv", "cluster_id.csv", "assignment.csv",
         "degree.csv", "edge_counts.csv", "mincut.csv", "com.csv",
-        "params.txt",
     },
-    "abcd": {"degree.csv", "cluster_sizes.csv",
-             "mixing_parameter.txt", "params.txt"},
+    "abcd": {"degree.csv", "cluster_sizes.csv", "mixing_parameter.txt"},
     "abcd+o": {
         "degree.csv", "cluster_sizes.csv",
-        "mixing_parameter.txt", "n_outliers.txt", "params.txt",
+        "mixing_parameter.txt", "n_outliers.txt",
     },
-    "lfr": {"degree.csv", "cluster_sizes.csv",
-            "mixing_parameter.txt", "params.txt"},
-    "npso": {"degree.csv", "cluster_sizes.csv", "params.txt"},
+    "lfr": {"degree.csv", "cluster_sizes.csv", "mixing_parameter.txt"},
+    "npso": {"degree.csv", "cluster_sizes.csv"},
 }
 
 
