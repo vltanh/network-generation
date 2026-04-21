@@ -5,6 +5,21 @@ Each generator has its own `profile.py` under `src/<gen>/` (and
 Those modules compose the building blocks below to produce their
 generator-specific output set.
 
+Outlier handling is a two-step preprocessing pipeline applied to the
+output of `read_clustering` + `read_edgelist`:
+
+  A. `identify_outliers` — unified definition: an outlier is any node
+     that is unclustered OR assigned to a size-1 cluster. Mutates
+     `node2com`/`cluster_counts` in place to demote size-1 clusters
+     into the outlier pool.
+  B. `apply_outlier_mode` — orthogonal transform over two dimensions:
+       - mode ∈ {excluded, singleton, combined} (cluster shape)
+       - drop_outlier_outlier_edges (OO-edge handling)
+
+After these two steps, the remaining profile primitives see a clean
+`(nodes, node2com, cluster_counts, neighbors)` whose outlier semantics
+are already baked in; mu, edge counts, mincut etc. are generator-only.
+
 Deps: stdlib + pandas only.  numpy is pulled in lazily inside the
 lfr mixing-parameter branch (the only numpy call site in profiling);
 pymincut lives with the ec-sbm profile module, not here.
@@ -15,6 +30,10 @@ import logging
 from collections import defaultdict
 
 import pandas as pd
+
+
+OUTLIER_MODES = ("excluded", "singleton", "combined")
+COMBINED_OUTLIER_CLUSTER_ID = "__outliers__"
 
 
 # ---------------------------------------------------------------------------
@@ -61,6 +80,88 @@ def read_edgelist(edgelist_path, nodes):
             nodes.add(v)
 
     return nodes, neighbors
+
+
+# ---------------------------------------------------------------------------
+# Outlier identification + mode transform
+# ---------------------------------------------------------------------------
+
+def identify_outliers(nodes, node2com, cluster_counts):
+    """Unified outlier identification — Step A of the profile pipeline.
+
+    An outlier is any node that is unclustered OR assigned to a size-1
+    cluster in the input. `node2com` and `cluster_counts` are mutated in
+    place: every size-1 cluster is removed from `cluster_counts`, and its
+    member node is removed from `node2com`. After this call, downstream
+    code sees a single pool of unclustered nodes (unclustered-in-input ∪
+    formerly-size-1-clustered), which is the input `apply_outlier_mode`
+    expects.
+
+    Returns:
+        outliers: set of outlier node IDs.
+    """
+    outliers = {u for u in nodes if u not in node2com}
+    singleton_clusters = [c for c, sz in cluster_counts.items() if sz == 1]
+    for c in singleton_clusters:
+        del cluster_counts[c]
+    for u, c in list(node2com.items()):
+        if c not in cluster_counts:
+            del node2com[u]
+            outliers.add(u)
+    return outliers
+
+
+def apply_outlier_mode(nodes, node2com, cluster_counts, neighbors, outliers,
+                       mode, drop_outlier_outlier_edges=False):
+    """Transform profile inputs per the chosen outlier mode — Step B.
+
+    `outliers` is the set returned by `identify_outliers` (all nodes that
+    are neither in a surviving multi-member cluster). This function
+    mutates `nodes`, `node2com`, `cluster_counts`, and `neighbors` in
+    place.
+
+    If `drop_outlier_outlier_edges` is True, every outlier-outlier edge
+    is pruned from `neighbors` first. This is a no-op under `excluded`
+    mode (where OO edges are dropped anyway along with the outliers).
+
+    Modes:
+      - excluded:  drop outliers from `nodes`; drop every edge incident
+                   to an outlier from `neighbors`. Profile sees a strictly
+                   clustered subgraph.
+      - singleton: give each outlier its own fresh cluster id of the form
+                   `__outlier_<nodeid>__`, size 1. Every edge incident to
+                   an outlier is inter-cluster.
+      - combined:  fold all outliers into one shared cluster id
+                   (`__outliers__`) of size |outliers|. Outlier-outlier
+                   edges become intra-cluster.
+    """
+    if mode not in OUTLIER_MODES:
+        raise ValueError(
+            f"unknown outlier mode: {mode!r}; expected one of {OUTLIER_MODES}"
+        )
+
+    if drop_outlier_outlier_edges and mode != "excluded":
+        for u in outliers:
+            if u in neighbors:
+                neighbors[u] = {v for v in neighbors[u] if v not in outliers}
+
+    if mode == "excluded":
+        for u in outliers:
+            nodes.discard(u)
+            if u in neighbors:
+                del neighbors[u]
+        for v in list(neighbors):
+            neighbors[v] = {w for w in neighbors[v] if w not in outliers}
+    elif mode == "singleton":
+        for u in outliers:
+            cid = f"__outlier_{u}__"
+            node2com[u] = cid
+            cluster_counts[cid] = 1
+    elif mode == "combined":
+        if outliers:
+            for u in outliers:
+                node2com[u] = COMBINED_OUTLIER_CLUSTER_ID
+            cluster_counts[COMBINED_OUTLIER_CLUSTER_ID] = len(outliers)
 
 
 # ---------------------------------------------------------------------------
@@ -163,6 +264,32 @@ def export_com_csv(out_dir, node2com):
     )
 
 
+def export_outlier_mode(out_dir, mode, drop_outlier_outlier_edges):
+    """Write the chosen outlier handling to outlier_mode.txt.
+
+    Two lines: mode, then drop_outlier_outlier_edges as lowercase true/false.
+    """
+    with open(f"{out_dir}/outlier_mode.txt", "w") as f:
+        f.write(f"{mode}\n{'true' if drop_outlier_outlier_edges else 'false'}\n")
+
+
+def read_outlier_mode(path):
+    """Read an outlier_mode.txt produced by `export_outlier_mode`.
+
+    Returns (mode, drop_outlier_outlier_edges) as (str, bool).
+    """
+    with open(path) as f:
+        lines = [ln.strip() for ln in f.read().splitlines() if ln.strip()]
+    if len(lines) != 2:
+        raise ValueError(f"{path}: expected 2 non-empty lines, got {len(lines)}")
+    mode, drop_oo = lines
+    if mode not in OUTLIER_MODES:
+        raise ValueError(f"{path}: unknown mode {mode!r}")
+    if drop_oo not in ("true", "false"):
+        raise ValueError(f"{path}: drop_outlier_outlier_edges must be true/false")
+    return mode, drop_oo == "true"
+
+
 # ---------------------------------------------------------------------------
 # Edge-count matrix (sbm + ec-sbm share this)
 # ---------------------------------------------------------------------------
@@ -201,72 +328,61 @@ def export_edge_count(out_dir, edge_counts):
 
 
 # ---------------------------------------------------------------------------
-# Mixing parameter (abcd / abcd+o / lfr variants)
+# Mixing parameter
 # ---------------------------------------------------------------------------
 
-def compute_mixing_parameter(nodes, neighbors, node2com, generator_type):
-    """
-    Compute the empirical mixing parameter that matches each generator's model
-    of how outliers relate to clusters:
+def compute_mixing_parameter(nodes, neighbors, node2com, reduction):
+    """Compute the empirical mixing parameter over (nodes, neighbors, node2com).
 
-      "lfr"    — outliers become singleton clusters in the synthetic output, so
-                 each outlier is in its own cluster: every incident edge is
-                 cross-cluster (out).  Reduction: mean of per-node µ_i.
-      "abcd"   — same singleton-cluster model as LFR; reduction is global
-                 ξ = Σ_out / Σ_total.
-      "abcd+o" — outliers cannot connect to each other in the model, so
-                 outlier-outlier edges are dropped entirely (not counted as in
-                 or out); clustered↔outlier counts as out.  Reduction is
-                 global ξ over the remaining edges.
+    The outlier semantics (mode + drop_oo) are already baked into the inputs
+    by `apply_outlier_mode`; this function is a clean pass that differs only
+    in how it reduces per-node counts to a scalar:
 
-    In LFR/ABCD/ABCD+o, clustered↔outlier edges count as out on both endpoints.
+      reduction="mean"   — mean of per-node µ_i = out_i / (in_i + out_i),
+                           skipping 0-degree nodes. Matches LFR's convention.
+      reduction="global" — global ξ = Σ_out / Σ_total. Matches ABCD/ABCD+o.
+
+    Nodes not present in `node2com` (can happen under `excluded` mode where
+    outliers have been dropped) are skipped implicitly — `neighbors` no
+    longer references them. Under `singleton`/`combined`, every node is in
+    `node2com` so every edge is counted.
     """
-    treat_outliers_as_singletons = generator_type in ("lfr", "abcd")
+    if reduction not in ("mean", "global"):
+        raise ValueError(
+            f"unknown reduction: {reduction!r}; expected 'mean' or 'global'"
+        )
 
     in_degree = defaultdict(int)
     out_degree = defaultdict(int)
 
     for u in nodes:
-        u_clustered = u in node2com
+        cu = node2com.get(u)
+        if cu is None:
+            continue
         for v in neighbors[u]:
-            v_clustered = v in node2com
-
-            if not u_clustered and not v_clustered:
-                # Two outliers: singletons (lfr/abcd) → different clusters (out);
-                # abcd+o → edge forbidden by the model, skip entirely.
-                if treat_outliers_as_singletons:
-                    out_degree[u] += 1
-                # else: abcd+o drops outlier-outlier edges
-            elif not u_clustered or not v_clustered:
-                out_degree[u] += 1
-            elif node2com[u] == node2com[v]:
+            cv = node2com.get(v)
+            if cv is None:
+                continue
+            if cu == cv:
                 in_degree[u] += 1
             else:
                 out_degree[u] += 1
 
-    if generator_type == "lfr":
-        # np is imported lazily so abcd/abcd+o/npso profilers stay numpy-free.
-        # Sort for cross-process determinism: floating-point sum varies with
-        # summation order even though the mean is mathematically order-free.
+    if reduction == "mean":
         import numpy as np
 
-        mus = [
-            out_degree[u] / (in_degree[u] + out_degree[u])
-            for u in sorted(nodes)
-        ]
+        mus = []
+        for u in sorted(nodes):
+            total = in_degree[u] + out_degree[u]
+            if total == 0:
+                continue
+            mus.append(out_degree[u] / total)
+        if not mus:
+            return 0.0
         return float(np.mean(mus))
     else:
         outs_sum = sum(out_degree.values())
         total_sum = outs_sum + sum(in_degree.values())
+        if total_sum == 0:
+            return 0.0
         return outs_sum / total_sum
-
-
-def export_cluster_sizes_with_singleton_outliers(out_dir, comm_size_sorted, n_outliers):
-    """Write cluster sizes with `n_outliers` appended as size-1 clusters.
-
-    Shared by abcd/lfr/npso which treat outliers implicitly as singletons.
-    """
-    cs_with_outliers = list(comm_size_sorted) + [
-        (f"outlier_{i}", 1) for i in range(n_outliers)
-    ]
-    export_comm_size(out_dir, cs_with_outliers)

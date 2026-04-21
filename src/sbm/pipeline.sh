@@ -11,6 +11,11 @@ TIMEOUT="3d"
 SEED=1
 N_THREADS=1
 KEEP_STATE=0
+# SBM default outlier policy: fold all outliers into one mega-cluster so every
+# edge (including outlier-outlier and clustered-outlier) routes through the
+# same block structure; keep OO edges.
+OUTLIER_MODE="combined"
+DROP_OO=""
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -21,6 +26,9 @@ while [[ "$#" -gt 0 ]]; do
         --seed) SEED="$2"; shift ;;
         --n-threads) N_THREADS="$2"; shift ;;
         --keep-state) KEEP_STATE=1 ;;
+        --outlier-mode) OUTLIER_MODE="$2"; shift ;;
+        --drop-outlier-outlier-edges) DROP_OO="--drop-outlier-outlier-edges" ;;
+        --keep-outlier-outlier-edges) DROP_OO="--keep-outlier-outlier-edges" ;;
         *) echo "Unknown parameter passed: $1"; exit 1 ;;
     esac
     shift
@@ -36,7 +44,12 @@ SETUP="${OUTPUT_DIR}/.state/setup"
 
 GEN_NAME="sbm"
 GEN_SCRIPT_DIR="${SCRIPT_DIR}"
-GEN_PROFILE_OUTPUTS=(node_id.csv cluster_id.csv assignment.csv degree.csv edge_counts.csv)
+GEN_PROFILE_OUTPUTS=(node_id.csv cluster_id.csv assignment.csv degree.csv edge_counts.csv outlier_mode.txt)
+# shellcheck disable=SC2034
+GEN_PROFILE_CLI_ARGS=(--outlier-mode "${OUTLIER_MODE}")
+if [ -n "${DROP_OO}" ]; then
+    GEN_PROFILE_CLI_ARGS+=("${DROP_OO}")
+fi
 # shellcheck disable=SC2034
 GEN_CLI_ARGS=(
     --node-id          "${SETUP}/node_id.csv"

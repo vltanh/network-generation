@@ -12,6 +12,9 @@ SEED=1
 N_THREADS=1
 KEEP_STATE=0
 NPSO_DIR=""
+# nPSO default outlier policy: each outlier becomes its own size-1 cluster.
+OUTLIER_MODE="singleton"
+DROP_OO=""
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -23,6 +26,9 @@ while [[ "$#" -gt 0 ]]; do
         --seed) SEED="$2"; shift ;;
         --n-threads) N_THREADS="$2"; shift ;;
         --keep-state) KEEP_STATE=1 ;;
+        --outlier-mode) OUTLIER_MODE="$2"; shift ;;
+        --drop-outlier-outlier-edges) DROP_OO="--drop-outlier-outlier-edges" ;;
+        --keep-outlier-outlier-edges) DROP_OO="--keep-outlier-outlier-edges" ;;
         *) echo "Unknown parameter passed: $1"; exit 1 ;;
     esac
     shift
@@ -41,10 +47,15 @@ SETUP="${OUTPUT_DIR}/.state/setup"
 
 GEN_NAME="npso"
 GEN_SCRIPT_DIR="${SCRIPT_DIR}"
-GEN_PROFILE_OUTPUTS=(degree.csv cluster_sizes.csv)
+GEN_PROFILE_OUTPUTS=(degree.csv cluster_sizes.csv outlier_mode.txt)
 # npso also reads the original edgelist at stage 2 (for the clustering-coeff
 # computation); declare it so stage-2 cache tracks that input.
 GEN_EXTRA_STAGE2_INPUTS="${INPUT_EDGELIST}"
+# shellcheck disable=SC2034
+GEN_PROFILE_CLI_ARGS=(--outlier-mode "${OUTLIER_MODE}")
+if [ -n "${DROP_OO}" ]; then
+    GEN_PROFILE_CLI_ARGS+=("${DROP_OO}")
+fi
 # shellcheck disable=SC2034
 GEN_CLI_ARGS=(
     --input-edgelist   "${INPUT_EDGELIST}"

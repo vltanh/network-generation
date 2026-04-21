@@ -25,6 +25,10 @@
 #   GEN_PROFILE_OUTPUTS  — bash array of stage-1 output *basenames* (relative
 #                          to the stage-1 setup dir) that gen.py consumes
 #                          (they're the files hashed into stage 1's done).
+#   GEN_PROFILE_CLI_ARGS — (optional) bash array of extra flags/values to
+#                          pass to profile.py beyond the mandatory
+#                          --edgelist/--clustering/--output-folder trio.
+#                          Used to surface --outlier-mode and friends.
 #
 # Stage 2 (gen) invokes `${GEN_SCRIPT_DIR}/gen.py`.  The wrapper specifies
 # its CLI shape via:
@@ -55,6 +59,11 @@ fi
 : "${N_THREADS:=1}"
 : "${KEEP_STATE:=0}"
 : "${GEN_EXTRA_STAGE2_INPUTS:=}"
+
+# GEN_PROFILE_CLI_ARGS is optional; default to empty array if unset.
+if ! declare -p GEN_PROFILE_CLI_ARGS >/dev/null 2>&1; then
+    GEN_PROFILE_CLI_ARGS=()
+fi
 
 SHARED_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 SRC_DIR="$( cd "${SHARED_DIR}/.." && pwd )"
@@ -132,7 +141,8 @@ if ! is_step_done "${STG1_SETUP_DIR}/done" "${OUT_1}"; then
         python "${GEN_SCRIPT_DIR}/profile.py" \
         --edgelist "${INPUT_EDGELIST}" \
         --clustering "${INPUT_CLUSTERING}" \
-        --output-folder "${STG1_SETUP_DIR}"
+        --output-folder "${STG1_SETUP_DIR}" \
+        "${GEN_PROFILE_CLI_ARGS[@]}"
     mark_done "${STG1_SETUP_DIR}/done" "Stage 1 (profile)" "${IN_1}" "${OUT_1}"
 else
     note_stage_skipped "${STG1_SETUP_DIR}/time_and_err.log"

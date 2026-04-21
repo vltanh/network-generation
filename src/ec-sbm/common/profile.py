@@ -2,14 +2,16 @@
 
 Output contract:
     node_id.csv, cluster_id.csv, assignment.csv, degree.csv, edge_counts.csv,
-    mincut.csv, com.csv
+    mincut.csv, com.csv, outlier_mode.txt
 
-EC-SBM profiles only the clustered subnetwork.  The pre-profile hook drops
-singleton clusters (no meaningful intra-cluster structure to preserve),
-restricts nodes to the surviving clustered set, and prunes outlier
-adjacency so the downstream degree / mincut / edge-count computation
-sees a clean clustered subgraph.  com.csv passes the surviving node→cluster
-map downstream for both v1 and v2 pipelines.
+EC-SBM profiles only the clustered subnetwork.  The outlier transform
+(identify + excluded/singleton/combined) replaces the old
+`_drop_singletons_and_outliers` hook: under `excluded` (default), size-1
+input clusters are promoted to outliers by `identify_outliers` and then
+dropped alongside the unclustered nodes by `apply_outlier_mode`. v1 is
+`excluded`-only (its downstream match-degree pipeline has no outlier
+model); v2 accepts any mode because its gen_outlier stage reads the
+resulting `outlier_mode.txt` to shape the residual SBM.
 
 Deps: stdlib + pandas + pymincut (for mincut).  scipy / numpy are NOT
 required by this module — gen_clustered.py uses them separately.
@@ -21,8 +23,10 @@ from collections import defaultdict
 
 from pymincut.pygraph import PyGraph
 
-from pipeline_common import drop_singleton_clusters, standard_setup, timed
+from pipeline_common import standard_setup, timed
 from profile_common import (
+    OUTLIER_MODES,
+    apply_outlier_mode,
     compute_comm_size,
     compute_edge_count,
     compute_node_degree,
@@ -32,34 +36,13 @@ from profile_common import (
     export_degree,
     export_edge_count,
     export_node_id,
+    export_outlier_mode,
+    identify_outliers,
     read_clustering,
     read_edgelist,
 )
 
 import pandas as pd  # noqa: E402
-
-
-def _drop_singletons_and_outliers(nodes, node2com, cluster_counts, neighbors):
-    com_df = pd.DataFrame(
-        list(node2com.items()), columns=["node_id", "cluster_id"]
-    )
-    kept_df = drop_singleton_clusters(com_df)
-    kept = set(kept_df["node_id"])
-
-    for u in list(node2com):
-        if u not in kept:
-            del node2com[u]
-    for c in list(cluster_counts):
-        if cluster_counts[c] <= 1:
-            del cluster_counts[c]
-
-    nodes.intersection_update(kept)
-
-    for u in list(neighbors):
-        if u not in kept:
-            del neighbors[u]
-            continue
-        neighbors[u] = {v for v in neighbors[u] if v in kept}
 
 
 def compute_mincut(nodes, neighbors, node2com, comm_size_sorted, node_id2iid):
@@ -105,14 +88,21 @@ def export_mincut(out_dir, mcs):
     pd.DataFrame(mcs).to_csv(f"{out_dir}/mincut.csv", index=False, header=False)
 
 
-def setup_inputs(edgelist_path, clustering_path, output_dir):
+def setup_inputs(edgelist_path, clustering_path, output_dir,
+                 outlier_mode="excluded", drop_outlier_outlier_edges=False):
     output_dir = standard_setup(output_dir)
 
     with timed("Input reading"):
         nodes, node2com, cluster_counts = read_clustering(clustering_path)
         nodes, neighbors = read_edgelist(edgelist_path, nodes)
 
-    _drop_singletons_and_outliers(nodes, node2com, cluster_counts, neighbors)
+    with timed("Outlier transform"):
+        outliers = identify_outliers(nodes, node2com, cluster_counts)
+        apply_outlier_mode(
+            nodes, node2com, cluster_counts, neighbors, outliers,
+            mode=outlier_mode,
+            drop_outlier_outlier_edges=drop_outlier_outlier_edges,
+        )
 
     with timed("Mappings computation"):
         node_deg_sorted, node_id2iid = compute_node_degree(nodes, neighbors)
@@ -132,6 +122,7 @@ def setup_inputs(edgelist_path, clustering_path, output_dir):
         )
         export_mincut(output_dir, mcs)
         export_com_csv(output_dir, node2com)
+        export_outlier_mode(output_dir, outlier_mode, drop_outlier_outlier_edges)
 
 
 def parse_args():
@@ -139,12 +130,25 @@ def parse_args():
     parser.add_argument("--edgelist", type=str, required=True)
     parser.add_argument("--clustering", type=str, required=True)
     parser.add_argument("--output-folder", type=str, required=True)
+    parser.add_argument(
+        "--outlier-mode", choices=OUTLIER_MODES, default="excluded",
+    )
+    oo = parser.add_mutually_exclusive_group()
+    oo.add_argument("--drop-outlier-outlier-edges",
+                    dest="drop_oo", action="store_true")
+    oo.add_argument("--keep-outlier-outlier-edges",
+                    dest="drop_oo", action="store_false")
+    parser.set_defaults(drop_oo=False)
     return parser.parse_args()
 
 
 def main():
     args = parse_args()
-    setup_inputs(args.edgelist, args.clustering, args.output_folder)
+    setup_inputs(
+        args.edgelist, args.clustering, args.output_folder,
+        outlier_mode=args.outlier_mode,
+        drop_outlier_outlier_edges=args.drop_oo,
+    )
 
 
 if __name__ == "__main__":

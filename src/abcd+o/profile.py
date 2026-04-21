@@ -1,12 +1,13 @@
 """ABCD+o profile: builds the inputs abcd+o/gen.py consumes.
 
 Output contract: degree.csv, cluster_sizes.csv, mixing_parameter.txt,
-n_outliers.txt.
+n_outliers.txt, outlier_mode.txt.
 
-ABCD+o forbids outlier-outlier edges, so each outlier's reported degree
-is its count of *clustered* neighbors only (not its total degree in the
-input graph).  Mixing parameter uses the global ratio ξ = Σ_out / Σ_total
-but drops outlier-outlier edges from both numerator and denominator.
+ABCD+o's default outlier policy is `(singleton, drop_oo=true)` — outlier-
+outlier edges are dropped from both mu and degree accounting, since the
+Julia sampler physically cannot produce them. Mixing parameter uses the
+global ratio ξ over the post-drop graph. gen.py enforces that the profile
+was produced under a policy whose empirical OO-edge count is zero.
 
 Deps: stdlib + pandas (no numpy, scipy, or pymincut).
 """
@@ -16,6 +17,8 @@ import argparse
 
 from pipeline_common import standard_setup, timed
 from profile_common import (
+    OUTLIER_MODES,
+    apply_outlier_mode,
     compute_comm_size,
     compute_mixing_parameter,
     compute_node_degree,
@@ -23,50 +26,43 @@ from profile_common import (
     export_degree,
     export_mixing_param,
     export_n_outliers,
+    export_outlier_mode,
+    identify_outliers,
     read_clustering,
     read_edgelist,
 )
 
 
-def _adjusted_degree_sorted(node_deg_sorted, nodes, neighbors, node2com):
-    """Replace each outlier's degree with its count of clustered neighbors."""
-    outlier_degrees = {
-        u: sum(1 for v in neighbors[u] if v in node2com)
-        for u in nodes if u not in node2com
-    }
-    return sorted(
-        (
-            (u, outlier_degrees[u] if u in outlier_degrees else d)
-            for u, d in node_deg_sorted
-        ),
-        key=lambda x: x[1], reverse=True,
-    )
-
-
-def setup_inputs(edgelist_path, clustering_path, output_dir):
+def setup_inputs(edgelist_path, clustering_path, output_dir,
+                 outlier_mode="singleton", drop_outlier_outlier_edges=True):
     output_dir = standard_setup(output_dir)
 
     with timed("Input reading"):
         nodes, node2com, cluster_counts = read_clustering(clustering_path)
         nodes, neighbors = read_edgelist(edgelist_path, nodes)
 
+    with timed("Outlier transform"):
+        outliers = identify_outliers(nodes, node2com, cluster_counts)
+        n_outliers = len(outliers)
+        apply_outlier_mode(
+            nodes, node2com, cluster_counts, neighbors, outliers,
+            mode=outlier_mode,
+            drop_outlier_outlier_edges=drop_outlier_outlier_edges,
+        )
+
     with timed("Mappings computation"):
         node_deg_sorted, _ = compute_node_degree(nodes, neighbors)
         comm_size_sorted, _ = compute_comm_size(cluster_counts)
 
-    n_outliers = sum(1 for u in nodes if u not in node2com)
-
     with timed("Outputs export"):
-        adjusted_deg = _adjusted_degree_sorted(
-            node_deg_sorted, nodes, neighbors, node2com,
-        )
-        export_degree(output_dir, adjusted_deg)
+        export_degree(output_dir, node_deg_sorted)
         export_comm_size(output_dir, comm_size_sorted)
         export_n_outliers(output_dir, n_outliers)
         mixing_param = compute_mixing_parameter(
-            nodes, neighbors, node2com, "abcd+o",
+            nodes, neighbors, node2com, reduction="global",
         )
         export_mixing_param(output_dir, mixing_param)
+        export_outlier_mode(output_dir, outlier_mode, drop_outlier_outlier_edges)
 
 
 def parse_args():
@@ -74,12 +70,25 @@ def parse_args():
     parser.add_argument("--edgelist", type=str, required=True)
     parser.add_argument("--clustering", type=str, required=True)
     parser.add_argument("--output-folder", type=str, required=True)
+    parser.add_argument(
+        "--outlier-mode", choices=OUTLIER_MODES, default="singleton",
+    )
+    oo = parser.add_mutually_exclusive_group()
+    oo.add_argument("--drop-outlier-outlier-edges",
+                    dest="drop_oo", action="store_true")
+    oo.add_argument("--keep-outlier-outlier-edges",
+                    dest="drop_oo", action="store_false")
+    parser.set_defaults(drop_oo=True)
     return parser.parse_args()
 
 
 def main():
     args = parse_args()
-    setup_inputs(args.edgelist, args.clustering, args.output_folder)
+    setup_inputs(
+        args.edgelist, args.clustering, args.output_folder,
+        outlier_mode=args.outlier_mode,
+        drop_outlier_outlier_edges=args.drop_oo,
+    )
 
 
 if __name__ == "__main__":

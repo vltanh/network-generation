@@ -7,9 +7,29 @@ from pathlib import Path
 import pandas as pd
 
 from pipeline_common import standard_setup, timed, drop_singleton_clusters
+from profile_common import read_outlier_mode
 
 
 OUTLIER_LIFT_WARNING = "outlier nodes form a community"
+
+
+def _validate_outlier_policy(mode, drop_oo):
+    """The Julia sampler cannot produce outlier-outlier edges.
+
+    Accept only policies whose empirical OO-edge count in the profile
+    stage was zero: either outliers were excluded entirely, or they
+    were kept as singletons with OO edges dropped. Anything else would
+    give the sampler a cross-block edge target it cannot match.
+    """
+    if mode == "excluded":
+        return
+    if mode == "singleton" and drop_oo:
+        return
+    raise ValueError(
+        f"ABCD+o gen.py cannot consume outlier_mode=({mode}, drop_oo={drop_oo}): "
+        f"the Julia sampler cannot produce outlier-outlier edges. "
+        f"Use (excluded, *) or (singleton, true)."
+    )
 
 
 def run_abcdo_generation(
@@ -17,6 +37,7 @@ def run_abcdo_generation(
     cluster_sizes_path,
     mixing_param_path,
     n_outliers_path,
+    outlier_mode_path,
     abcd_dir,
     output_dir,
     seed,
@@ -27,13 +48,29 @@ def run_abcdo_generation(
     logging.info(f"Seed: {seed}")
 
     with timed("Input loading"):
+        mode, drop_oo = read_outlier_mode(outlier_mode_path)
+        _validate_outlier_policy(mode, drop_oo)
+
         degrees = pd.read_csv(degree_path, header=None)[0].to_numpy()
         cluster_sizes = pd.read_csv(cluster_sizes_path, header=None)[0].to_numpy()
         with open(mixing_param_path) as f:
             xi = float(f.read().strip())
         with open(n_outliers_path) as f:
             n_outliers = int(f.read().strip())
-        logging.info(f"xi={xi} n_outliers={n_outliers} kept_clusters={len(cluster_sizes)}")
+
+        # Under `singleton`, cluster_sizes.csv ends with one size-1 row per
+        # outlier (produced by the shared export_comm_size path). Strip them
+        # so the sampler's `cs_with_outliers.tsv` carries the real clusters
+        # only, with the outlier mega-cluster prepended as cluster iid=1.
+        # Under `excluded`, the profile emitted no outlier rows, so nothing
+        # to strip.
+        if mode == "singleton" and n_outliers > 0:
+            cluster_sizes = cluster_sizes[:-n_outliers]
+
+        logging.info(
+            f"xi={xi} n_outliers={n_outliers} kept_clusters={len(cluster_sizes)} "
+            f"mode={mode} drop_oo={drop_oo}"
+        )
 
     deg_tsv = output_dir / "deg.tsv"
     cs_tsv = output_dir / "cs_with_outliers.tsv"
@@ -108,6 +145,8 @@ def parse_args():
     parser.add_argument("--cluster-sizes", type=str, required=True)
     parser.add_argument("--mixing-parameter", type=str, required=True)
     parser.add_argument("--n-outliers", type=str, required=True)
+    parser.add_argument("--outlier-mode", type=str, required=True,
+                        help="Path to outlier_mode.txt emitted by profile.py.")
     parser.add_argument("--abcd-dir", type=str, required=True)
     parser.add_argument("--output-folder", type=str, required=True)
     parser.add_argument("--seed", type=int, default=1)
@@ -121,6 +160,7 @@ def main():
         args.cluster_sizes,
         args.mixing_parameter,
         args.n_outliers,
+        args.outlier_mode,
         args.abcd_dir,
         args.output_folder,
         args.seed,

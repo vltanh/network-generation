@@ -16,14 +16,20 @@ TIMEOUT="3d"
 N_THREADS=1
 KEEP_STATE=0
 SEED=1
+# EC-SBM v2 default outlier policy: fold outliers into one combined block at
+# the profile stage; the residual-SBM in stage 3a reads outlier_mode.txt from
+# the profile dir and matches that choice when placing outlier edges.
+OUTLIER_MODE="combined"
+DROP_OO=""
 
-# Parse named arguments
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         --input-edgelist) INPUT_EDGELIST="$2"; shift ;;
         --input-clustering) INPUT_CLUSTERING="$2"; shift ;;
         --output-dir) OUTPUT_DIR="$2"; shift ;;
         --outlier-mode) OUTLIER_MODE="$2"; shift ;;
+        --drop-outlier-outlier-edges) DROP_OO="--drop-outlier-outlier-edges" ;;
+        --keep-outlier-outlier-edges) DROP_OO="--keep-outlier-outlier-edges" ;;
         --edge-correction) EDGE_CORRECTION="$2"; shift ;;
         --algorithm) ALGORITHM="$2"; shift ;;
         --timeout) TIMEOUT="$2"; shift ;;
@@ -112,14 +118,20 @@ mkdir -p "${STG_PROFILE_DIR}" "${STG_GEN_CLUSTERED_DIR}" \
 echo "=== Starting Stage 1: Profile ==="
 
 IN_PROFILE="${INPUT_EDGELIST} ${INPUT_CLUSTERING}"
-OUT_PROFILE="${STG_PROFILE_DIR}/node_id.csv ${STG_PROFILE_DIR}/cluster_id.csv ${STG_PROFILE_DIR}/assignment.csv ${STG_PROFILE_DIR}/degree.csv ${STG_PROFILE_DIR}/mincut.csv ${STG_PROFILE_DIR}/edge_counts.csv ${STG_PROFILE_DIR}/com.csv"
+OUT_PROFILE="${STG_PROFILE_DIR}/node_id.csv ${STG_PROFILE_DIR}/cluster_id.csv ${STG_PROFILE_DIR}/assignment.csv ${STG_PROFILE_DIR}/degree.csv ${STG_PROFILE_DIR}/mincut.csv ${STG_PROFILE_DIR}/edge_counts.csv ${STG_PROFILE_DIR}/com.csv ${STG_PROFILE_DIR}/outlier_mode.txt"
+
+PROFILE_CLI=(--outlier-mode "${OUTLIER_MODE}")
+if [ -n "${DROP_OO}" ]; then
+    PROFILE_CLI+=("${DROP_OO}")
+fi
 
 if ! is_step_done "${STG_PROFILE_DIR}/done" "${OUT_PROFILE}"; then
     run_stage "${STG_PROFILE_DIR}/time_and_err.log" \
         python "${COMMON_DIR}/profile.py" \
         --edgelist "${INPUT_EDGELIST}" \
         --clustering "${INPUT_CLUSTERING}" \
-        --output-folder "${STG_PROFILE_DIR}"
+        --output-folder "${STG_PROFILE_DIR}" \
+        "${PROFILE_CLI[@]}"
     mark_done "${STG_PROFILE_DIR}/done" "Stage 1 (profile)" "${IN_PROFILE}" "${OUT_PROFILE}"
 else
     note_stage_skipped "${STG_PROFILE_DIR}/time_and_err.log"
@@ -157,7 +169,10 @@ fi
 echo "=== Starting Stage 3: Outlier Generation & Combine ==="
 
 # 3a. Generate Outliers
-IN_GEN_OUTLIER="${INPUT_EDGELIST} ${INPUT_CLUSTERING} ${STG_GEN_CLUSTERED_DIR}/edge.csv"
+# gen_outlier.py reads outlier_mode.txt from the stage-1 profile dir rather
+# than taking --outlier-mode on the CLI, so the profile stage is the single
+# source of truth for outlier policy across v2.
+IN_GEN_OUTLIER="${INPUT_EDGELIST} ${INPUT_CLUSTERING} ${STG_GEN_CLUSTERED_DIR}/edge.csv ${STG_PROFILE_DIR}/outlier_mode.txt"
 OUT_GEN_OUTLIER="${STG_GEN_OUTLIER_EDGES_DIR}/edge_outlier.csv"
 
 if ! is_step_done "${STG_GEN_OUTLIER_EDGES_DIR}/done" "${OUT_GEN_OUTLIER}"; then
@@ -166,7 +181,7 @@ if ! is_step_done "${STG_GEN_OUTLIER_EDGES_DIR}/done" "${OUT_GEN_OUTLIER}"; then
         --orig-edgelist "${INPUT_EDGELIST}" \
         --orig-clustering "${INPUT_CLUSTERING}" \
         --exist-edgelist "${STG_GEN_CLUSTERED_DIR}/edge.csv" \
-        --outlier-mode "${OUTLIER_MODE}" \
+        --outlier-mode "${STG_PROFILE_DIR}/outlier_mode.txt" \
         --edge-correction "${EDGE_CORRECTION}" \
         --output-folder "${STG_GEN_OUTLIER_EDGES_DIR}" \
         --seed "$((SEED + 1))"
