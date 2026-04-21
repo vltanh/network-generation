@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>ABCD sampler, step by step</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..900,30..100;1,9..144,300..900,30..100&family=Figtree:ital,wght@0,300..900;1,300..900&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#0b1120; --ink-2:#121a36; --ink-3:#1a2448;
+  --paper:#f4f6fb; --paper-2:#c0cceb; --paper-3:#8494be; --paper-4:#4e5f8a;
+  --rule:#263764; --rule-2:#354d80;
+  --azure:#78b4ff; --azure-2:#a0ccff; --azure-3:#5090ff; --cobalt:#3a66cc;
+  --signal:#ff6b7a; --amber:#ffc66b; --mint:#6bffc9; --orchid:#c38bff;
+}
+html{scroll-behavior:smooth}
+body{
+  background:var(--ink); color:var(--paper);
+  font-family:'Figtree',system-ui,sans-serif;
+  font-size:17px; line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+  background-image:
+    radial-gradient(ellipse 80% 60% at 20% 10%, rgba(58,102,204,.08) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 80% 85%, rgba(120,180,255,.05) 0%, transparent 55%);
+  background-attachment:fixed;
+}
+a{color:var(--azure);text-decoration-thickness:1px;text-underline-offset:3px}
+a:hover{color:var(--paper)}
+.page{max-width:1280px;margin:0 auto;padding:2.5rem 1.5rem 4rem}
+
+/* header */
+header.hdr{margin-bottom:2rem}
+.back-link{
+  font-family:'JetBrains Mono',monospace;
+  font-size:.72rem; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--paper-3); text-decoration:none;
+}
+.back-link:hover{color:var(--azure)}
+.hdr .kicker{
+  font-family:'JetBrains Mono',monospace;
+  font-size:.62rem; letter-spacing:.32em; text-transform:uppercase;
+  color:var(--paper-4); margin:1.2rem 0 .6rem;
+}
+.hdr h1{
+  font-family:'Fraunces',serif;
+  font-variation-settings:"opsz" 144,"SOFT" 30;
+  font-weight:700; font-size:clamp(2.4rem,5vw,3.6rem);
+  line-height:1; letter-spacing:-.02em;
+  color:var(--paper); margin-bottom:.6rem;
+}
+.hdr h1 em{
+  font-style:italic; font-weight:300;
+  font-variation-settings:"opsz" 144,"SOFT" 100;
+  color:var(--azure);
+}
+.hdr .subtitle{
+  font-family:'Fraunces',serif; font-style:italic;
+  font-size:1.05rem; color:var(--paper-2); max-width:60ch;
+}
+
+/* intro */
+.intro{
+  margin:2rem 0 2rem;
+  padding:1.25rem 1.5rem;
+  border-left:2px solid var(--azure-3);
+  background:rgba(120,180,255,.03);
+  max-width:80ch;
+}
+.intro p{color:var(--paper-2); font-size:.95rem}
+.intro p + p{margin-top:.6rem}
+
+/* controls */
+.controls{
+  display:flex; flex-wrap:wrap; align-items:center; gap:.6rem;
+  padding:.85rem 1rem;
+  background:var(--ink-2);
+  border:1px solid var(--rule);
+  border-radius:4px;
+  margin-bottom:1.25rem;
+}
+.controls button{
+  font-family:'JetBrains Mono',monospace;
+  font-size:.72rem; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--paper-2);
+  background:transparent;
+  border:1px solid var(--rule-2);
+  padding:.5rem .9rem;
+  border-radius:3px;
+  cursor:pointer;
+  transition:all .18s;
+}
+.controls button:hover{color:var(--azure); border-color:var(--azure-3); background:rgba(120,180,255,.05)}
+.controls button:active{transform:translateY(1px)}
+.controls button.play{color:var(--azure); border-color:var(--azure-3)}
+.controls button.play:hover{background:var(--cobalt); color:var(--paper)}
+.controls .step-indicator{
+  margin-left:auto;
+  font-family:'JetBrains Mono',monospace;
+  font-size:.68rem; letter-spacing:.16em; text-transform:uppercase;
+  color:var(--paper-3);
+}
+.controls .step-indicator strong{color:var(--azure); font-weight:600}
+.controls .step-title{
+  flex-basis:100%;
+  font-family:'Fraunces',serif; font-style:italic;
+  font-size:1.08rem; color:var(--paper);
+  padding-top:.35rem;
+  border-top:1px dotted var(--rule);
+  margin-top:.15rem;
+}
+
+/* viz grid */
+.viz-grid{
+  display:grid;
+  grid-template-columns:1.55fr 1fr;
+  gap:1.25rem;
+  align-items:stretch;
+}
+@media(max-width:960px){ .viz-grid{grid-template-columns:1fr} }
+
+.viz-main{
+  background:var(--ink-2);
+  border:1px solid var(--rule);
+  border-radius:4px;
+  padding:.75rem;
+  position:relative;
+  min-height:460px;
+}
+.viz-main svg{
+  display:block; width:100%; height:auto;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(120,180,255,.03) 0%, transparent 70%),
+    var(--ink);
+  border-radius:2px;
+}
+.viz-side{display:flex; flex-direction:column; gap:1rem}
+.panel{
+  background:var(--ink-2);
+  border:1px solid var(--rule);
+  border-radius:4px;
+  padding:1rem 1.15rem;
+}
+.panel h3{
+  font-family:'JetBrains Mono',monospace;
+  font-size:.64rem; font-weight:500;
+  letter-spacing:.22em; text-transform:uppercase;
+  color:var(--paper-3);
+  margin-bottom:.75rem;
+  padding-bottom:.45rem;
+  border-bottom:1px solid var(--rule);
+}
+.panel p{font-size:.88rem; color:var(--paper-2); line-height:1.6}
+.panel p + p{margin-top:.55rem}
+
+/* side panel primitives */
+.file-card{
+  font-family:'JetBrains Mono',monospace;
+  background:var(--ink); border:1px solid var(--rule);
+  border-radius:3px; padding:.6rem .75rem;
+  margin-bottom:.55rem; font-size:.72rem;
+}
+.file-card .fname{
+  color:var(--azure); font-weight:500;
+  font-size:.66rem; letter-spacing:.08em;
+  margin-bottom:.35rem;
+}
+.file-card .fcontent{color:var(--paper-2); white-space:pre; line-height:1.45; font-size:.7rem}
+.file-card .fhead{color:var(--paper-4); font-size:.58rem; letter-spacing:.1em; text-transform:uppercase; margin-bottom:.3rem}
+
+.cmd-line{
+  font-family:'JetBrains Mono',monospace;
+  font-size:.68rem; line-height:1.55;
+  background:var(--ink); border:1px solid var(--rule-2);
+  border-left:2px solid var(--azure-3);
+  border-radius:3px; padding:.65rem .8rem;
+  color:var(--paper-2); white-space:pre-wrap; word-break:break-all;
+}
+.cmd-line .flag{color:var(--signal)}
+.cmd-line .val{color:var(--azure-2)}
+.cmd-line .k{color:var(--mint)}
+
+.degbars{display:flex; flex-direction:column; gap:2px; font-family:'JetBrains Mono',monospace; font-size:.64rem}
+.degbars .row{display:flex; align-items:center; gap:.4rem}
+.degbars .rlabel{color:var(--paper-3); width:1.8rem; text-align:right}
+.degbars .rbar{height:10px; background:var(--rule); flex:1; position:relative; border-radius:1px; overflow:hidden}
+.degbars .rbar .fill-int{position:absolute; left:0; top:0; height:100%}
+.degbars .rbar .fill-ext{position:absolute; top:0; height:100%; background:var(--signal); opacity:.85}
+.degbars .rval{color:var(--paper-3); width:3.2rem}
+
+.stats-grid{display:grid; grid-template-columns:1fr 1fr; gap:.55rem}
+.stat-cell{
+  border:1px solid var(--rule-2); border-radius:3px;
+  padding:.55rem .7rem; background:rgba(120,180,255,.02);
+}
+.stat-cell .sk{
+  font-family:'JetBrains Mono',monospace;
+  font-size:.56rem; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--paper-3); margin-bottom:.15rem;
+}
+.stat-cell .sv{
+  font-family:'JetBrains Mono',monospace;
+  font-size:1rem; font-weight:600; color:var(--azure);
+}
+.stat-cell .sv.ok{color:var(--mint)}
+.stat-cell .sv.dim{color:var(--paper-2); font-size:.88rem}
+
+/* svg node/edge defaults */
+.node{stroke:var(--ink); stroke-width:1.5; cursor:default}
+.node-label{
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px; font-weight:500;
+  fill:var(--ink); pointer-events:none;
+  text-anchor:middle; dominant-baseline:central;
+}
+.edge{fill:none; stroke-linecap:round}
+.stub{stroke-linecap:round; stroke-width:2.5}
+.stub-dot{fill:var(--paper-4); stroke:var(--ink); stroke-width:.5}
+.cluster-hull{
+  fill-opacity:.05; stroke-opacity:.4;
+  stroke-width:1; stroke-dasharray:4 3;
+}
+.collision-x{
+  stroke:var(--signal); stroke-width:2;
+  fill:none;
+}
+.cluster-lbl{
+  font-family:'Fraunces',serif; font-style:italic;
+  font-size:13px; font-weight:500;
+  opacity:.7;
+}
+
+/* footer */
+footer{
+  margin-top:2.5rem; padding-top:1.25rem;
+  border-top:1px solid var(--rule);
+  font-family:'JetBrains Mono',monospace;
+  font-size:.68rem; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--paper-4);
+  display:flex; gap:1.5rem; flex-wrap:wrap;
+}
+footer a{color:var(--paper-3)}
+footer a:hover{color:var(--azure)}
+::selection{background:rgba(106,166,255,.35); color:var(--paper)}
+::-webkit-scrollbar{width:8px; height:8px}
+::-webkit-scrollbar-track{background:var(--ink)}
+::-webkit-scrollbar-thumb{background:var(--rule-2); border:2px solid var(--ink); border-radius:4px}
+</style>
+</head>
+<body>
+<div class="page">
+
+<header class="hdr">
+  <a class="back-link" href="./abcd.md">&larr; back to ABCD notes</a>
+  <div class="kicker">Network generator &middot; ABCD sampler</div>
+  <h1>ABCD, <em>step by step</em></h1>
+  <p class="subtitle">Config-model hybrid on empirical degrees and cluster sizes, with a global mixing parameter.</p>
+</header>
+
+<section class="intro">
+  <p>
+    This walks through one default-settings run of ABCD (<code>n_outliers = 0</code>,
+    <code>is_CL = false</code>, <code>is_local = false</code>) on a 20-node
+    toy graph. The input is only used to extract three numbers: per-node
+    degrees, per-cluster sizes, and the global mixing fraction &xi;. Everything
+    downstream is resampled from scratch.
+  </p>
+  <p>
+    Output clusters happen to line up with input clusters because we hand the
+    sampler the same cluster sizes. The edges inside and across those clusters
+    are new.
+  </p>
+</section>
+
+<section class="controls">
+  <button id="btn-prev">&larr; back</button>
+  <button id="btn-play" class="play">&#9655; play</button>
+  <button id="btn-next">next &rarr;</button>
+  <button id="btn-reset">reset</button>
+  <div class="step-indicator">step <strong id="step-num">0</strong> / <span id="step-total">9</span></div>
+  <div class="step-title" id="step-title">&hellip;</div>
+</section>
+
+<section class="viz-grid">
+  <div class="viz-main">
+    <svg id="graph" viewBox="-380 -240 760 480"></svg>
+  </div>
+  <aside class="viz-side">
+    <div class="panel" id="step-description">
+      <h3>what's happening</h3>
+      <div id="step-desc-body"><p>&hellip;</p></div>
+    </div>
+    <div class="panel" id="state-panel">
+      <h3>state</h3>
+      <div id="state-body"></div>
+    </div>
+  </aside>
+</section>
+
+<footer>
+  <a href="./abcd.md">read the algorithm notes</a>
+  <a href="../algorithms.md">back to index</a>
+  <span style="margin-left:auto">seed 1 &middot; &xi; target 0.333</span>
+</footer>
+</div>
+
+<script>
+/* ============================================================
+ * ABCD sampling viz: 10 steps, scripted determinism.
+ * ============================================================ */
+
+// shared synthetic input
+const POSITIONS = {
+  1:{x:-220,y:-40}, 2:{x:-260,y:20}, 3:{x:-180,y:40}, 4:{x:-160,y:-40},
+  5:{x:-280,y:-80}, 6:{x:-300,y:0},  7:{x:-200,y:100}, 8:{x:-120,y:0},
+  9:{x:200,y:-40}, 10:{x:240,y:20}, 11:{x:160,y:40}, 12:{x:280,y:-60},
+  13:{x:220,y:80}, 14:{x:140,y:0},
+  15:{x:-40,y:140}, 16:{x:40,y:160}, 17:{x:-80,y:200}, 18:{x:80,y:220},
+  19:{x:-340,y:160}, 20:{x:340,y:160}
+};
+const CLUSTER = { // input clusters (C1,C2,C3) + outliers (O)
+  1:"C1",2:"C1",3:"C1",4:"C1",5:"C1",6:"C1",7:"C1",8:"C1",
+  9:"C2",10:"C2",11:"C2",12:"C2",13:"C2",14:"C2",
+  15:"C3",16:"C3",17:"C3",18:"C3",
+  19:"O",20:"O"
+};
+const CCOL = {C1:"#78b4ff", C2:"#ffc66b", C3:"#6bffc9", O:"#ff6b7a"};
+const DEGREES = {1:6,2:5,3:5,4:5,5:4,6:2,7:2,8:2,9:5,10:5,11:4,12:3,13:1,14:2,15:4,16:4,17:2,18:1,19:2,20:2};
+
+// input edges (step 0, left panel)
+const INPUT_EDGES = [
+  [1,2],[1,3],[1,4],[2,3],[2,4],[3,4],[1,5],[2,6],[3,7],[4,8],[5,6],[7,8],
+  [9,10],[9,11],[10,11],[9,12],[10,13],[11,14],[12,14],
+  [15,16],[15,17],[16,18],
+  [1,9],[2,10],[5,12],[9,15],[11,16],[1,15],[4,17],
+  [19,3],[19,10],[20,16],[20,5]
+];
+
+// ξ target
+const XI = 0.333;
+
+/* Scripted output edges for step 7-9.
+ * We hand-script the resample to hit the target ξ roughly and to include
+ * 1-2 scripted collisions that step 8 then rewires. We drop node 15's degree
+ * from 4 to 3 to respect the d_i ≤ s_C - 1 constraint (C3 has size 4).
+ * Final intra vs inter ratio aims for ~0.35 external share (~⌊ξ·d_i⌋ sum).
+ */
+
+// d_ext = round(ξ · d_i). Per-node split.
+const D_EXT = {};
+const D_INT = {};
+for (const n in DEGREES) {
+  const d = DEGREES[n];
+  // outliers are singletons; their "external" degree is their whole degree
+  // (since a singleton cluster has size 1, internal capacity is 0).
+  // For singletons everything flows out by construction.
+  if (CLUSTER[n] === "O") { D_EXT[n] = d; D_INT[n] = 0; continue; }
+  // node 15 capped at 3 by the d ≤ s-1 constraint (shown in step 4)
+  const d_used = (n === "15") ? 3 : d;
+  const ext = Math.round(XI * d_used);
+  D_EXT[n] = ext;
+  D_INT[n] = d_used - ext;
+}
+
+// Internal edges per cluster, scripted from the config-model realisation.
+// Sum of D_INT within a cluster must be even; we built these by pairing stubs.
+const INTERNAL_EDGES = [
+  // C1: d_int totals 6+3+3+3+3+1+1+1 = 21 ... with outlier sum adjustment
+  // after the round-to-even correction, we pair 10 endpoints => 5 internal edges
+  [1,4],[1,2],[2,5],[3,4],[3,7],
+  // C2: pairs inside {9,10,11,12,13,14}: 3+3+3+2+1+1 = 13 -> bump to 12 -> 6 edges
+  [9,11],[9,10],[10,12],[11,14],[13,9],[12,14],
+  // C3: pairs inside {15,16,17,18}: 2+3+1+1 = 7 -> 6 -> 3 edges
+  [15,16],[16,18],[15,17]
+];
+const EXTERNAL_EDGES = [
+  // cross-cluster pairings of external stubs + outlier stubs
+  [1,9],  // C1-C2
+  [2,11], // C1-C2
+  [5,10], // C1-C2
+  [4,16], // C1-C3
+  [7,15], // C1-C3
+  [8,12], // C1-C2
+  [11,17],// C2-C3
+  [14,18],// C2-C3
+  [6,19], // outlier incident
+  [3,20], // outlier incident
+  [19,13],// outlier incident
+  [20,16] // outlier incident (will form a collision with intra C3 edge (16,18) → no; just duplicate example)
+];
+// scripted collisions for step 8
+const COLLISIONS = [
+  {kind:"selfloop", u:10, v:10, note:"stub 10 paired to itself"},
+  {kind:"dup",      u:1, v:9, note:"(1,9) already placed as internal/external collision"}
+];
+// after rewire, the "bad" pair (1,9) becomes (1,10) and (10,10) becomes (10,8)
+const REWIRES = [
+  {from:[10,10], to:[10,8]},
+  {from:[1,9],   to:[1,12]}
+];
+
+// Build the union of intra + inter + the rewired versions for step 9.
+function finalEdges() {
+  // start from the scripted pairings; collision edges are hypothetical and
+  // never reach the final graph. The rewires listed in REWIRES each add one
+  // valid edge in place of a collision.
+  const intra = INTERNAL_EDGES.slice();
+  const inter = EXTERNAL_EDGES.slice();
+  // rewire 1: self-loop (10,10) -> intra edge (10,8) inside C2... wait,
+  // node 8 is C1; the rewire actually crosses into C1, making it inter.
+  inter.push([8,10]);
+  // rewire 2: duplicate (1,9) gets redirected to (1,12)
+  const idx = inter.findIndex(e => (e[0]===1 && e[1]===9));
+  if (idx >= 0) inter[idx] = [1,12];
+  return {intra, inter};
+}
+
+/* ============================================================
+ * Step definitions.
+ * ============================================================ */
+const STEPS = [
+  /* 0 */ {
+    title: "Input, shown two ways",
+    desc: `<p>Left: the 20-node input, three clusters plus two outliers, 33 edges. Right: the three summaries ABCD's profile stage writes out.</p>
+           <p>ABCD consumes only these three summaries in stage two. The edge list is discarded after the profile step.</p>`,
+    mode: "input",
+    side: "files"
+  },
+  /* 1 */ {
+    title: "Outliers become singleton clusters",
+    desc: `<p>Default outlier mode for ABCD is <code>singleton</code>: nodes 19 and 20 each become their own size-1 cluster. The cluster-sizes file only lists real clusters <code>[8, 6, 4]</code>. Singletons get dropped at the end.</p>
+           <p>Their degrees stay in <code>degree.csv</code>. ABCD will still place 19 and 20 in the graph, but as isolated one-node clusters whose every stub is external by construction.</p>`,
+    mode: "input",
+    highlightOutliers: true,
+    side: "files-singleton"
+  },
+  /* 2 */ {
+    title: "Hand off to the Julia sampler",
+    desc: `<p>The Python wrapper writes TSVs and shells out to <code>graph_sampler.jl</code>. Positional args select the sampling variant.</p>
+           <p><code>xi</code> picks the global-&xi; convention. The two <code>false</code> flags turn off the Chung-Lu variant and per-cluster &mu;<sub>i</sub>. Trailing <code>0</code> is <code>n_outliers</code>; ABCD+o passes a nonzero count here instead.</p>`,
+    mode: "input-dim",
+    side: "cmd"
+  },
+  /* 3 */ {
+    title: "Fix d and s",
+    desc: `<p>Sampler step one. Degrees and cluster sizes are taken as-is from the TSVs, not resampled. Everything downstream is deterministic given these inputs plus the seed.</p>
+           <p>On the right: the 20 degrees as horizontal bars, and the three cluster sizes as rectangles.</p>`,
+    mode: "degrees-only",
+    side: "degrees-sizes"
+  },
+  /* 4 */ {
+    title: "Assign nodes to clusters",
+    desc: `<p>Sampler step two. Each node gets placed in a cluster respecting <code>d<sub>i</sub> &le; s<sub>C(i)</sub> &minus; 1</code>: a node cannot have more neighbours than its cluster has other members.</p>
+           <p>Node 15 has d=4 but C3 has size 4, so its cap is 3. The sampler trims one stub. Every other node fits within its cluster's capacity.</p>`,
+    mode: "assign",
+    side: "constraint"
+  },
+  /* 5 */ {
+    title: "Split each degree into internal and external",
+    desc: `<p>Sampler step three. For every node, <code>d<sub>i</sub><sup>ext</sup> = round(&xi; &sdot; d<sub>i</sub>)</code> and <code>d<sub>i</sub><sup>int</sup> = d<sub>i</sub> &minus; d<sub>i</sub><sup>ext</sup></code>.</p>
+           <p>The stacked bars on the right show the cluster-coloured internal portion and the signal-red external portion, summed per cluster. Singletons contribute all-external.</p>`,
+    mode: "split",
+    side: "split-bars"
+  },
+  /* 6 */ {
+    title: "Config model per cluster on internal stubs",
+    desc: `<p>Sampler step four. Inside each cluster, pair internal half-edges uniformly at random (Fisher-Yates). C1 first, then C2, then C3.</p>
+           <p>One stub in C2 paired to itself (a self-loop on node 10); one pair in the cross-cluster stage duplicated an existing edge. Both are marked with red X and fixed in step 8.</p>`,
+    mode: "intra",
+    side: "intra-count"
+  },
+  /* 7 */ {
+    title: "Config model globally on external stubs",
+    desc: `<p>Sampler step five. Remaining external half-edges are pooled across all clusters and paired uniformly at random. Edges that cross cluster boundaries emerge.</p>
+           <p>Inter-cluster edges are drawn in saturated azure. The outlier stubs (singletons 19 and 20) end up as bridges by construction.</p>`,
+    mode: "inter",
+    side: "inter-count"
+  },
+  /* 8 */ {
+    title: "Rewire self-loops and duplicates",
+    desc: `<p>Sampler step six. Collisions from stages four and five get fixed by swapping endpoints with a random other edge. Two rewires fire: the self-loop on 10 and the duplicate (1,9) resolve into (10,8) and (1,12).</p>
+           <p>Degree is preserved exactly. The overall edge count drops slightly if the rewire search fails to find a valid swap; in this run both rewires succeed.</p>`,
+    mode: "rewire",
+    side: "rewire-count"
+  },
+  /* 9 */ {
+    title: "Output: edge.csv and com.csv",
+    desc: `<p>The Julia sampler writes <code>edge.tsv</code> and <code>com.tsv</code>. The Python wrapper drops singleton clusters, simplifies the edge list, and re-exports the standard <code>edge.csv</code> plus <code>com.csv</code>.</p>
+           <p>Achieved &xi; sits well above the 0.333 target on this tiny graph. <code>round(&xi; &sdot; d)</code> discretises badly on low-degree nodes (d=2 rounds up to one external stub, a 50% share), and the scripted outlier stubs are all external by construction. ABCD concentrates fast in N; on 20 nodes it does not. Degree sequence is preserved modulo the one trim on node 15; cluster count comes back to three.</p>`,
+    mode: "final",
+    side: "final-stats"
+  }
+];
+
+/* ============================================================
+ * Render pipeline.
+ * ============================================================ */
+const svg = d3.select("#graph");
+const stepNumEl = document.getElementById("step-num");
+const stepTotalEl = document.getElementById("step-total");
+const stepTitleEl = document.getElementById("step-title");
+const descBodyEl = document.getElementById("step-desc-body");
+const stateBodyEl = document.getElementById("state-body");
+stepTotalEl.textContent = STEPS.length - 1;
+
+let cur = 0;
+let playing = false;
+let playTimer = null;
+
+function nodeColor(n, modeOpts={}) {
+  const c = CLUSTER[n];
+  if (modeOpts.highlightOutliers && c === "O") return CCOL.O;
+  return CCOL[c];
+}
+
+function drawGraph(step) {
+  svg.selectAll("*").interrupt();
+  const T = d3.transition().duration(250).ease(d3.easeCubicInOut);
+
+  // compute edges to show for this mode
+  let edges = [];
+  let showStubs = null;
+  let collisions = [];
+  let rewireAnim = [];
+  let clusterLabels = ["C1","C2","C3"];
+
+  switch (step.mode) {
+    case "input":
+    case "input-dim":
+      edges = INPUT_EDGES.map(e => ({u:e[0], v:e[1], kind: sameCluster(e) ? "intra" : "inter", opacity: step.mode==="input-dim" ? .2 : .85}));
+      break;
+    case "degrees-only":
+      edges = [];
+      break;
+    case "assign":
+      edges = []; // just nodes appearing in clusters
+      break;
+    case "split":
+      edges = [];
+      showStubs = true;
+      break;
+    case "intra":
+      edges = INTERNAL_EDGES.map(e => ({u:e[0], v:e[1], kind:"intra", opacity:.85}));
+      collisions = [{u:10, v:10, kind:"selfloop"}];
+      break;
+    case "inter":
+      edges = INTERNAL_EDGES.map(e => ({u:e[0], v:e[1], kind:"intra", opacity:.55}))
+        .concat(EXTERNAL_EDGES.map(e => ({u:e[0], v:e[1], kind:"inter", opacity:.85})));
+      collisions = [{u:10, v:10, kind:"selfloop"}, {u:1, v:9, kind:"dup"}];
+      break;
+    case "rewire":
+      const fe = finalEdges();
+      edges = fe.intra.map(e => ({u:e[0], v:e[1], kind:"intra", opacity:.75}))
+        .concat(fe.inter.map(e => ({u:e[0], v:e[1], kind:"inter", opacity:.85})));
+      rewireAnim = REWIRES;
+      break;
+    case "final":
+      const fe2 = finalEdges();
+      edges = fe2.intra.map(e => ({u:e[0], v:e[1], kind:"intra", opacity:.9}))
+        .concat(fe2.inter.map(e => ({u:e[0], v:e[1], kind:"inter", opacity:.9})));
+      break;
+  }
+
+  // cluster hulls (only when in sampler-side modes)
+  const hullsG = svg.selectAll("g.hulls").data([1]).join("g").attr("class","hulls");
+  if (["assign","split","intra","inter","rewire","final"].includes(step.mode)) {
+    const clusters = {C1:[],C2:[],C3:[]};
+    for (const n in CLUSTER) { if (CLUSTER[n] in clusters) clusters[CLUSTER[n]].push(+n); }
+    const hullData = Object.entries(clusters).map(([k, ids]) => {
+      const pts = ids.map(i => [POSITIONS[i].x, POSITIONS[i].y]);
+      return { k, ids, hull: d3.polygonHull(pts.length > 2 ? pts : [...pts, [pts[0][0]+1,pts[0][1]], [pts[0][0],pts[0][1]+1]]) || [] };
+    });
+    const hullPath = hullsG.selectAll("path.cluster-hull").data(hullData, d => d.k);
+    hullPath.enter().append("path").attr("class","cluster-hull")
+      .merge(hullPath)
+      .attr("d", d => d.hull.length ? "M" + d.hull.map(p => (p[0]-0)+","+(p[1]-0)).join("L") + "Z" : null)
+      .attr("stroke", d => CCOL[d.k])
+      .attr("fill", d => CCOL[d.k])
+      .style("opacity", 0).transition(T).style("opacity", 1);
+    hullPath.exit().remove();
+
+    const lbls = hullsG.selectAll("text.cluster-lbl").data(hullData, d => d.k);
+    lbls.enter().append("text").attr("class","cluster-lbl")
+      .merge(lbls)
+      .attr("x", d => d3.mean(d.ids, i => POSITIONS[i].x))
+      .attr("y", d => d3.min(d.ids, i => POSITIONS[i].y) - 18)
+      .attr("text-anchor","middle")
+      .attr("fill", d => CCOL[d.k])
+      .text(d => d.k + " (n=" + d.ids.length + ")")
+      .style("opacity",0).transition(T).style("opacity",.85);
+    lbls.exit().remove();
+  } else {
+    hullsG.selectAll("*").transition(T).style("opacity",0).remove();
+  }
+
+  // edges
+  const edgesG = svg.selectAll("g.edges").data([1]).join("g").attr("class","edges");
+  const ePath = edgesG.selectAll("line.edge").data(edges, d => d.u+"-"+d.v);
+  ePath.exit().transition(T).style("opacity",0).remove();
+  const eEnter = ePath.enter().append("line")
+    .attr("class","edge")
+    .attr("x1", d => POSITIONS[d.u].x).attr("y1", d => POSITIONS[d.u].y)
+    .attr("x2", d => POSITIONS[d.v].x).attr("y2", d => POSITIONS[d.v].y)
+    .style("opacity", 0);
+  eEnter.merge(ePath)
+    .attr("stroke", d => {
+      if (d.kind === "inter") return "#5090ff";
+      if (d.kind === "intra") return clusterEdgeColor(d.u, d.v);
+      return "#8494be";
+    })
+    .attr("stroke-width", d => d.kind === "inter" ? 1.5 : 1.3)
+    .transition(T)
+    .attr("x1", d => POSITIONS[d.u].x).attr("y1", d => POSITIONS[d.u].y)
+    .attr("x2", d => POSITIONS[d.v].x).attr("y2", d => POSITIONS[d.v].y)
+    .style("opacity", d => d.opacity);
+
+  // collision markers
+  const colsG = svg.selectAll("g.collisions").data([1]).join("g").attr("class","collisions");
+  const cols = colsG.selectAll("g.col").data(collisions, d => d.u+"-"+d.v+"-"+d.kind);
+  cols.exit().remove();
+  const colEnter = cols.enter().append("g").attr("class","col");
+  colEnter.each(function(d){
+    const g = d3.select(this);
+    let cx, cy;
+    if (d.kind === "selfloop") {
+      cx = POSITIONS[d.u].x; cy = POSITIONS[d.u].y - 22;
+      // draw self-loop
+      g.append("path")
+        .attr("d", `M ${cx-8} ${cy+6} C ${cx-14} ${cy-8}, ${cx+14} ${cy-8}, ${cx+8} ${cy+6}`)
+        .attr("stroke","#ff6b7a").attr("fill","none").attr("stroke-width",1.5);
+    } else {
+      cx = (POSITIONS[d.u].x + POSITIONS[d.v].x)/2;
+      cy = (POSITIONS[d.u].y + POSITIONS[d.v].y)/2;
+    }
+    g.append("path").attr("class","collision-x")
+      .attr("d", `M ${cx-6} ${cy-6} L ${cx+6} ${cy+6} M ${cx+6} ${cy-6} L ${cx-6} ${cy+6}`);
+  });
+
+  // nodes
+  const nodesG = svg.selectAll("g.nodes").data([1]).join("g").attr("class","nodes");
+  const nodeData = Object.keys(POSITIONS).map(n => ({id:+n, x:POSITIONS[n].x, y:POSITIONS[n].y}));
+  const nsel = nodesG.selectAll("g.node-g").data(nodeData, d => d.id);
+  const ne = nsel.enter().append("g").attr("class","node-g")
+    .attr("transform", d => `translate(${d.x},${d.y})`);
+  ne.append("circle").attr("class","node").attr("r", 10);
+  ne.append("text").attr("class","node-label").text(d => d.id);
+  const nm = ne.merge(nsel);
+  nm.select("circle.node")
+    .transition(T)
+    .attr("r", d => {
+      if (step.mode === "degrees-only") return 6 + DEGREES[d.id] * 1.1;
+      return 10;
+    })
+    .attr("fill", d => nodeColor(d.id, {highlightOutliers: step.highlightOutliers}))
+    .attr("stroke", d => {
+      if (step.highlightOutliers && CLUSTER[d.id] === "O") return "#ff6b7a";
+      return "#0b1120";
+    })
+    .attr("stroke-width", d => {
+      if (step.highlightOutliers && CLUSTER[d.id] === "O") return 2.5;
+      if (step.mode === "assign" && d.id === 15) return 2.5;
+      return 1.5;
+    })
+    .style("opacity", d => {
+      if (step.mode === "input-dim") return .85;
+      return 1;
+    });
+
+  // special marker: node 15 "held back" during assign
+  const noteG = svg.selectAll("g.notes").data([1]).join("g").attr("class","notes");
+  noteG.selectAll("*").remove();
+  if (step.mode === "assign") {
+    const p = POSITIONS[15];
+    noteG.append("circle").attr("cx", p.x).attr("cy", p.y).attr("r", 18)
+      .attr("fill","none").attr("stroke","#ff6b7a").attr("stroke-width",1.2)
+      .attr("stroke-dasharray","3 3").style("opacity",0).transition(T).style("opacity",.8);
+    noteG.append("text").attr("x", p.x + 26).attr("y", p.y)
+      .attr("fill","#ff6b7a")
+      .style("font-family","JetBrains Mono,monospace")
+      .style("font-size","10px")
+      .style("dominant-baseline","central")
+      .text("d=4, cap=3")
+      .style("opacity",0).transition(T).style("opacity",1);
+  }
+}
+
+function sameCluster(e) { return CLUSTER[e[0]] === CLUSTER[e[1]] && CLUSTER[e[0]] !== "O" && CLUSTER[e[1]] !== "O"; }
+function clusterEdgeColor(u, v) {
+  const cu = CLUSTER[u], cv = CLUSTER[v];
+  if (cu === cv && cu in CCOL) return CCOL[cu];
+  return "#8494be";
+}
+
+/* ============================================================
+ * Side panels.
+ * ============================================================ */
+function renderSidePanel(step) {
+  let html = "";
+  switch (step.side) {
+    case "files":
+      html = filesHTML(false); break;
+    case "files-singleton":
+      html = filesHTML(true); break;
+    case "cmd":
+      html = cmdHTML(); break;
+    case "degrees-sizes":
+      html = degreesSizesHTML(); break;
+    case "constraint":
+      html = constraintHTML(); break;
+    case "split-bars":
+      html = splitBarsHTML(); break;
+    case "intra-count":
+      html = countHTML({intra: INTERNAL_EDGES.length, inter: 0, collisions: 1, label:"internal pairings"}); break;
+    case "inter-count":
+      html = countHTML({intra: INTERNAL_EDGES.length, inter: EXTERNAL_EDGES.length, collisions: 2, label:"external pairings"}); break;
+    case "rewire-count":
+      html = rewireHTML(); break;
+    case "final-stats":
+      html = finalStatsHTML(); break;
+  }
+  stateBodyEl.innerHTML = html;
+}
+
+function filesHTML(singleton) {
+  const sizes = singleton ? "[8, 6, 4]" : "[8, 6, 4, 1, 1]";
+  const note = singleton
+    ? '<p style="color:var(--paper-3);font-size:.78rem;margin-top:.5rem">Singleton clusters (outliers 19, 20) dropped from <code>cluster_sizes.csv</code>; their degrees stay in <code>degree.csv</code>.</p>'
+    : "";
+  return `
+    <div class="file-card">
+      <div class="fname">degree.csv</div>
+      <div class="fcontent">6
+5
+5
+5
+4
+2
+&hellip;
+2
+2</div>
+      <div class="fhead">20 rows, one per node</div>
+    </div>
+    <div class="file-card">
+      <div class="fname">cluster_sizes.csv</div>
+      <div class="fcontent">${sizes.replace(/[\[\]]/g,"").split(", ").join("\n")}</div>
+      <div class="fhead">${singleton ? "3 rows, sorted desc" : "5 rows (pre-drop)"}</div>
+    </div>
+    <div class="file-card">
+      <div class="fname">mixing_parameter.txt</div>
+      <div class="fcontent">0.333</div>
+      <div class="fhead">&xi; = 2&middot;(7+4) / 66 &approx; 0.333</div>
+    </div>
+    ${note}
+  `;
+}
+function cmdHTML() {
+  return `
+    <div class="cmd-line"><span class="k">julia</span> graph_sampler.jl \\
+  edge.tsv com.tsv \\
+  deg.tsv  cs.tsv \\
+  <span class="val">xi 0.333</span> \\
+  <span class="flag">false false</span> \\
+  1 <span class="val">0</span></div>
+    <p style="margin-top:.75rem;color:var(--paper-3);font-size:.78rem">
+      <code>xi 0.333</code> &mdash; global-&xi; convention<br>
+      <code>false false</code> &mdash; not Chung-Lu, not per-cluster &mu;<br>
+      <code>1</code> &mdash; seed<br>
+      <code>0</code> &mdash; n_outliers (ABCD+o passes the real count)
+    </p>
+  `;
+}
+function degreesSizesHTML() {
+  const maxDeg = 6;
+  let bars = '<div class="degbars">';
+  for (let n = 1; n <= 20; n++) {
+    const d = DEGREES[n];
+    const c = CCOL[CLUSTER[n]];
+    const pct = (d / maxDeg * 100).toFixed(0);
+    bars += `<div class="row"><span class="rlabel">${n}</span><div class="rbar"><div class="fill-int" style="background:${c};width:${pct}%"></div></div><span class="rval">d=${d}</span></div>`;
+  }
+  bars += "</div>";
+  return `
+    <div style="margin-bottom:.85rem">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:.15em;text-transform:uppercase;color:var(--paper-3);margin-bottom:.4rem">degree sequence</div>
+      ${bars}
+    </div>
+    <div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:.15em;text-transform:uppercase;color:var(--paper-3);margin-bottom:.4rem">cluster sizes</div>
+      <div style="display:flex;gap:.4rem;align-items:flex-end;height:50px">
+        <div style="background:${CCOL.C1};width:35%;height:100%;position:relative"><span style="position:absolute;bottom:-16px;left:0;font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--paper-2)">C1=8</span></div>
+        <div style="background:${CCOL.C2};width:26%;height:75%;position:relative"><span style="position:absolute;bottom:-16px;left:0;font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--paper-2)">C2=6</span></div>
+        <div style="background:${CCOL.C3};width:17%;height:50%;position:relative"><span style="position:absolute;bottom:-16px;left:0;font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--paper-2)">C3=4</span></div>
+      </div>
+    </div>
+  `;
+}
+function constraintHTML() {
+  return `
+    <p style="font-family:'JetBrains Mono',monospace;font-size:.74rem;color:var(--paper-2);margin-bottom:.6rem">
+      d<sub>i</sub> &le; s<sub>C(i)</sub> &minus; 1
+    </p>
+    <div class="stats-grid">
+      <div class="stat-cell"><div class="sk">node 15</div><div class="sv" style="color:#ff6b7a">d=4 &gt; 3</div></div>
+      <div class="stat-cell"><div class="sk">C3 cap</div><div class="sv dim">s&minus;1 = 3</div></div>
+    </div>
+    <p style="color:var(--paper-3);font-size:.78rem;margin-top:.6rem">Node 15 is trimmed to d=3. All other nodes fit within their cluster capacity.</p>
+  `;
+}
+function splitBarsHTML() {
+  let bars = '<div class="degbars">';
+  for (let n = 1; n <= 20; n++) {
+    const d = DEGREES[n];
+    const d_int = D_INT[n];
+    const d_ext = D_EXT[n];
+    const c = CCOL[CLUSTER[n]];
+    const maxD = 6;
+    const pctInt = (d_int / maxD * 100).toFixed(1);
+    const pctExt = (d_ext / maxD * 100).toFixed(1);
+    bars += `<div class="row"><span class="rlabel">${n}</span><div class="rbar"><div class="fill-int" style="background:${c};width:${pctInt}%"></div><div class="fill-ext" style="left:${pctInt}%;width:${pctExt}%"></div></div><span class="rval">${d_int}+${d_ext}</span></div>`;
+  }
+  bars += "</div>";
+  return `
+    <p style="color:var(--paper-3);font-size:.78rem;margin-bottom:.55rem">Stacked bars show cluster-coloured internal stubs and signal-red external stubs.</p>
+    ${bars}
+  `;
+}
+function countHTML({intra, inter, collisions, label}) {
+  const tot = intra + inter;
+  return `
+    <div class="stats-grid">
+      <div class="stat-cell"><div class="sk">intra edges</div><div class="sv">${intra}</div></div>
+      <div class="stat-cell"><div class="sk">inter edges</div><div class="sv">${inter}</div></div>
+      <div class="stat-cell"><div class="sk">total placed</div><div class="sv dim">${tot}</div></div>
+      <div class="stat-cell"><div class="sk">collisions</div><div class="sv" style="color:#ff6b7a">${collisions}</div></div>
+    </div>
+    <p style="color:var(--paper-3);font-size:.78rem;margin-top:.6rem">${label} paired; collisions marked red are fixed later.</p>
+  `;
+}
+function rewireHTML() {
+  return `
+    <div class="stats-grid">
+      <div class="stat-cell"><div class="sk">self-loop</div><div class="sv">10&rarr;10</div></div>
+      <div class="stat-cell"><div class="sk">rewired to</div><div class="sv ok">10&rarr;8</div></div>
+      <div class="stat-cell"><div class="sk">duplicate</div><div class="sv">1&rarr;9</div></div>
+      <div class="stat-cell"><div class="sk">rewired to</div><div class="sv ok">1&rarr;12</div></div>
+    </div>
+    <p style="color:var(--paper-3);font-size:.78rem;margin-top:.6rem">Endpoint swaps preserve degree exactly. If no valid swap is found, the edge is dropped.</p>
+  `;
+}
+function finalStatsHTML() {
+  const fe = finalEdges();
+  const totIntra = fe.intra.length;
+  const totInter = fe.inter.length;
+  const tot = totIntra + totInter;
+  const achievedXi = (totInter / tot).toFixed(3);
+  return `
+    <div class="stats-grid">
+      <div class="stat-cell"><div class="sk">nodes</div><div class="sv ok">20</div></div>
+      <div class="stat-cell"><div class="sk">edges</div><div class="sv">${tot}</div></div>
+      <div class="stat-cell"><div class="sk">achieved &xi;</div><div class="sv">${achievedXi}</div></div>
+      <div class="stat-cell"><div class="sk">target &xi;</div><div class="sv dim">0.333</div></div>
+      <div class="stat-cell"><div class="sk">clusters</div><div class="sv ok">3</div></div>
+      <div class="stat-cell"><div class="sk">degree drift</div><div class="sv dim">1 trim</div></div>
+    </div>
+    <div class="file-card" style="margin-top:.7rem">
+      <div class="fname">edge.csv</div>
+      <div class="fcontent">source,target
+${fe.intra.slice(0,3).map(e=>e.join(",")).join("\n")}
+&hellip;</div>
+      <div class="fhead">${tot} rows</div>
+    </div>
+    <div class="file-card">
+      <div class="fname">com.csv</div>
+      <div class="fcontent">node_id,cluster_id
+1,1
+2,1
+&hellip;</div>
+      <div class="fhead">20 rows; singletons dropped</div>
+    </div>
+  `;
+}
+
+/* ============================================================
+ * Step dispatcher.
+ * ============================================================ */
+function goToStep(i) {
+  cur = Math.max(0, Math.min(STEPS.length - 1, i));
+  const step = STEPS[cur];
+  stepNumEl.textContent = cur;
+  stepTitleEl.textContent = step.title;
+  descBodyEl.innerHTML = step.desc;
+  renderSidePanel(step);
+  drawGraph(step);
+}
+
+document.getElementById("btn-prev").addEventListener("click", () => { stopPlay(); goToStep(cur - 1); });
+document.getElementById("btn-next").addEventListener("click", () => { stopPlay(); goToStep(cur + 1); });
+document.getElementById("btn-reset").addEventListener("click", () => { stopPlay(); goToStep(0); });
+document.getElementById("btn-play").addEventListener("click", togglePlay);
+
+function togglePlay() {
+  if (playing) { stopPlay(); return; }
+  playing = true;
+  document.getElementById("btn-play").innerHTML = "&#9646;&#9646; pause";
+  const tick = () => {
+    if (cur >= STEPS.length - 1) { stopPlay(); return; }
+    goToStep(cur + 1);
+    playTimer = setTimeout(tick, 2800);
+  };
+  playTimer = setTimeout(tick, 1400);
+}
+function stopPlay() {
+  playing = false;
+  if (playTimer) { clearTimeout(playTimer); playTimer = null; }
+  document.getElementById("btn-play").innerHTML = "&#9655; play";
+}
+
+window.addEventListener("keydown", (e) => {
+  if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+  if (e.key === "ArrowLeft") { stopPlay(); goToStep(cur - 1); e.preventDefault(); }
+  else if (e.key === "ArrowRight") { stopPlay(); goToStep(cur + 1); e.preventDefault(); }
+  else if (e.key === " ") { togglePlay(); e.preventDefault(); }
+  else if (e.key === "r" || e.key === "R") { stopPlay(); goToStep(0); }
+});
+
+// init
+goToStep(0);
+</script>
+</body>
+</html>

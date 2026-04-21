@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>LFR generator, step by step</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..900,30..100;1,9..144,300..900,30..100&family=Figtree:ital,wght@0,300..900;1,300..900&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --ink:#0b1120; --ink-2:#121a36; --ink-3:#1a2448;
+  --paper:#f4f6fb; --paper-2:#c0cceb; --paper-3:#8494be; --paper-4:#4e5f8a;
+  --rule:#263764; --rule-2:#354d80;
+  --azure:#78b4ff; --azure-2:#a0ccff; --azure-3:#5090ff; --cobalt:#3a66cc;
+  --signal:#ff6b7a; --amber:#ffc66b; --mint:#6bffc9; --orchid:#c38bff;
+}
+
+html{scroll-behavior:smooth}
+
+body{
+  background:var(--ink); color:var(--paper);
+  font-family:'Figtree',system-ui,-apple-system,sans-serif;
+  font-feature-settings:"ss01","kern","liga","cv11";
+  font-size:16px; line-height:1.55;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+  min-height:100vh;
+  background-image:
+    radial-gradient(ellipse 80% 60% at 15% 8%, rgba(58,102,204,.08) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 85% 88%, rgba(120,180,255,.05) 0%, transparent 55%);
+  background-attachment:fixed;
+}
+a{color:var(--azure);text-decoration-thickness:1px;text-underline-offset:3px;transition:color .2s}
+a:hover{color:var(--paper)}
+
+.page{max-width:1180px;margin:0 auto;padding:2.4rem 1.5rem 4rem;position:relative}
+
+/* ═══════════ HEADER ═══════════ */
+header{position:relative;margin-bottom:2.2rem}
+header .top-rule{
+  display:flex;align-items:center;justify-content:space-between;gap:1rem;
+  padding:.55rem 0;
+  border-top:1px solid var(--paper-3);
+  border-bottom:1px solid var(--paper-4);
+  font-family:'JetBrains Mono',ui-monospace,monospace;
+  font-size:.66rem;letter-spacing:.22em;
+  color:var(--paper-2);text-transform:uppercase;
+}
+header .top-rule .ornament{font-family:'Fraunces',serif;font-size:1.1rem;letter-spacing:.4em;color:var(--azure)}
+header .back{
+  font-family:'JetBrains Mono',monospace; text-decoration:none; color:var(--paper-2);
+  font-size:.66rem;letter-spacing:.22em;text-transform:uppercase;
+}
+header .back:hover{color:var(--azure)}
+header h1{
+  font-family:'Fraunces',serif; font-optical-sizing:auto;
+  font-variation-settings:"opsz" 144,"SOFT" 30;
+  font-weight:800; font-size:clamp(2.4rem,5.8vw,4rem);
+  line-height:.95; letter-spacing:-.028em; color:var(--paper);
+  margin:1.4rem 0 .35rem;
+}
+header h1 em{font-style:italic;font-variation-settings:"opsz" 144,"SOFT" 100;font-weight:300;color:var(--azure)}
+header .sub{
+  font-family:'Fraunces',serif;font-style:italic;font-weight:400;
+  font-variation-settings:"opsz" 14; font-size:1.02rem;
+  color:var(--paper-2); max-width:62ch;
+}
+
+/* ═══════════ INTRO ═══════════ */
+.intro{margin:1.8rem 0 2.2rem; font-size:1.02rem; color:var(--paper-2); max-width:64ch}
+.intro p + p{margin-top:.9rem}
+.intro code{
+  font-family:'JetBrains Mono',monospace; font-size:.88em;
+  color:var(--azure-2); background:rgba(120,180,255,.06);
+  padding:.05em .35em; border-radius:2px;
+}
+
+/* ═══════════ CONTROLS ═══════════ */
+.controls{
+  display:flex;align-items:center;flex-wrap:wrap;gap:.55rem;
+  padding:.9rem 1rem; background:var(--ink-2); border:1px solid var(--rule);
+  position:relative; margin-bottom:1.3rem;
+}
+.controls::before,.controls::after{content:'';position:absolute;width:14px;height:14px;pointer-events:none}
+.controls::before{top:-1px;left:-1px;border-top:1px solid var(--azure-3);border-left:1px solid var(--azure-3)}
+.controls::after{bottom:-1px;right:-1px;border-bottom:1px solid var(--azure-3);border-right:1px solid var(--azure-3)}
+
+.btn{
+  font-family:'JetBrains Mono',monospace; font-size:.72rem;
+  letter-spacing:.11em;text-transform:uppercase; color:var(--paper);
+  background:transparent; border:1px solid var(--rule-2);
+  padding:.55rem .95rem; cursor:pointer; transition:all .18s; border-radius:2px;
+}
+.btn:hover:not(:disabled){border-color:var(--azure);color:var(--azure)}
+.btn:active:not(:disabled){transform:translateY(1px)}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn.primary{background:var(--cobalt);border-color:var(--cobalt)}
+.btn.primary:hover:not(:disabled){background:var(--azure-3);border-color:var(--azure-3);color:var(--paper)}
+.btn.primary.active{background:var(--signal);border-color:var(--signal)}
+
+.step-indicator{
+  margin-left:auto; font-family:'JetBrains Mono',monospace;
+  font-size:.72rem;letter-spacing:.18em;text-transform:uppercase; color:var(--paper-3);
+}
+.step-indicator b{color:var(--azure);font-weight:500}
+
+.step-title{
+  flex-basis:100%; margin-top:.6rem;padding-top:.75rem;
+  border-top:1px solid var(--rule);
+  font-family:'Fraunces',serif; font-style:italic; font-weight:400;
+  font-size:1.1rem; color:var(--paper);
+}
+.step-title .num{
+  font-family:'JetBrains Mono',monospace; font-size:.66rem;
+  letter-spacing:.22em; color:var(--azure); font-style:normal;
+  margin-right:.8rem; vertical-align:.15em;
+}
+
+/* ═══════════ VIZ GRID ═══════════ */
+.viz-grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:1.2rem;margin-bottom:2.5rem}
+.viz-main,.panel{background:var(--ink-2);border:1px solid var(--rule);position:relative;transition:border-color .25s}
+.viz-main::before,.viz-main::after,.panel::before,.panel::after{content:'';position:absolute;width:14px;height:14px;pointer-events:none}
+.viz-main::before,.panel::before{top:-1px;left:-1px;border-top:1px solid var(--azure-3);border-left:1px solid var(--azure-3)}
+.viz-main::after,.panel::after{bottom:-1px;right:-1px;border-bottom:1px solid var(--azure-3);border-right:1px solid var(--azure-3)}
+
+.viz-main{padding:.9rem;display:flex;flex-direction:column;min-height:480px}
+.viz-main .chrome{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:0 .3rem .6rem;
+  font-family:'JetBrains Mono',monospace;
+  font-size:.62rem;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--paper-4);
+}
+.viz-main .chrome .right{color:var(--paper-3)}
+.viz-main svg{flex:1;width:100%;min-height:440px;display:block}
+
+.legend{
+  display:flex;flex-wrap:wrap;gap:.55rem .95rem;
+  padding:.7rem .3rem 0;
+  font-family:'JetBrains Mono',monospace;
+  font-size:.65rem; color:var(--paper-3); letter-spacing:.02em;
+  border-top:1px solid var(--rule); margin-top:.6rem;
+}
+.legend span{display:inline-flex;align-items:center;gap:.4rem}
+.legend .sw{display:inline-block;width:10px;height:10px;border-radius:50%;border:1px solid rgba(255,255,255,.2)}
+.legend .sw.sq{border-radius:0}
+
+.side{display:flex;flex-direction:column;gap:1.2rem}
+.panel{padding:1rem 1.1rem}
+.panel h3{
+  font-family:'JetBrains Mono',monospace;
+  font-size:.62rem;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--paper-3);
+  padding-bottom:.55rem;margin-bottom:.8rem;
+  border-bottom:1px solid var(--rule);
+  display:flex;justify-content:space-between;align-items:center;
+}
+.panel h3 .tag{color:var(--azure);font-weight:500}
+.panel p{color:var(--paper-2);font-size:.92rem;line-height:1.55}
+.panel p + p{margin-top:.7rem}
+.panel code, .mono{font-family:'JetBrains Mono',monospace;font-size:.82em;color:var(--azure-2)}
+.panel .callout{
+  background:rgba(120,180,255,.05); border-left:2px solid var(--azure-3);
+  padding:.5rem .7rem; margin-top:.8rem; font-size:.85rem; color:var(--paper-2);
+}
+.panel .callout.warn{border-left-color:var(--signal);background:rgba(255,107,122,.06)}
+.panel .callout.hint{border-left-color:var(--orchid);background:rgba(195,139,255,.05)}
+
+/* stats grid */
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:.55rem .9rem;font-family:'JetBrains Mono',monospace;font-size:.78rem}
+.stats .k{color:var(--paper-4);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase}
+.stats .v{color:var(--paper);font-size:1rem;margin-top:.15rem}
+.stats .v.dim{color:var(--paper-3)}
+.stats .v.hi{color:var(--azure)}
+
+/* code block */
+.code-block{
+  font-family:'JetBrains Mono',monospace; font-size:.76rem; line-height:1.55;
+  background:var(--ink); border:1px solid var(--rule);
+  padding:.8rem .9rem; overflow-x:auto; color:var(--paper-2);
+}
+.code-block .kw{color:var(--azure)}
+.code-block .arg{color:var(--amber)}
+.code-block .str{color:var(--mint)}
+.code-block .cmt{color:var(--paper-4);font-style:italic}
+.code-block .fn{color:var(--azure-2)}
+
+/* file rows */
+.file-row{
+  display:flex;align-items:baseline;gap:.6rem;
+  font-family:'JetBrains Mono',monospace;font-size:.78rem;
+  padding:.28rem 0; border-bottom:1px dashed var(--rule);
+}
+.file-row:last-child{border-bottom:none}
+.file-row .fname{color:var(--azure-2)}
+.file-row .fval{color:var(--paper);margin-left:auto}
+.file-row .fnote{color:var(--paper-4);font-size:.68rem}
+
+/* bar list (histograms + per-node bars) */
+.blist{display:grid;grid-template-columns:2.4rem 1fr 2.2rem;gap:2px .55rem;font-family:'JetBrains Mono',monospace;font-size:.68rem;align-items:center}
+.blist .lbl{color:var(--paper-3);text-align:right}
+.blist .bar{position:relative;height:9px;background:var(--ink-3);border-radius:1px;overflow:hidden}
+.blist .bar .fill{position:absolute;inset:0 auto 0 0;background:var(--azure);transition:width .3s}
+.blist .bar .fill.fresh{background:var(--orchid)}
+.blist .bar .fill.amber{background:var(--amber)}
+.blist .bar .fill.mint{background:var(--mint)}
+.blist .bar .fill.muted{background:var(--paper-4)}
+.blist .val{color:var(--paper-2);font-size:.66rem;text-align:right}
+
+/* side-by-side histograms */
+.hist-pair{display:grid;grid-template-columns:1fr 1fr;gap:.7rem;margin-top:.3rem}
+.hist-pair .hcol h4{
+  font-family:'JetBrains Mono',monospace;font-size:.58rem;
+  letter-spacing:.18em;text-transform:uppercase;color:var(--paper-4);
+  margin-bottom:.35rem;padding-bottom:.25rem;border-bottom:1px solid var(--rule);
+}
+
+/* stacked bars for int/ext split */
+.stacked{display:grid;grid-template-columns:1.8rem 1fr 3.4rem;gap:2px .55rem;font-family:'JetBrains Mono',monospace;font-size:.66rem;align-items:center}
+.stacked .lbl{color:var(--paper-3);text-align:right}
+.stacked .stk{display:flex;height:9px;background:var(--ink-3);border-radius:1px;overflow:hidden}
+.stacked .stk .s-int{background:var(--azure)}
+.stacked .stk .s-ext{background:var(--orchid)}
+.stacked .val{color:var(--paper-2);font-size:.62rem}
+
+/* ═══════════ FOOTER ═══════════ */
+footer{
+  margin-top:3rem;padding-top:1.4rem;border-top:1px solid var(--rule);
+  font-family:'JetBrains Mono',monospace;font-size:.7rem;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--paper-3);
+  display:flex;justify-content:space-between;flex-wrap:wrap;gap:.8rem;
+}
+footer a{color:var(--paper-2);text-decoration:none;transition:color .2s}
+footer a:hover{color:var(--azure)}
+
+@media (max-width:768px){
+  .page{padding:1.6rem 1rem 3rem}
+  .viz-grid{grid-template-columns:1fr}
+  .viz-main{min-height:380px}
+  .viz-main svg{min-height:340px}
+  header h1{font-size:clamp(2rem,7vw,2.8rem)}
+  .step-indicator{margin-left:0}
+  .hist-pair{grid-template-columns:1fr}
+}
+
+/* ═══════════ SVG ═══════════ */
+svg .edge{stroke:var(--paper-4);stroke-width:1.1;fill:none;transition:stroke .3s,stroke-width .3s,opacity .3s}
+svg .edge.dim{opacity:.3}
+svg .edge.input{stroke:var(--paper-4);opacity:.55}
+svg .edge.int{stroke:var(--azure-2);opacity:.9;stroke-width:1.3}
+svg .edge.ext{stroke:var(--orchid);opacity:.85;stroke-width:1.1}
+svg .edge.bad{stroke:var(--signal);stroke-width:1.6;opacity:1}
+svg .edge.drop{opacity:0;transition:opacity .5s}
+svg .edge.ghost{stroke:var(--paper-4);opacity:.18;stroke-dasharray:3 3}
+
+svg .node{stroke:var(--ink);stroke-width:1.4;transition:r .3s,stroke-width .3s,filter .3s,fill .3s}
+svg .node.highlight{stroke:var(--paper);stroke-width:2}
+svg .node-label{
+  font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:500;
+  fill:var(--ink);text-anchor:middle;dominant-baseline:central;
+  pointer-events:none;user-select:none;
+}
+svg .node-label.light{fill:var(--paper)}
+svg .axis-line{stroke:var(--paper-4);stroke-width:.7;opacity:.6}
+svg .axis-tick{stroke:var(--paper-4);stroke-width:.5;opacity:.5}
+svg .axis-text{font-family:'JetBrains Mono',monospace;font-size:8px;fill:var(--paper-3);text-anchor:middle}
+svg .fit-line{stroke:var(--azure);stroke-width:1.4;stroke-dasharray:5 3;fill:none;opacity:.9}
+svg .data-pt{fill:var(--paper-2);stroke:none}
+svg .panel-head{font-family:'JetBrains Mono',monospace;font-size:9px;fill:var(--paper-3);letter-spacing:1.5px;text-anchor:middle;text-transform:uppercase}
+svg .panel-sub{font-family:'JetBrains Mono',monospace;font-size:8px;fill:var(--paper-4);text-anchor:middle}
+svg .cluster-ring{fill:none;stroke:var(--paper-4);stroke-width:.8;stroke-dasharray:3 3;opacity:.5}
+svg .cluster-label{font-family:'JetBrains Mono',monospace;font-size:8px;fill:var(--paper-3);letter-spacing:1.5px;text-anchor:middle}
+svg .arrow{stroke:var(--azure);fill:none;stroke-width:1.4;marker-end:url(#arrow)}
+svg .write-box{fill:var(--ink-3);stroke:var(--azure-3);stroke-width:1;stroke-dasharray:4 3}
+svg .write-text{font-family:'JetBrains Mono',monospace;font-size:10px;fill:var(--azure-2);text-anchor:middle}
+
+.panel-content{animation:fade .45s ease both}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+<div class="page">
+
+<header>
+  <div class="top-rule">
+    <a href="../algorithms.md" class="back">&larr; all generators</a>
+    <span class="ornament">&sect;</span>
+    <span>LFR &middot; Lancichinetti Fortunato Radicchi</span>
+  </div>
+  <h1>The <em>LFR</em> benchmark generator.</h1>
+  <p class="sub">Power-law fit on the input's degrees and cluster sizes, then a fresh sample through the LFR C++ binary. Walked frame by frame on the shared 20-node example.</p>
+</header>
+
+<section class="intro">
+  <p>LFR does not copy your graph. It reads the input as two distributions, fits power laws to them, and hands the fitted exponents to a C++ sampler that draws fresh values. The output's node ids, degrees, and cluster partition are a new draw, not a permutation of the input.</p>
+  <p>Default settings on our 20-node synthetic mean <code>outlier_mode=singleton</code> (outliers become size-1 clusters before the floor <code>minc&ge;3</code> filters them out) and the mean-per-node <code>&mu;</code> convention for mixing. Twelve steps cover profile extraction, power-law fit, binary invocation, and output reassembly.</p>
+</section>
+
+<section class="controls" role="group" aria-label="step controls">
+  <button class="btn" id="btn-prev">&larr; back</button>
+  <button class="btn primary" id="btn-play">play</button>
+  <button class="btn" id="btn-next">next &rarr;</button>
+  <button class="btn" id="btn-reset">reset</button>
+  <div class="step-indicator">step <b id="step-num">0</b> / <span id="step-total">11</span></div>
+  <div class="step-title"><span class="num" id="step-code">00</span><span id="step-title">input</span></div>
+</section>
+
+<section class="viz-grid">
+  <div class="viz-main">
+    <div class="chrome">
+      <span id="chrome-left">fig &middot; 20 nodes &middot; 33 edges</span>
+      <span class="right" id="stage-tag">stage &middot; input</span>
+    </div>
+    <svg id="graph" viewBox="-380 -180 760 460" width="100%" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#78b4ff"/>
+        </marker>
+      </defs>
+    </svg>
+    <div class="legend" id="legend">
+      <span><span class="sw" style="background:#78b4ff"></span>C1</span>
+      <span><span class="sw" style="background:#ffc66b"></span>C2</span>
+      <span><span class="sw" style="background:#6bffc9"></span>C3</span>
+      <span><span class="sw" style="background:#ff6b7a"></span>outliers</span>
+      <span><span class="sw sq" style="background:#a0ccff"></span>internal</span>
+      <span><span class="sw sq" style="background:#c38bff"></span>external</span>
+    </div>
+  </div>
+
+  <aside class="side">
+    <div class="panel" id="p-desc">
+      <h3>what's happening <span class="tag" id="desc-tag">00</span></h3>
+      <div class="panel-content" id="desc-body"></div>
+    </div>
+    <div class="panel" id="p-state">
+      <h3>state <span class="tag" id="state-tag">input</span></h3>
+      <div class="panel-content" id="state-body"></div>
+    </div>
+  </aside>
+</section>
+
+<footer>
+  <div>
+    <a href="./lfr.md">&larr; algorithm notes</a>
+    &nbsp;&middot;&nbsp;
+    <a href="../algorithms.md">index</a>
+  </div>
+  <div style="color:var(--paper-4)">seed &middot; 1 &nbsp;&middot;&nbsp; singleton outliers &middot; mean-&mu;</div>
+</footer>
+
+</div>
+
+<script>
+(() => {
+"use strict";
+
+// ═══════════════════════════════════════════════════════════════
+// INPUT DATA (shared 20-node synthetic)
+// ═══════════════════════════════════════════════════════════════
+const POSITIONS = {
+  1:{x:-220,y:-40}, 2:{x:-260,y:20}, 3:{x:-180,y:40}, 4:{x:-160,y:-40},
+  5:{x:-280,y:-80}, 6:{x:-300,y:0}, 7:{x:-200,y:100}, 8:{x:-120,y:0},
+  9:{x:200,y:-40}, 10:{x:240,y:20}, 11:{x:160,y:40}, 12:{x:280,y:-60},
+  13:{x:220,y:80}, 14:{x:140,y:0},
+  15:{x:-40,y:140}, 16:{x:40,y:160}, 17:{x:-80,y:200}, 18:{x:80,y:220},
+  19:{x:-340,y:160}, 20:{x:340,y:160},
+};
+const CLUSTER_OF = {};
+[1,2,3,4,5,6,7,8].forEach(n=>CLUSTER_OF[n]='C1');
+[9,10,11,12,13,14].forEach(n=>CLUSTER_OF[n]='C2');
+[15,16,17,18].forEach(n=>CLUSTER_OF[n]='C3');
+[19,20].forEach(n=>CLUSTER_OF[n]='OUT');
+const CCOL = {C1:'#78b4ff', C2:'#ffc66b', C3:'#6bffc9', OUT:'#ff6b7a'};
+
+const EDGES = [
+  [1,2],[1,3],[1,4],[2,3],[2,4],[3,4],[1,5],[2,6],[3,7],[4,8],[5,6],[7,8],
+  [9,10],[9,11],[10,11],[9,12],[10,13],[11,14],[12,14],
+  [15,16],[15,17],[16,18],
+  [1,9],[2,10],[5,12], [9,15],[11,16], [1,15],[4,17],
+  [3,19],[10,19],[16,20],[5,20],
+];
+const DEGREE = {};
+EDGES.forEach(([u,v])=>{DEGREE[u]=(DEGREE[u]||0)+1;DEGREE[v]=(DEGREE[v]||0)+1});
+
+// singleton-mode cluster_sizes.csv: real clusters plus one entry per outlier
+const INPUT_DEGREES = Array.from({length:20},(_,i)=>DEGREE[i+1]);
+const INPUT_CLUSTER_SIZES = [8,6,4,1,1];  // singleton mode
+const INPUT_MU = 0.3158;                   // computed from spec, mean-per-node
+
+// ═══════════════════════════════════════════════════════════════
+// LFR PARAMETERS (computed locally with powerlaw library)
+// ═══════════════════════════════════════════════════════════════
+const LFR_PARAMS = {
+  N:20, k:3.30, maxk:6, minc:3, maxc:8, mu:0.3158, t1:2.3875, t2:2.2275,
+};
+
+// ═══════════════════════════════════════════════════════════════
+// FRESH LFR-INTERNAL SAMPLE (deterministic illustrative)
+// Chosen so sum equals 66 (even), sizes fit [minc,maxc], and each
+// cluster admits a valid degree assignment d_i <= s - 1.
+// ═══════════════════════════════════════════════════════════════
+const SAMPLED_DEGREES = [6,5,5,5,4,4,4,3,3,3,3,3,3,3,2,2,2,2,2,2];  // sum=66
+const SAMPLED_CS = [7,6,4,3];                                        // sum=20, 4 clusters
+// Greedy first-fit descending assignment -> (cluster, in-cluster idx)
+// Gives these per-cluster degree groups:
+//   L1 (size 7): degs [6,5,5,5,4,4,4]  int 22 ext 11
+//   L2 (size 6): degs [3,3,3,3,3,3]    int 12 ext  6
+//   L3 (size 4): degs [3,2,2,2]        int  5 ext  4
+//   L4 (size 3): degs [2,2,2]          int  3 ext  3
+const FRESH_NODES = [];  // fresh 1..20 ids; node i has .id, .d, .cluster (0..3), .idxInCluster, .dInt, .dExt
+{
+  const sizes = SAMPLED_CS.slice();
+  const order = SAMPLED_DEGREES.slice();
+  const occ = [0,0,0,0];
+  const mu = LFR_PARAMS.mu;
+  order.forEach((d, i) => {
+    const nid = i + 1;
+    for (let c = 0; c < sizes.length; c++) {
+      if (occ[c] < sizes[c] && d <= sizes[c] - 1) {
+        const ext = Math.round(mu * d);
+        const int_ = d - ext;
+        FRESH_NODES.push({id:nid, d, cluster:c, idxInCluster:occ[c], dExt:ext, dInt:int_});
+        occ[c]++;
+        break;
+      }
+    }
+  });
+}
+// Positions for fresh nodes: four horizontal bands of circles; deliberately
+// NOT reusing POSITIONS, to reinforce "fresh partition, fresh IDs".
+const FRESH_POS = {};
+{
+  const cx = [-240, 60, 220, -40];
+  const cy = [-60, -60, 130, 130];
+  FRESH_NODES.forEach(n => {
+    const cap = SAMPLED_CS[n.cluster];
+    const r = 46;  // ring radius per cluster
+    const bigger = cap > 4;
+    const rr = bigger ? 56 : 36;
+    const ang = (n.idxInCluster / cap) * Math.PI * 2 - Math.PI/2;
+    FRESH_POS[n.id] = {
+      x: cx[n.cluster] + rr * Math.cos(ang),
+      y: cy[n.cluster] + rr * Math.sin(ang),
+    };
+  });
+}
+// Fresh palette (deliberately not the input palette for clusters):
+//   paper-2 / paper-3 greys by default; pale cluster hues once assigned.
+const FRESH_CCOL = ['#a0ccff', '#ffc66b', '#6bffc9', '#c38bff'];
+
+// Internal + external edge examples (illustrative, drawn on fresh graph)
+// Per-cluster internal edges: approx int_sum/2 edges each.
+const INT_EDGES = [
+  // cluster 0 (7 nodes idx 0..6 correspond to fresh ids 1..7), ~11 edges
+  [1,2],[1,3],[1,4],[2,3],[2,5],[3,6],[4,5],[4,7],[5,6],[6,7],[1,5],
+  // cluster 1 (ids 8..13), ~6 edges
+  [8,9],[8,10],[9,11],[10,12],[11,13],[12,13],
+  // cluster 2 (ids 14..17), ~2 edges (5 stubs -> 2 edges + 1 unmatched leftover -> rewire)
+  [14,15],[14,16],
+  // cluster 3 (ids 18..20), ~1 edge (3 stubs -> 1 edge + 1 unmatched -> rewire)
+  [18,19],
+];
+// External edges (inter-cluster), ~12 edges from 24 external stubs
+const EXT_EDGES = [
+  [1,8],[1,14],[2,9],[3,18],[4,11],[5,15],[6,10],[7,19],
+  [8,16],[9,14],[11,20],[17,13],
+];
+// Flagged artefacts for the rewire step
+const BAD_ARTEFACTS = [
+  {kind:'self', u:1},               // self-loop on fresh node 1
+  {kind:'par',  u:8, v:9},          // parallel internal
+];
+
+// ═══════════════════════════════════════════════════════════════
+// HISTOGRAMS
+// ═══════════════════════════════════════════════════════════════
+function histOf(arr, maxKey){
+  const h = {};
+  arr.forEach(x => { h[x] = (h[x]||0) + 1 });
+  const max = maxKey || Math.max(...arr);
+  const out = [];
+  for (let k = 1; k <= max; k++) out.push([k, h[k]||0]);
+  return out;
+}
+const INPUT_DEG_HIST  = histOf(INPUT_DEGREES, 6);
+const OUTPUT_DEG_HIST = histOf(SAMPLED_DEGREES, 6);
+
+// ═══════════════════════════════════════════════════════════════
+// STEPS
+// ═══════════════════════════════════════════════════════════════
+const STEPS = [
+  {
+    code:'00', title:'input', stage:'stage &middot; input',
+    chrome:'fig &middot; 20 nodes &middot; 33 edges &middot; 3 clusters + 2 outliers',
+    desc:() => `
+      <p>The shared synthetic on the left, plus the three files LFR's profile stage will write on the right.
+      LFR does not see the graph after this point. It sees the three files.</p>
+      <p>The profile is the only place where cluster labels and node identities matter.</p>
+    `,
+    state: statePanelProfileFiles,
+  },
+  {
+    code:'01', title:'fit two power laws', stage:'stage &middot; gen (python wrapper)',
+    chrome:'fit &middot; degree &amp; cluster-size power laws',
+    desc:() => `
+      <p>Two calls into the <code>powerlaw</code> package. <code>t1</code> fits over all twenty degrees, no
+      <code>xmin</code> pinning: the library picks its own via KS and returns <code>${LFR_PARAMS.t1}</code>
+      at <code>xmin=2</code>. <code>t2</code> fits cluster sizes with <code>xmin=minc=3</code>, so the two
+      size-1 outlier entries fall below the floor and only <code>[8, 6, 4]</code> contribute: <code>${LFR_PARAMS.t2}</code>.</p>
+      <p>With N=20 the exponents are unstable, but whatever the library returns is what LFR consumes.</p>
+    `,
+    state: statePanelFitStats,
+  },
+  {
+    code:'02', title:'write time_seed.dat', stage:'stage &middot; gen (python wrapper)',
+    chrome:'io &middot; seed file for the C++ binary',
+    desc:() => `
+      <p>The LFR binary reads its random seed from <code>./time_seed.dat</code> in its working directory,
+      not from a command-line flag. The wrapper writes the seed to that path before invoking the binary
+      with <code>cwd=output_dir</code>.</p>
+      <p>One line. One integer. That is the entire file.</p>
+    `,
+    state: statePanelSeedCode,
+  },
+  {
+    code:'03', title:'sample degree sequence', stage:'stage &middot; binary',
+    chrome:'sample &middot; N degrees from truncated power law',
+    desc:() => `
+      <p>The C++ binary draws N=20 degrees from <code>truncated_power_law(t1=${LFR_PARAMS.t1}, min=1, max=${LFR_PARAMS.maxk}, mean=${LFR_PARAMS.k})</code>.
+      The sample differs from the input, especially in the tail.</p>
+      <p>The left histogram is the input. The right histogram is a fresh draw. The new sequence
+      has the same mean and max by construction but not the same multiset.</p>
+    `,
+    state: statePanelDegHist,
+  },
+  {
+    code:'04', title:'sample cluster sizes', stage:'stage &middot; binary',
+    chrome:'sample &middot; cluster sizes, summing to N',
+    desc:() => `
+      <p>Sizes are drawn from <code>truncated_power_law(t2=${LFR_PARAMS.t2}, min=${LFR_PARAMS.minc}, max=${LFR_PARAMS.maxc})</code>,
+      resampled until the total matches N=20. Our illustrative draw lands at <code>[7, 6, 4, 3]</code>: four
+      clusters where the input had three real ones (plus two size-1 singletons that the minc=3 floor erased).</p>
+      <p>This is the cleanest demonstration that LFR is not preserving your partition. The cluster count
+      itself is a random variable.</p>
+    `,
+    state: statePanelSizeSample,
+  },
+  {
+    code:'05', title:'assign nodes to clusters', stage:'stage &middot; binary',
+    chrome:'assign &middot; d_i &le; s_{C(i)} - 1',
+    desc:() => `
+      <p>Fresh integer ids 1..N are placed into the sampled clusters so that each node's degree fits
+      inside its cluster. A degree-6 node can only go into a cluster of size 7 or more. Greedy
+      first-fit-descending handles the packing.</p>
+      <p>The labels on the canvas are fresh integers. They look like the input's but correspond to nothing
+      in the original graph. The pale cluster hues are new too.</p>
+    `,
+    state: statePanelAssign,
+  },
+  {
+    code:'06', title:'split degree by &mu;', stage:'stage &middot; binary',
+    chrome:'split &middot; d_int = d - round(&mu; &middot; d)',
+    desc:() => `
+      <p>Each node's degree cuts into an internal part (stubs that will connect within the cluster) and an
+      external part (stubs that will connect across clusters). The split is <code>d_ext = round(&mu; &middot; d)</code>
+      with <code>&mu;=${LFR_PARAMS.mu}</code>, <code>d_int = d - d_ext</code>.</p>
+      <p>On small degrees the rounding sends some <code>d_ext</code> to zero and some to one. The stacked
+      bars track this per-cluster.</p>
+    `,
+    state: statePanelSplit,
+  },
+  {
+    code:'07', title:'internal config model', stage:'stage &middot; binary',
+    chrome:'wire &middot; internal stubs, per cluster',
+    desc:() => `
+      <p>For each cluster the internal stubs are matched pairwise, uniformly at random: classic
+      configuration model, one instance per cluster. The azure edges on the canvas are internal.</p>
+      <p>Clusters with an odd internal stub sum (here the 4-node and 3-node clusters, internal
+      sums 5 and 3) cannot match perfectly and will leave a leftover stub for the rewire step to clean up.</p>
+    `,
+    state: statePanelIntStubs,
+  },
+  {
+    code:'08', title:'external config model', stage:'stage &middot; binary',
+    chrome:'wire &middot; external stubs, global',
+    desc:() => `
+      <p>All external stubs enter a single pool and get matched uniformly at random across clusters.
+      A pair within the same cluster is retried so external means external.</p>
+      <p>Orchid edges on the canvas. Total external stubs across all nodes: 24, matched into 12 edges.</p>
+    `,
+    state: statePanelExtStubs,
+  },
+  {
+    code:'09', title:'rewire self-loops + duplicates', stage:'stage &middot; binary',
+    chrome:'rewire &middot; clean the multigraph',
+    desc:() => `
+      <p>Configuration model can produce self-loops (a node's stub matched to another of its own stubs)
+      and parallel edges (two nodes matched twice). LFR's rewire pass swaps endpoints with a randomly
+      chosen other edge until the multigraph becomes simple.</p>
+      <p>The two red-flagged artefacts on the canvas get resolved by endpoint swaps. Writes
+      <code>network.dat</code> (each edge listed twice) and <code>community.dat</code>.</p>
+    `,
+    state: statePanelRewire,
+  },
+  {
+    code:'10', title:'python wrapper cleanup', stage:'stage &middot; gen (python wrapper)',
+    chrome:'export &middot; edge.csv + com.csv',
+    desc:() => `
+      <p>The wrapper reads <code>network.dat</code> and <code>community.dat</code> back. <code>simplify_edges</code>
+      collapses LFR's each-edge-twice convention into an undirected edge list. <code>drop_singleton_clusters</code>
+      removes any size-1 clusters (LFR's minc=3 floor means there should be none, but the call is defensive).</p>
+      <p>Writes <code>edge.csv</code> + <code>com.csv</code>. Unlinks <code>network.dat</code>, <code>community.dat</code>,
+      <code>statistics.dat</code>, <code>time_seed.dat</code>.</p>
+    `,
+    state: statePanelCleanupCode,
+  },
+  {
+    code:'11', title:'output', stage:'stage &middot; output',
+    chrome:'out &middot; fresh network, fresh partition',
+    desc:() => `
+      <p>Final graph, twenty fresh nodes, roughly the same mean degree and cluster-size profile as the
+      input. Four clusters where the input had three. The cluster ids on the right have nothing to
+      say about the cluster ids in the input.</p>
+      <p>If someone hands you this graph and asks "which of these clusters is the input's C1?", the
+      answer is that none of them is. LFR did not preserve that information.</p>
+    `,
+    state: statePanelOutput,
+  },
+];
+
+// ═══════════════════════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════════════════════
+const state = {step:0, playing:false, timer:null};
+const svg = document.getElementById('graph');
+const NS = 'http://www.w3.org/2000/svg';
+function el(tag, attrs={}, parent=svg, text=null){
+  const e = document.createElementNS(NS, tag);
+  for (const [k,v] of Object.entries(attrs)) e.setAttribute(k,v);
+  if (text != null) e.textContent = text;
+  if (parent) parent.appendChild(e);
+  return e;
+}
+
+function drawInputGraph(dim=true){
+  EDGES.forEach(([u,v]) => {
+    const a = POSITIONS[u], b = POSITIONS[v];
+    el('line', {x1:a.x, y1:a.y, x2:b.x, y2:b.y, class:'edge ' + (dim ? 'input' : 'dim')});
+  });
+  Object.keys(POSITIONS).forEach(k => {
+    const n = +k, p = POSITIONS[n];
+    el('circle', {cx:p.x, cy:p.y, r:10, fill:CCOL[CLUSTER_OF[n]], class:'node'});
+    el('text', {class:'node-label', x:p.x, y:p.y+0.5}, svg, n);
+  });
+}
+
+function drawFreshGraph(opts){
+  opts = opts || {};
+  const showInt = opts.showInt !== false;
+  const showExt = opts.showExt !== false;
+  const useColor = opts.useColor !== false;
+  const highlightBad = opts.highlightBad || false;
+  const dropBad = opts.dropBad || false;
+
+  // cluster rings (soft backdrops)
+  const centers = [{x:-240,y:-60},{x:60,y:-60},{x:220,y:130},{x:-40,y:130}];
+  centers.forEach((c,i) => {
+    const cap = SAMPLED_CS[i];
+    const r = cap > 4 ? 74 : 54;
+    el('circle', {cx:c.x, cy:c.y, r, class:'cluster-ring'});
+    el('text', {class:'cluster-label', x:c.x, y:c.y - r - 6}, svg, `L${i+1} · size ${cap}`);
+  });
+
+  // edges
+  if (showInt) {
+    INT_EDGES.forEach(([u,v]) => {
+      const a = FRESH_POS[u], b = FRESH_POS[v];
+      if (!a || !b) return;
+      const isBad = dropBad && BAD_ARTEFACTS.some(e => e.kind==='par' && e.u===u && e.v===v);
+      if (isBad) return;  // dropped on step 9
+      const cls = 'edge int' + (highlightBad && BAD_ARTEFACTS.some(e => e.kind==='par' && e.u===u && e.v===v) ? ' bad' : '');
+      el('line', {x1:a.x, y1:a.y, x2:b.x, y2:b.y, class:cls});
+    });
+  }
+  if (showExt) {
+    EXT_EDGES.forEach(([u,v]) => {
+      const a = FRESH_POS[u], b = FRESH_POS[v];
+      if (!a || !b) return;
+      el('line', {x1:a.x, y1:a.y, x2:b.x, y2:b.y, class:'edge ext'});
+    });
+  }
+  // flagged artefacts on step 9
+  if (highlightBad) {
+    BAD_ARTEFACTS.forEach(a => {
+      if (a.kind === 'self') {
+        const p = FRESH_POS[a.u];
+        el('path', {class:'edge bad', d:`M ${p.x+6} ${p.y-6} a 10 10 0 1 1 -1 -12`});
+        el('text', {'text-anchor':'middle', 'font-family':'JetBrains Mono,monospace',
+                    'font-size':'13', 'font-weight':'700', fill:'#ff6b7a',
+                    x: p.x + 22, y: p.y - 18}, svg, '×');
+      } else {
+        const pa = FRESH_POS[a.u], pb = FRESH_POS[a.v];
+        const mx=(pa.x+pb.x)/2, my=(pa.y+pb.y)/2;
+        const dx=pb.x-pa.x, dy=pb.y-pa.y, L=Math.hypot(dx,dy)||1;
+        const ox=-dy/L*8, oy=dx/L*8;
+        el('path', {class:'edge bad', d:`M ${pa.x} ${pa.y} Q ${mx+ox} ${my+oy} ${pb.x} ${pb.y}`});
+        el('text', {'text-anchor':'middle', 'font-family':'JetBrains Mono,monospace',
+                    'font-size':'13', 'font-weight':'700', fill:'#ff6b7a',
+                    x: mx+ox*1.5, y: my+oy*1.5-2}, svg, '×');
+      }
+    });
+  }
+
+  // nodes
+  FRESH_NODES.forEach(n => {
+    const p = FRESH_POS[n.id];
+    const fill = useColor ? FRESH_CCOL[n.cluster] : '#c0cceb';
+    el('circle', {cx:p.x, cy:p.y, r:10, fill, class:'node'});
+    el('text', {class:'node-label', x:p.x, y:p.y+0.5}, svg, n.id);
+  });
+}
+
+function drawSplitGraph(){
+  // show fresh graph split screen: left panel fit t1, right panel fit t2
+  // (we keep it as a single-SVG, simpler: draw schematic bars + fit lines)
+  // Left: degree log-log scatter with t1 line. Right: size log-log scatter with t2 line.
+  const drawPanel = (ox, oy, title, pts, alpha, xminV) => {
+    el('text', {class:'panel-head', x:ox+110, y:oy-8}, svg, title);
+    el('line', {class:'axis-line', x1:ox, y1:oy+160, x2:ox+220, y2:oy+160});
+    el('line', {class:'axis-line', x1:ox, y1:oy, x2:ox, y2:oy+160});
+    el('text', {class:'axis-text', x:ox+110, y:oy+180}, svg, 'log k');
+    el('text', {class:'axis-text', x:ox-28, y:oy+80, transform:`rotate(-90 ${ox-28} ${oy+80})`}, svg, 'log p(k)');
+    // data points
+    const maxLogX = Math.log(Math.max(...pts.map(p=>p[0]))+0.5);
+    const maxCt = Math.max(...pts.map(p=>p[1]));
+    pts.forEach(([k,c]) => {
+      if (c === 0) return;
+      const lx = Math.log(k) / maxLogX;
+      const ly = Math.log(c) / Math.log(maxCt+0.5);
+      const x = ox + 10 + lx * 200;
+      const y = oy + 150 - ly * 130;
+      el('circle', {class:'data-pt', cx:x, cy:y, r:3});
+    });
+    // fit line: p(k) ~ k^(-alpha) so log p = -alpha * log k. Anchor: largest ct at xmin.
+    const xm = xminV || 1;
+    const lxMin = Math.log(xm) / maxLogX;
+    const lyMin = 0.95;  // anchor near top
+    const lxMax = 1;
+    const lyMax = lyMin - alpha * (lxMax - lxMin) / 3.2;
+    const x1 = ox + 10 + lxMin * 200, y1 = oy + 150 - lyMin * 130;
+    const x2 = ox + 10 + lxMax * 200, y2 = oy + 150 - Math.max(0.05, lyMax) * 130;
+    el('line', {class:'fit-line', x1, y1, x2, y2});
+    el('text', {class:'panel-sub', x:ox+110, y:oy+175}, svg, `α = ${alpha.toFixed(3)}, xmin = ${xminV}`);
+  };
+  drawPanel(-330, -30, 'degree distribution', INPUT_DEG_HIST, LFR_PARAMS.t1, 2);
+  drawPanel(80, -30, 'cluster-size distribution', [[3,1],[4,1],[5,0],[6,1],[7,0],[8,1]], LFR_PARAMS.t2, 3);
+  // caption
+  el('text', {class:'panel-sub', x:0, y:200}, svg, 'input data overlaid with the fitted power-law tail');
+}
+
+function drawSeedWrite(){
+  // illustrate time_seed.dat
+  el('rect', {class:'write-box', x:-220, y:-60, width:440, height:140, rx:6});
+  el('text', {'font-family':'JetBrains Mono,monospace', 'font-size':'10', 'letter-spacing':'2',
+              fill:'#8494be', 'text-anchor':'middle', x:0, y:-38}, svg, 'OUTPUT_DIR/time_seed.dat');
+  el('text', {class:'write-text', x:0, y:0, 'font-size':'24', 'font-weight':'700', fill:'#78b4ff'}, svg, '1');
+  el('text', {class:'panel-sub', x:0, y:40}, svg, 'single integer, newline-terminated');
+  el('text', {class:'panel-head', x:0, y:150}, svg, 'binary reads ./time_seed.dat from cwd');
+  // small arrow from file-box to "binary"
+  el('path', {class:'arrow', d:'M 0 80 L 0 130'});
+}
+
+function drawHistPair(labels, data1, data2, titleL, titleR){
+  // simple bar charts side by side. Input vs resampled.
+  const drawBar = (ox, oy, title, hist, color, max) => {
+    el('text', {class:'panel-head', x:ox+140, y:oy-8}, svg, title);
+    const W = 240, H = 140, BW = W / hist.length - 4;
+    el('line', {class:'axis-line', x1:ox, y1:oy+H, x2:ox+W, y2:oy+H});
+    hist.forEach(([k,c], i) => {
+      const x = ox + i * (BW+4) + 4;
+      const h = (c / max) * (H - 10);
+      el('rect', {x, y:oy+H-h, width:BW, height:h, fill:color, opacity:.85});
+      el('text', {class:'axis-text', x:x+BW/2, y:oy+H+14}, svg, k);
+      if (c > 0) el('text', {class:'axis-text', x:x+BW/2, y:oy+H-h-4, fill:'#c0cceb'}, svg, c);
+    });
+  };
+  const allMax = Math.max(...data1.map(x=>x[1]), ...data2.map(x=>x[1]));
+  drawBar(-330, -30, titleL, data1, '#a0ccff', allMax);
+  drawBar(80,  -30, titleR, data2, '#c38bff', allMax);
+  el('text', {class:'panel-sub', x:0, y:165}, svg, labels);
+}
+
+function drawSizesPair(){
+  // two rows of rectangles: input sizes (5 entries: 8 6 4 1 1), resampled (7 6 4 3).
+  const drawRow = (ox, oy, title, sizes, color) => {
+    el('text', {class:'panel-head', x:ox+120, y:oy-4}, svg, title);
+    let cur = ox;
+    const U = 18;
+    sizes.forEach((s, i) => {
+      el('rect', {x:cur, y:oy+10, width:s*U, height:26, fill:color, opacity:.85, rx:2});
+      el('text', {'font-family':'JetBrains Mono,monospace', 'font-size':'11', 'font-weight':'600',
+                  fill:'#0b1120', 'text-anchor':'middle', 'dominant-baseline':'central',
+                  x:cur+s*U/2, y:oy+23}, svg, s);
+      cur += s*U + 3;
+    });
+  };
+  drawRow(-330, -20, 'input (singleton mode)', INPUT_CLUSTER_SIZES, '#c0cceb');
+  el('text', {class:'panel-sub', x:-145, y:40}, svg, 'minc=3 floor excludes the two 1s');
+  drawRow(-330, 70, 'resampled', SAMPLED_CS, '#c38bff');
+  el('text', {class:'panel-sub', x:-145, y:130}, svg, 'sum = N = 20');
+
+  el('text', {class:'panel-head', x:0, y:170}, svg, '3 real input clusters → 4 fresh sampled clusters');
+}
+
+function renderSVG(step){
+  svg.textContent = '';
+  // preserve defs
+  const defs = document.createElementNS(NS, 'defs');
+  defs.innerHTML = '';
+  const m = document.createElementNS(NS, 'marker');
+  m.setAttribute('id','arrow'); m.setAttribute('viewBox','0 0 10 10');
+  m.setAttribute('refX','9'); m.setAttribute('refY','5');
+  m.setAttribute('markerWidth','6'); m.setAttribute('markerHeight','6');
+  m.setAttribute('orient','auto-start-reverse');
+  const mp = document.createElementNS(NS,'path');
+  mp.setAttribute('d','M 0 0 L 10 5 L 0 10 z'); mp.setAttribute('fill','#78b4ff');
+  m.appendChild(mp); defs.appendChild(m); svg.appendChild(defs);
+
+  switch (step) {
+    case 0: drawInputGraph(false); break;
+    case 1: drawSplitGraph(); break;
+    case 2: drawSeedWrite(); break;
+    case 3: drawHistPair('degree histogram: input vs resampled',
+                          INPUT_DEG_HIST, OUTPUT_DEG_HIST,
+                          'input degrees', 'resampled degrees'); break;
+    case 4: drawSizesPair(); break;
+    case 5: drawFreshGraph({showInt:false, showExt:false, useColor:true}); break;
+    case 6: drawFreshGraph({showInt:false, showExt:false, useColor:true}); break;
+    case 7: drawFreshGraph({showInt:true,  showExt:false, useColor:true}); break;
+    case 8: drawFreshGraph({showInt:true,  showExt:true,  useColor:true}); break;
+    case 9: drawFreshGraph({showInt:true,  showExt:true,  useColor:true, highlightBad:true}); break;
+    case 10: drawFreshGraph({showInt:true, showExt:true, useColor:true, dropBad:true}); break;
+    case 11: drawFreshGraph({showInt:true, showExt:true, useColor:true, dropBad:true}); break;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SIDE PANELS
+// ═══════════════════════════════════════════════════════════════
+function statePanelProfileFiles(){
+  return `
+    <div class="file-row"><span class="fname">degree.csv</span><span class="fnote">N=20 rows</span><span class="fval">6,5,5,5,4,2,...</span></div>
+    <div class="file-row"><span class="fname">cluster_sizes.csv</span><span class="fnote">singleton mode</span><span class="fval">8, 6, 4, 1, 1</span></div>
+    <div class="file-row"><span class="fname">mixing_parameter.txt</span><span class="fnote">mean &mu;_i</span><span class="fval">${LFR_PARAMS.mu}</span></div>
+    <div class="callout">Under <code>outlier_mode=singleton</code>, each outlier becomes its own size-1 cluster before the LFR minc&ge;3 floor filters them out. Five entries in the sizes file, three will drive the t2 fit.</div>
+    <div class="callout hint">The mean-&mu; convention averages per-node out/(in+out). A degree-6 hub counts the same as a degree-1 leaf.</div>
+  `;
+}
+
+function statePanelFitStats(){
+  return `
+    <pre class="code-block">
+<span class="kw">t1</span> = <span class="fn">powerlaw.Fit</span>(degrees, <span class="arg">discrete</span>=<span class="str">True</span>).power_law.alpha
+<span class="cmt"># t1 = ${LFR_PARAMS.t1}, xmin picked at 2 by KS</span>
+
+<span class="kw">minc</span> = <span class="fn">max</span>(<span class="fn">min</span>(cluster_sizes), 3)
+<span class="cmt"># minc = 3 (LFR's hard floor)</span>
+
+<span class="kw">t2</span> = <span class="fn">powerlaw.Fit</span>(cluster_sizes, <span class="arg">discrete</span>=<span class="str">True</span>, <span class="arg">xmin</span>=minc).power_law.alpha
+<span class="cmt"># t2 = ${LFR_PARAMS.t2}</span></pre>
+    <div class="stats" style="margin-top:.8rem">
+      <div><div class="k">t1 (degree)</div><div class="v hi">${LFR_PARAMS.t1}</div></div>
+      <div><div class="k">t2 (size)</div><div class="v hi">${LFR_PARAMS.t2}</div></div>
+      <div><div class="k">minc</div><div class="v">${LFR_PARAMS.minc}</div></div>
+      <div><div class="k">maxc</div><div class="v">${LFR_PARAMS.maxc}</div></div>
+    </div>
+    <div class="callout warn">N=20 is far below the regime where the <code>powerlaw</code> fit is stable. What the library returns is nonetheless what LFR receives.</div>
+  `;
+}
+
+function statePanelSeedCode(){
+  return `
+    <pre class="code-block">(output_dir / <span class="str">"time_seed.dat"</span>).<span class="fn">write_text</span>(<span class="kw">f</span><span class="str">"{seed}\\n"</span>)
+
+<span class="fn">subprocess.run</span>(
+    [lfr_exec, <span class="str">"-N"</span>, <span class="kw">str</span>(N), <span class="str">"-k"</span>, <span class="kw">str</span>(k),
+     <span class="str">"-maxk"</span>, <span class="kw">str</span>(maxk), <span class="str">"-minc"</span>, <span class="kw">str</span>(minc),
+     <span class="str">"-maxc"</span>, <span class="kw">str</span>(maxc), <span class="str">"-mu"</span>, <span class="kw">str</span>(mu),
+     <span class="str">"-t1"</span>, <span class="kw">str</span>(t1), <span class="str">"-t2"</span>, <span class="kw">str</span>(t2)],
+    <span class="arg">cwd</span>=output_dir,
+)</pre>
+    <div class="callout">Seed is not a CLI flag. Every other argument is. The binary opens <code>./time_seed.dat</code> from its own cwd, which is why the wrapper sets <code>cwd=output_dir</code>.</div>
+  `;
+}
+
+function statePanelDegHist(){
+  const inBars = INPUT_DEG_HIST.map(([k,c]) => {
+    const w = c > 0 ? Math.round(100 * c / 7) : 0;
+    return `<div class="lbl">k=${k}</div><div class="bar"><div class="fill" style="width:${w}%"></div></div><div class="val">${c}</div>`;
+  }).join('');
+  const outBars = OUTPUT_DEG_HIST.map(([k,c]) => {
+    const w = c > 0 ? Math.round(100 * c / 7) : 0;
+    return `<div class="lbl">k=${k}</div><div class="bar"><div class="fill fresh" style="width:${w}%"></div></div><div class="val">${c}</div>`;
+  }).join('');
+  return `
+    <div style="font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--paper-4);letter-spacing:.18em;text-transform:uppercase;margin-bottom:.3rem">input degrees</div>
+    <div class="blist">${inBars}</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--paper-4);letter-spacing:.18em;text-transform:uppercase;margin:.8rem 0 .3rem">resampled degrees</div>
+    <div class="blist">${outBars}</div>
+    <div class="stats" style="margin-top:.8rem">
+      <div><div class="k">mean (both)</div><div class="v">${LFR_PARAMS.k}</div></div>
+      <div><div class="k">max (both)</div><div class="v">${LFR_PARAMS.maxk}</div></div>
+    </div>
+    <div class="callout warn">Same mean and max by construction. The multiset differs. On larger inputs the difference concentrates in the tail.</div>
+  `;
+}
+
+function statePanelSizeSample(){
+  return `
+    <div class="stats">
+      <div><div class="k">input (file)</div><div class="v">[8, 6, 4, 1, 1]</div></div>
+      <div><div class="k">resampled</div><div class="v hi">[7, 6, 4, 3]</div></div>
+      <div><div class="k">input count</div><div class="v">5</div></div>
+      <div><div class="k">output count</div><div class="v">4</div></div>
+    </div>
+    <div class="callout">The count of clusters is a random variable. On the shipped dnc example, 42 input clusters became 51 output clusters under a similar resample.</div>
+    <div class="callout hint">Rejection sampling: the binary re-draws sequences whose sum differs from N, then restarts if an assignment step-5 fails.</div>
+  `;
+}
+
+function statePanelAssign(){
+  const rows = FRESH_NODES.slice(0, 14).map(n => `
+    <tr>
+      <td style="color:var(--paper)">${n.id}</td>
+      <td style="color:var(--paper-3);padding-left:.8rem">L${n.cluster+1}</td>
+      <td style="color:var(--azure-2);text-align:right">d=${n.d}</td>
+    </tr>
+  `).join('');
+  return `
+    <table style="width:100%;font-family:'JetBrains Mono',monospace;font-size:.72rem;border-collapse:collapse">
+      <thead>
+        <tr style="border-bottom:1px solid var(--rule)">
+          <th style="text-align:left;color:var(--paper-4);font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;padding-bottom:.3rem">id</th>
+          <th style="text-align:left;color:var(--paper-4);font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;padding:0 0 .3rem .8rem">cluster</th>
+          <th style="text-align:right;color:var(--paper-4);font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;padding-bottom:.3rem">deg</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div class="callout">Greedy first-fit descending. Node with d=6 lands in L1 (size 7). The three size-2 tail nodes fill L4 (size 3). Constraint <code>d &le; s - 1</code> holds everywhere.</div>
+    <div class="callout warn">These ids have no correspondence to the input's node 1, node 2, and so on. They are freshly-invented integers.</div>
+  `;
+}
+
+function statePanelSplit(){
+  // stacked bars for each cluster's degree distribution
+  const mu = LFR_PARAMS.mu;
+  const groups = [[],[],[],[]];
+  FRESH_NODES.forEach(n => groups[n.cluster].push(n));
+  const cap = (arr, maxVal) => arr.map(n => {
+    const total = maxVal;
+    const intPct = 100 * n.dInt / total;
+    const extPct = 100 * n.dExt / total;
+    return `
+      <div class="lbl">${n.id}</div>
+      <div class="stk">
+        <div class="s-int" style="width:${intPct}%"></div>
+        <div class="s-ext" style="width:${extPct}%"></div>
+      </div>
+      <div class="val">${n.dInt}+${n.dExt}</div>
+    `;
+  }).join('');
+  let html = '<div style="font-family:\'JetBrains Mono\',monospace;font-size:.6rem;color:var(--paper-3);margin-bottom:.2rem">int (azure) + ext (orchid)</div>';
+  groups.forEach((g, i) => {
+    html += `<div style="font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--paper-4);letter-spacing:.15em;text-transform:uppercase;margin:.5rem 0 .2rem">L${i+1} · size ${SAMPLED_CS[i]}</div>`;
+    html += `<div class="stacked">${cap(g, 6)}</div>`;
+  });
+  html += `<div class="callout">Internal stub sums per cluster: 22, 12, 5, 3. The odd ones (5 and 3) will leave a leftover stub for the rewire pass.</div>`;
+  return html;
+}
+
+function statePanelIntStubs(){
+  return `
+    <div class="stats">
+      <div><div class="k">int stubs L1</div><div class="v">22 → 11 edges</div></div>
+      <div><div class="k">int stubs L2</div><div class="v">12 → 6 edges</div></div>
+      <div><div class="k">int stubs L3</div><div class="v" style="color:var(--signal)">5 → 2 + 1 odd</div></div>
+      <div><div class="k">int stubs L4</div><div class="v" style="color:var(--signal)">3 → 1 + 1 odd</div></div>
+    </div>
+    <div class="callout">Each cluster runs a configuration-model match on its own. An odd stub total leaves one unpaired stub that the binary pushes into the external pool or rewires.</div>
+  `;
+}
+
+function statePanelExtStubs(){
+  return `
+    <div class="stats">
+      <div><div class="k">ext stubs</div><div class="v">24</div></div>
+      <div><div class="k">ext edges</div><div class="v">12</div></div>
+      <div><div class="k">same-cluster?</div><div class="v">rejected</div></div>
+      <div><div class="k">self-loops so far</div><div class="v" style="color:var(--signal)">1</div></div>
+    </div>
+    <div class="callout hint">An external stub pair that happens to fall within the same cluster gets retried. Config-model self-loops can still sneak in when a node's two stubs land on each other. The rewire pass handles the rest.</div>
+  `;
+}
+
+function statePanelRewire(){
+  return `
+    <div class="stats">
+      <div><div class="k">before</div><div class="v dim">21 edges + artefacts</div></div>
+      <div><div class="k">self-loops</div><div class="v" style="color:var(--signal)">1</div></div>
+      <div><div class="k">parallels</div><div class="v" style="color:var(--signal)">1</div></div>
+      <div><div class="k">after</div><div class="v">20 edges</div></div>
+    </div>
+    <div class="callout warn">LFR rewires rather than drops. A self-loop on node u swaps with a random other edge (v, w) to become (u, v) and (u, w). A parallel (u, v) swaps with (x, y) to become (u, x) and (v, y). Degree sequence stays exact.</div>
+  `;
+}
+
+function statePanelCleanupCode(){
+  return `
+    <pre class="code-block">edge_df = <span class="fn">pd.read_csv</span>(<span class="str">"network.dat"</span>, <span class="arg">sep</span>=<span class="str">r"\\s+"</span>, ...)
+com_df  = <span class="fn">pd.read_csv</span>(<span class="str">"community.dat"</span>, <span class="arg">sep</span>=<span class="str">r"\\s+"</span>, ...)
+
+edge_df = <span class="fn">simplify_edges</span>(edge_df)       <span class="cmt"># dedup u-v / v-u</span>
+com_df  = <span class="fn">drop_singleton_clusters</span>(com_df) <span class="cmt"># defensive</span>
+
+edge_df.<span class="fn">to_csv</span>(<span class="str">"edge.csv"</span>, <span class="arg">index</span>=<span class="str">False</span>)
+com_df.<span class="fn">to_csv</span>(<span class="str">"com.csv"</span>, <span class="arg">index</span>=<span class="str">False</span>)
+
+<span class="cmt"># unlink network.dat, community.dat,
+# statistics.dat, time_seed.dat</span></pre>
+    <div class="callout">LFR's convention lists every edge twice (once per direction) in <code>network.dat</code>. <code>simplify_edges</code> collapses that to undirected. The scratch files do not leave the output directory.</div>
+  `;
+}
+
+function statePanelOutput(){
+  return `
+    <div class="stats">
+      <div><div class="k">N</div><div class="v">${LFR_PARAMS.N}</div></div>
+      <div><div class="k">edges</div><div class="v">20</div></div>
+      <div><div class="k">mean k</div><div class="v">${LFR_PARAMS.k}</div></div>
+      <div><div class="k">clusters</div><div class="v hi">4</div></div>
+    </div>
+    <div class="stats" style="margin-top:.7rem">
+      <div><div class="k">input clusters</div><div class="v dim">3 (+ 2 singleton)</div></div>
+      <div><div class="k">output clusters</div><div class="v hi">4</div></div>
+    </div>
+    <div class="callout warn">Cluster ids L1, L2, L3, L4 in the output have nothing to do with the input's C1, C2, C3. LFR invented a fresh partition from its own power-law sample.</div>
+    <div class="callout">On the shipped dnc example (906 nodes, 42 input clusters), the LFR output lands at 51 clusters. Same mechanism, scaled up.</div>
+  `;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ORCHESTRATOR
+// ═══════════════════════════════════════════════════════════════
+function render(){
+  const s = STEPS[state.step];
+  renderSVG(state.step);
+  document.getElementById('step-num').textContent = state.step;
+  document.getElementById('step-total').textContent = STEPS.length - 1;
+  document.getElementById('step-code').textContent = s.code;
+  document.getElementById('step-title').innerHTML = s.title;
+  document.getElementById('stage-tag').innerHTML = s.stage;
+  document.getElementById('desc-tag').textContent = s.code;
+  document.getElementById('chrome-left').innerHTML = s.chrome;
+  const niceTitle = s.title.split('&')[0].split('·')[0].trim();
+  document.getElementById('state-tag').textContent = niceTitle;
+
+  const descEl = document.getElementById('desc-body');
+  const stateEl = document.getElementById('state-body');
+  descEl.classList.remove('panel-content');
+  stateEl.classList.remove('panel-content');
+  void descEl.offsetWidth; void stateEl.offsetWidth;
+  descEl.innerHTML = s.desc();
+  stateEl.innerHTML = s.state();
+  descEl.classList.add('panel-content');
+  stateEl.classList.add('panel-content');
+
+  document.getElementById('btn-prev').disabled = state.step === 0;
+  document.getElementById('btn-next').disabled = state.step === STEPS.length - 1;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CONTROLS
+// ═══════════════════════════════════════════════════════════════
+function next(){
+  if (state.step < STEPS.length - 1) { state.step++; render(); }
+  else stopPlay();
+}
+function prev(){ if (state.step > 0) { state.step--; render(); } }
+function reset(){ stopPlay(); state.step = 0; render(); }
+function startPlay(){
+  if (state.playing) return;
+  state.playing = true;
+  const pb = document.getElementById('btn-play');
+  pb.classList.add('active'); pb.textContent = 'pause';
+  state.timer = setInterval(() => {
+    if (state.step >= STEPS.length - 1) stopPlay();
+    else next();
+  }, 2400);
+}
+function stopPlay(){
+  if (!state.playing) return;
+  state.playing = false;
+  clearInterval(state.timer); state.timer = null;
+  const pb = document.getElementById('btn-play');
+  pb.classList.remove('active'); pb.textContent = 'play';
+}
+function togglePlay(){ state.playing ? stopPlay() : startPlay(); }
+
+document.getElementById('btn-prev').addEventListener('click', () => { stopPlay(); prev(); });
+document.getElementById('btn-next').addEventListener('click', () => { stopPlay(); next(); });
+document.getElementById('btn-play').addEventListener('click', togglePlay);
+document.getElementById('btn-reset').addEventListener('click', reset);
+window.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  if (e.key === 'ArrowLeft') { stopPlay(); prev(); e.preventDefault(); }
+  else if (e.key === 'ArrowRight') { stopPlay(); next(); e.preventDefault(); }
+  else if (e.key === ' ') { togglePlay(); e.preventDefault(); }
+  else if (e.key === 'r' || e.key === 'R') { reset(); e.preventDefault(); }
+});
+
+render();
+})();
+</script>
+</body>
+</html>
