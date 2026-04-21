@@ -182,6 +182,6 @@ Cold cost (not shown in the steady-state) is slightly higher because
 - [Source: `src/lfr/gen.py`](../../src/lfr/gen.py)
 - [Source: `src/lfr/profile.py`](../../src/lfr/profile.py)
 - [Upstream: Lancichinetti, Fortunato, Radicchi 2008](https://arxiv.org/abs/0805.4770)
-- [Interactive GUI: lfr steps at default settings](./lfr.html)
+- [Interactive GUI: lfr steps at default settings](https://vltanh.me/netgen/lfr.html)
 - [ABCD (empirical-sequence variant)](./abcd.md)
 - [Index of all generators](../algorithms.md)
