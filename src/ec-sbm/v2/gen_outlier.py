@@ -9,8 +9,14 @@ import graph_tool.all as gt
 from scipy.sparse import dok_matrix
 
 from pipeline_common import standard_setup, timed, write_edge_tuples_csv
-from params_common import read_params
+from params_common import read_params, resolve_param
 from utils import normalize_edge, run_rewire_attempts
+
+# Gen-outlier's default outlier policy is independent of the profile stage:
+# the residual-SBM folds all outliers into one combined block by default.
+# Override per-invocation with --outlier-mode (CLI) or via --params-file
+# (pipeline-supplied fingerprint).
+DEFAULT_OUTLIER_MODE = "combined"
 
 
 def load_network_data(orig_edgelist_fp, orig_clustering_fp, exist_edgelist_fp):
@@ -300,15 +306,24 @@ def parse_args():
     parser.add_argument("--orig-clustering", type=str, required=True)
     parser.add_argument("--exist-edgelist", type=str, required=True)
     parser.add_argument(
-        "--profile-params",
+        "--outlier-mode",
         type=str,
-        required=True,
+        choices=["combined", "singleton"],
+        default=None,
         help=(
-            "Path to params.txt written by the profile stage. "
-            "The residual-SBM uses the outlier_mode there to place outlier "
-            "edges consistently with how the profile folded them. "
-            "A follow-up commit will replace this with a direct "
-            "--gen-outlier-mode CLI arg so v2 can decouple the two modes."
+            "How the residual-SBM places outliers: 'combined' folds all "
+            "outliers into one block (default); 'singleton' makes each outlier "
+            "its own size-1 block.  Overrides any value in --params-file."
+        ),
+    )
+    parser.add_argument(
+        "--params-file",
+        type=str,
+        default=None,
+        help=(
+            "Optional path to a params.txt (key=value per line). "
+            "Used when the CLI flag is not given — pipeline invocations rely on "
+            "this so cache invalidation tracks the file's hash."
         ),
     )
     parser.add_argument(
@@ -330,8 +345,11 @@ def parse_args():
 
 def main():
     args = parse_args()
-    profile_params = read_params(args.profile_params)
-    outlier_mode = profile_params["outlier_mode"]
+    file_params = read_params(args.params_file) if args.params_file else None
+    outlier_mode = resolve_param(
+        args.outlier_mode, file_params, "outlier_mode",
+        default=DEFAULT_OUTLIER_MODE,
+    )
     if outlier_mode == "excluded":
         raise SystemExit(
             "ec-sbm v2 gen_outlier does not support outlier_mode=excluded; "
