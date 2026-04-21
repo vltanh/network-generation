@@ -1,82 +1,105 @@
-# SBM: the straight-shooter
+# SBM
 
 [← back to index](../algorithms.md)
 
-If you only remember one thing about the SBM generator, remember this: **it hands graph-tool a degree sequence, a block assignment, and a block-edge-count matrix, says "match these exactly", and then cleans up the inevitable mess**. Almost everything interesting happens inside `graph_tool.generate_sbm`. Our job on both ends is plumbing.
+The SBM generator is the thinnest wrapper in the repo. It hands graph-tool a
+degree sequence, a block assignment, and a block-edge-count matrix, asks for a
+micro-canonical degree-corrected SBM, and then cleans up the self-loops and
+parallel edges that the micro constraint leaves behind. Everything
+interesting happens inside `graph_tool.generate_sbm`.
 
-Let's walk through it.
+## What the model does
 
-## What the model is, in plain-ish words
+A stochastic block model places each node in a block (community) and samples
+edges based on a block-pair rate matrix `e_{rs}`. Degree-corrected variants add
+per-node degree as a second constraint, so hubs stay hubs. The *micro*
+flavour makes both constraints exact on the sampled multigraph: the
+inter-block counts match `e_{rs}` exactly and the degree sequence matches the
+input exactly, before any post-hoc simplification.
 
-Stochastic Block Models are the community-detection world's equivalent of "draw a histogram, then throw darts inside each bar." Each node lives in a *block* (think: community). You say "I want this many edges between block 1 and block 2, and this many inside block 1" and the sampler obliges. The degree-corrected variant adds a second constraint: **every node's degree must come out right too**, not just each block's total.
+We pass `micro_degs=True` and `micro_ers=True` to `gt.generate_sbm`. This is
+the strictest degree-corrected SBM graph-tool offers.
 
-graph-tool supports two flavours of the degree-corrected SBM:
+## Stage 1: the profile
 
-- **Canonical** (macro): degrees and block counts match *in expectation*. Each sample is a draw from a Poisson-ish distribution.
-- **Micro-canonical**: degrees and block counts match *exactly* on the sampled multigraph. No wiggle room.
-
-We use the micro flavour by passing `micro_degs=True` and `micro_ers=True` to `gt.generate_sbm`. This is the strictest degree-corrected SBM you can ask for.
-
-## Stage 1: what we pull out of your graph
-
-[`src/sbm/profile.py`](../../src/sbm/profile.py) reads your edgelist + clustering and emits five CSV files. The default outlier policy is `combined` — every unclustered node (plus the sole member of any size-1 cluster) gets folded into one giant pseudo-cluster named `__outliers__`. This keeps the block matrix square and avoids special cases downstream.
-
-The five files:
+[`src/sbm/profile.py`](../../src/sbm/profile.py) reads your edgelist and
+reference clustering, folds outliers into a single `__outliers__` pseudo-cluster
+(the default `combined` mode), and writes five CSVs. An outlier here is any
+node that is either unclustered or the sole member of a size-1 cluster.
 
 | File | What it is |
 | --- | --- |
-| `node_id.csv` | Original node IDs in degree-descending order (ties broken by ID ascending) |
+| `node_id.csv` | Node IDs in degree-descending order (ties by ID asc) |
 | `cluster_id.csv` | Cluster IDs in size-descending order |
-| `assignment.csv` | Per-node: index into `cluster_id.csv` |
-| `degree.csv` | Per-node: integer degree |
-| `edge_counts.csv` | Triples `(row, col, weight)` for the inter-block edge matrix |
+| `assignment.csv` | Per-node cluster iid (index into `cluster_id.csv`) |
+| `degree.csv` | Per-node integer degree |
+| `edge_counts.csv` | `(row, col, weight)` triples for the block matrix |
 
-One subtlety worth flagging: the edge-counts matrix is built by walking every edge **twice** — once as `(u, v)`, once as `(v, u)`. So off-diagonal `probs[r, s]` and `probs[s, r]` are both equal to the edge count between blocks `r` and `s`, and the diagonal `probs[k, k]` equals *twice* the number of intra-k edges. That doubling isn't a bug; it's exactly what graph-tool wants for undirected inputs (each intra-block edge is two half-edges, both landing in the same block).
+The edge-count matrix is built by walking each edge twice (once per direction).
+So off-diagonal `probs[r, s]` equals the count of edges between blocks `r`
+and `s`, and the diagonal `probs[k, k]` equals twice the count of intra-block
+edges in block `k`. The doubling is graph-tool's undirected convention: each
+intra-block edge is two half-edges, both landing in the same block.
 
-## Stage 2: one function call, two cleanups
+## Stage 2: one call, two cleanups
 
-[`src/sbm/gen.py:44-51`](../../src/sbm/gen.py#L44) is the whole generation step:
+The generation step in [`src/sbm/gen.py`](../../src/sbm/gen.py) is three lines:
 
 ```python
 g = gt.generate_sbm(
-    assignments,
-    probs,
-    out_degs=degrees,
-    micro_ers=True,
-    micro_degs=True,
-    directed=False,
+    assignments, probs, out_degs=degrees,
+    micro_ers=True, micro_degs=True, directed=False,
 )
-```
-
-That's it. graph-tool does the heavy lifting.
-
-Two lines later:
-
-```python
 gt.remove_parallel_edges(g)
 gt.remove_self_loops(g)
 ```
 
-This is where you lose a small amount of what the profile asked for. The micro-SBM sampler is allowed to emit multigraphs — it fulfills the count constraints as counts, not as *distinct edges*. If a block is small and its internal count is high, you get self-loops. If two hubs are the only thing holding up a large `probs[r, s]`, you get parallel edges. We kill both.
+The micro-SBM sampler is allowed to emit multigraphs. It hits the count
+constraints as counts, not as distinct edges. If a small block has a high
+intra-block count, you get self-loops; if two hubs are the only thing holding
+up a large `probs[r, s]`, you get parallel edges. Both are simplified away.
 
-On sparse empirical networks this loss is under 1%. On dense synthetic cases it can be worse — the limit is "how many distinct pairs actually exist in each cell". We don't currently log how many edges the dedup dropped; that would be a nice addition.
+On sparse empirical networks this loss is small. On denser cases it can be
+larger: the hard ceiling per cell is "how many distinct pairs actually exist".
+The ceiling is the same one in the canonical SBM, just less visible there
+because canonical SBM marginals already absorb it.
 
-## What you get
+## What you get on the shipped example
 
-| Thing you wanted | Did you get it? |
+Default run on the [`dnc`](../../examples/input/empirical_networks/networks/dnc/)
+input with [`sbm-flat-best+cc`](../../examples/input/reference_clusterings/clusterings/sbm-flat-best+cc/dnc/)
+clustering at `--seed 1`:
+
+| Stat | Input | SBM output | Note |
+| --- | --- | --- | --- |
+| N | 906 | 902 | 4 nodes isolated after dedup |
+| Edges | 10429 | 7438 | 29% lost to multi-edge / self-loop removal |
+| Mean degree | 23.02 | 16.49 | tracks the edge loss |
+| Global clustering coeff. | 0.548 | 0.341 | lower (DC-SBM tends toward tree-like) |
+| Mean k-core | 15.99 | 10.49 | |
+| Num clusters | 42 | 42 | exact (passthrough of input) |
+
+The big number to read is the 29% edge loss. That is the dedup bill for this
+input: a highly clustered graph (global ccoeff 0.548) compressed through a
+micro-SBM whose block matrix was filled with duplicate-heavy cells.
+
+## Output guarantees
+
+| Property | Status |
 | --- | --- |
-| Same node count | Yes, exact |
-| Same block structure | Yes, exact (nodes stay in their blocks) |
-| Same per-node degree | Pre-dedup: exact. Post-dedup: upper bound. |
-| Same inter-block edge counts | Pre-dedup: exact. Post-dedup: upper bound. |
-| Same clustering coefficient / triangle density | No. DC-SBM is nearly tree-like. |
-| Same path lengths / mixing time / motif counts | No. |
+| N | exact after the `combined` outlier transform |
+| Block structure | exact (each node stays in its input block) |
+| Degree sequence | exact pre-dedup; upper bound post-dedup |
+| Inter-block counts `e_{rs}` | exact pre-dedup; upper bound post-dedup |
+| Clustering coefficient / triangle count | not targeted |
 
-The tree-likeness is the famous weakness of the whole SBM family. If your real graph has lots of triangles (most social networks), SBM output looks weirdly diffuse in comparison. That's a limitation of the model, not of this implementation.
+The tree-likeness is the standard DC-SBM caveat. If the input has lots of
+triangles, the output looks diffuse by comparison. That is a property of the
+DC-SBM as a generative model, not of this implementation.
 
-## Determinism traps
+## Determinism
 
-We seed three RNGs:
+Three RNGs seeded at the start of stage 2:
 
 ```python
 np.random.seed(seed)
@@ -84,22 +107,29 @@ gt.seed_rng(seed)
 gt.openmp_set_num_threads(n_threads)
 ```
 
-And we export `PYTHONHASHSEED=0` from [`pipeline.sh:36`](../../src/sbm/pipeline.sh#L36). That last one matters. `gt.generate_sbm` reads Python set/dict iteration order somewhere inside, and without a pinned hash seed you get different output on reruns even with the same `seed`. The comment in the pipeline file spells this out.
+`PYTHONHASHSEED=0` is exported from
+[`pipeline.sh`](../../src/sbm/pipeline.sh). This is load-bearing.
+`gt.generate_sbm` is sensitive to Python set/dict iteration order in some
+code paths, so without a pinned hash seed reruns at the same `--seed` diverge.
 
-**The footgun**: `--seed 0` does *not* mean "seed with zero". graph-tool treats 0 as "use the entropy source", which silently disables reproducibility. The default everywhere in this repo is `--seed 1`. If you need a "null" seed, use 1 and keep moving.
+`--seed 0` is a trap: graph-tool treats 0 as "use entropy source", which
+disables reproducibility. The default everywhere in this repo is `--seed 1`.
 
 ## Cost
 
-On the dnc example network, single-threaded:
+Measured via [`scripts/benchmark/bench_isolated.sh`](../../scripts/benchmark/bench_isolated.sh)
+on an isolated cgroup (4 cores, 16 GiB cap), 10 seeds x 10 kept runs per seed:
 
-- Kept mean: ~4.0 s
-- Cold start: ~21 s
+- kept mean: 1.65 s
+- kept std: 0.03 s
 
-The cold cost is entirely graph-tool's C++ library load + Python-side PRNG setup. Warm up with a throwaway run if you're batching.
+See the [index](../algorithms.md) for the full per-generator table. SBM is the
+fastest of the seven at this input size.
 
 ## Where to look next
 
 - [Source: `src/sbm/gen.py`](../../src/sbm/gen.py)
 - [Source: `src/sbm/profile.py`](../../src/sbm/profile.py)
 - [graph-tool's `generate_sbm` docs](https://graph-tool.skewed.de/static/doc/generation.html#graph_tool.generation.generate_sbm)
+- [Interactive GUI: sbm steps at default settings](./sbm.html)
 - [Index of all generators](../algorithms.md)
