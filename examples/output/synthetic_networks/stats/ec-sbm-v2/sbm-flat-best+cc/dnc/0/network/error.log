@@ -1,4 +1,4 @@
-	Command being timed: "python /u/vltanh/ecsbmv2/network-generation/network_evaluation/network_stats/compute_network_stats.py --network examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/edge.csv --outdir examples/output/synthetic_networks/stats/ec-sbm-v2/sbm-flat-best+cc/dnc/0/network"
+	Command being timed: "python /path/to/network-generation/network_evaluation/network_stats/compute_network_stats.py --network examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/edge.csv --outdir examples/output/synthetic_networks/stats/ec-sbm-v2/sbm-flat-best+cc/dnc/0/network"
 	User time (seconds): 1.31
 	System time (seconds): 0.82
 	Percent of CPU this job got: 64%

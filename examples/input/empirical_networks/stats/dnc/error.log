@@ -1,4 +1,4 @@
-	Command being timed: "python /u/vltanh/ecsbmv2/network_evaluation/network_stats/compute_network_stats.py --network test/input/dnc/dnc.csv --outdir test/output/empirical_networks/stats/dnc"
+	Command being timed: "python /path/to/network_evaluation/network_stats/compute_network_stats.py --network test/input/dnc/dnc.csv --outdir test/output/empirical_networks/stats/dnc"
 	User time (seconds): 2.50
 	System time (seconds): 0.79
 	Percent of CPU this job got: 51%

@@ -1,5 +1,5 @@
 === 2026-04-21T05:11:40Z | pid=2780808 | host=cc-login2.campuscluster.illinois.edu | EXECUTED ===
-	Command being timed: "python /u/vltanh/ecsbmv2/network-generation/src/npso/gen.py --input-edgelist examples/input/empirical_networks/networks/dnc/dnc.csv --degree examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/.state/setup/degree.csv --cluster-sizes examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/.state/setup/cluster_sizes.csv --npso-dir /u/vltanh/ecsbmv2/network-generation/externals/npso --n-threads 1 --output-folder examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/.state/gen --seed 1"
+	Command being timed: "python /path/to/network-generation/src/npso/gen.py --input-edgelist examples/input/empirical_networks/networks/dnc/dnc.csv --degree examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/.state/setup/degree.csv --cluster-sizes examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/.state/setup/cluster_sizes.csv --npso-dir /path/to/network-generation/externals/npso --n-threads 1 --output-folder examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/.state/gen --seed 1"
 	User time (seconds): 1.90
 	System time (seconds): 1.37
 	Percent of CPU this job got: 3%

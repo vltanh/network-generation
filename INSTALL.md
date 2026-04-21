@@ -85,6 +85,31 @@ No `LD_LIBRARY_PATH` is needed at run time (matlabengine configures its own load
 
 After installing a generator's submodule, `run_generator.sh` picks it up automatically via the defaults `--abcd-dir=externals/abcd`, `--lfr-binary=externals/lfr/unweighted_undirected/benchmark`, `--npso-dir=externals/npso`. Override those flags if you want to use a different path.
 
+## Tests
+
+The test suite lives under `tests/` and is split by subsystem:
+
+- `tests/common` — state machine, per-stage params, profile/pipeline helpers (fast, no external tooling)
+- `tests/profile_py` — per-generator `profile.py` output contract (fast)
+- `tests/dispatcher` — `run_generator.sh` flag dispatch (fast, wrapper-only)
+- `tests/wrappers` — `--keep-state` wrapper contract (invokes pipelines)
+- `tests/simple_gens` — end-to-end runs for `sbm`, `abcd`, `abcd+o`, `lfr`, `npso`; skips gens whose externals aren't installed
+- `tests/ec_sbm` — end-to-end runs for `ec-sbm-v1` / `ec-sbm-v2`
+
+Activate the conda env that has the generator deps on `PATH` before running pipeline-level tests:
+
+```bash
+conda activate <your-env>
+python -m pytest tests/common tests/profile_py tests/dispatcher    # unit tests only (~seconds)
+python -m pytest tests/wrappers tests/simple_gens tests/ec_sbm     # end-to-end (minutes; skips gens missing externals)
+```
+
+If `pytest`'s subprocess shell needs additional paths (e.g. your conda env isn't on the inherited `PATH`), set `NW_TEST_PATH_PREFIX` to a colon-separated prefix that will be prepended to `PATH` inside spawned `run_generator.sh` calls:
+
+```bash
+NW_TEST_PATH_PREFIX="$CONDA_PREFIX/bin" python -m pytest tests/simple_gens
+```
+
 ## Optional: run-stats and run-comp
 
 Only needed if you pass `--run-stats` or `--run-comp` to `run_generator.sh`. These flags invoke the `network_evaluation/` submodule, which has its own deps on top of whatever the chosen generator needs: `graph-tool`, `pymincut`, `scipy`, `sklearn`, `networkit`, `tqdm`, `matplotlib`, `seaborn` (plus `numpy` / `pandas`, already present for every generator).

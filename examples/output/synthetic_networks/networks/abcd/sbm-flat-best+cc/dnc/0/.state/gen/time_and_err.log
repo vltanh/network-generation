@@ -1,5 +1,5 @@
 === 2026-04-21T05:00:40Z | pid=2665623 | host=cc-login2.campuscluster.illinois.edu | EXECUTED ===
-	Command being timed: "python /u/vltanh/ecsbmv2/network-generation/src/abcd/gen.py --degree examples/output/synthetic_networks/networks/abcd/sbm-flat-best+cc/dnc/0/.state/setup/degree.csv --cluster-sizes examples/output/synthetic_networks/networks/abcd/sbm-flat-best+cc/dnc/0/.state/setup/cluster_sizes.csv --mixing-parameter examples/output/synthetic_networks/networks/abcd/sbm-flat-best+cc/dnc/0/.state/setup/mixing_parameter.txt --abcd-dir /u/vltanh/ecsbmv2/network-generation/externals/abcd --output-folder examples/output/synthetic_networks/networks/abcd/sbm-flat-best+cc/dnc/0/.state/gen --seed 1"
+	Command being timed: "python /path/to/network-generation/src/abcd/gen.py --degree examples/output/synthetic_networks/networks/abcd/sbm-flat-best+cc/dnc/0/.state/setup/degree.csv --cluster-sizes examples/output/synthetic_networks/networks/abcd/sbm-flat-best+cc/dnc/0/.state/setup/cluster_sizes.csv --mixing-parameter examples/output/synthetic_networks/networks/abcd/sbm-flat-best+cc/dnc/0/.state/setup/mixing_parameter.txt --abcd-dir /path/to/network-generation/externals/abcd --output-folder examples/output/synthetic_networks/networks/abcd/sbm-flat-best+cc/dnc/0/.state/gen --seed 1"
 	User time (seconds): 4.45
 	System time (seconds): 0.41
 	Percent of CPU this job got: 83%

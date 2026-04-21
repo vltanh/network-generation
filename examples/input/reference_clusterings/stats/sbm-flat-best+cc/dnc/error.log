@@ -1,4 +1,4 @@
-	Command being timed: "python /u/vltanh/ecsbmv2/community-detection/network_evaluation/network_stats/compute_cluster_stats.py --network test/input/dnc/dnc.csv --community test/output/reference_clusterings/clusterings/sbm-flat-ndc+cc/dnc/com.csv --outdir test/output/reference_clusterings/stats/sbm-flat-ndc+cc/dnc"
+	Command being timed: "python /path/to/community-detection/network_evaluation/network_stats/compute_cluster_stats.py --network test/input/dnc/dnc.csv --community test/output/reference_clusterings/clusterings/sbm-flat-ndc+cc/dnc/com.csv --outdir test/output/reference_clusterings/stats/sbm-flat-ndc+cc/dnc"
 	User time (seconds): 1.36
 	System time (seconds): 0.24
 	Percent of CPU this job got: 132%

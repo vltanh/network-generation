@@ -1,7 +1,7 @@
 === Invocation 2026-04-21T05:01:40Z | seed=1 | keep_state=1 | pid=2673076 | host=cc-login2.campuscluster.illinois.edu ===
 === [Stage 1 (profile)] examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/profile/time_and_err.log ===
 [Stage 1 (profile)] === 2026-04-21T05:01:40Z | pid=2673076 | host=cc-login2.campuscluster.illinois.edu | EXECUTED ===
-[Stage 1 (profile)] 	Command being timed: "python /u/vltanh/ecsbmv2/network-generation/src/ec-sbm/common/profile.py --edgelist examples/input/empirical_networks/networks/dnc/dnc.csv --clustering examples/input/reference_clusterings/clusterings/sbm-flat-best+cc/dnc/com.csv --output-folder examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/profile --params-file examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/profile/params.txt"
+[Stage 1 (profile)] 	Command being timed: "python /path/to/network-generation/src/ec-sbm/common/profile.py --edgelist examples/input/empirical_networks/networks/dnc/dnc.csv --clustering examples/input/reference_clusterings/clusterings/sbm-flat-best+cc/dnc/com.csv --output-folder examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/profile --params-file examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/profile/params.txt"
 [Stage 1 (profile)] 	User time (seconds): 0.31
 [Stage 1 (profile)] 	System time (seconds): 0.19
 [Stage 1 (profile)] 	Percent of CPU this job got: 57%
@@ -34,7 +34,7 @@
 
 === [Stage 2 (gen_clustered)] examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/gen_clustered/time_and_err.log ===
 [Stage 2 (gen_clustered)] === 2026-04-21T05:01:41Z | pid=2673076 | host=cc-login2.campuscluster.illinois.edu | EXECUTED ===
-[Stage 2 (gen_clustered)] 	Command being timed: "python /u/vltanh/ecsbmv2/network-generation/src/ec-sbm/v1/gen_clustered.py --node-id examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/profile/node_id.csv --cluster-id examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/profile/cluster_id.csv --assignment examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/profile/assignment.csv --degree examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/profile/degree.csv --mincut examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/profile/mincut.csv --edge-counts examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/profile/edge_counts.csv --output-folder examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/gen_clustered --seed 1"
+[Stage 2 (gen_clustered)] 	Command being timed: "python /path/to/network-generation/src/ec-sbm/v1/gen_clustered.py --node-id examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/profile/node_id.csv --cluster-id examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/profile/cluster_id.csv --assignment examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/profile/assignment.csv --degree examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/profile/degree.csv --mincut examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/profile/mincut.csv --edge-counts examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/profile/edge_counts.csv --output-folder examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/gen_clustered --seed 1"
 [Stage 2 (gen_clustered)] 	User time (seconds): 1.17
 [Stage 2 (gen_clustered)] 	System time (seconds): 0.59
 [Stage 2 (gen_clustered)] 	Percent of CPU this job got: 58%
@@ -156,7 +156,7 @@
 
 === [Stage 3a (gen_outlier)] examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/gen_outlier/edges/time_and_err.log ===
 [Stage 3a (gen_outlier)] === 2026-04-21T05:01:44Z | pid=2673076 | host=cc-login2.campuscluster.illinois.edu | EXECUTED ===
-[Stage 3a (gen_outlier)] 	Command being timed: "python /u/vltanh/ecsbmv2/network-generation/src/ec-sbm/v1/gen_outlier.py --edgelist examples/input/empirical_networks/networks/dnc/dnc.csv --clustering examples/input/reference_clusterings/clusterings/sbm-flat-best+cc/dnc/com.csv --output-folder examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/gen_outlier/edges --seed 2"
+[Stage 3a (gen_outlier)] 	Command being timed: "python /path/to/network-generation/src/ec-sbm/v1/gen_outlier.py --edgelist examples/input/empirical_networks/networks/dnc/dnc.csv --clustering examples/input/reference_clusterings/clusterings/sbm-flat-best+cc/dnc/com.csv --output-folder examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/gen_outlier/edges --seed 2"
 [Stage 3a (gen_outlier)] 	User time (seconds): 1.12
 [Stage 3a (gen_outlier)] 	System time (seconds): 0.57
 [Stage 3a (gen_outlier)] 	Percent of CPU this job got: 63%
@@ -193,7 +193,7 @@
 
 === [Stage 3b (gen_outlier/combine)] examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/gen_outlier/time_and_err.log ===
 [Stage 3b (gen_outlier/combine)] === 2026-04-21T05:01:47Z | pid=2673076 | host=cc-login2.campuscluster.illinois.edu | EXECUTED ===
-[Stage 3b (gen_outlier/combine)] 	Command being timed: "python /u/vltanh/ecsbmv2/network-generation/src/ec-sbm/common/combine_edgelists.py --edgelist-1 examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/gen_clustered/edge.csv --name-1 clustered --edgelist-2 examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/gen_outlier/edges/edge_outlier.csv --name-2 outlier --output-folder examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/gen_outlier --output-filename edge.csv"
+[Stage 3b (gen_outlier/combine)] 	Command being timed: "python /path/to/network-generation/src/ec-sbm/common/combine_edgelists.py --edgelist-1 examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/gen_clustered/edge.csv --name-1 clustered --edgelist-2 examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/gen_outlier/edges/edge_outlier.csv --name-2 outlier --output-folder examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/gen_outlier --output-filename edge.csv"
 [Stage 3b (gen_outlier/combine)] 	User time (seconds): 0.30
 [Stage 3b (gen_outlier/combine)] 	System time (seconds): 0.20
 [Stage 3b (gen_outlier/combine)] 	Percent of CPU this job got: 53%
@@ -229,7 +229,7 @@
 
 === [Stage 4a (match_degree)] examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/match_degree/edges/time_and_err.log ===
 [Stage 4a (match_degree)] === 2026-04-21T05:01:48Z | pid=2673076 | host=cc-login2.campuscluster.illinois.edu | EXECUTED ===
-[Stage 4a (match_degree)] 	Command being timed: "python /u/vltanh/ecsbmv2/network-generation/src/ec-sbm/v1/match_degree.py --input-edgelist examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/gen_outlier/edge.csv --ref-edgelist examples/input/empirical_networks/networks/dnc/dnc.csv --ref-clustering examples/input/reference_clusterings/clusterings/sbm-flat-best+cc/dnc/com.csv --output-folder examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/match_degree/edges --seed 3"
+[Stage 4a (match_degree)] 	Command being timed: "python /path/to/network-generation/src/ec-sbm/v1/match_degree.py --input-edgelist examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/gen_outlier/edge.csv --ref-edgelist examples/input/empirical_networks/networks/dnc/dnc.csv --ref-clustering examples/input/reference_clusterings/clusterings/sbm-flat-best+cc/dnc/com.csv --output-folder examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/match_degree/edges --seed 3"
 [Stage 4a (match_degree)] 	User time (seconds): 0.28
 [Stage 4a (match_degree)] 	System time (seconds): 0.20
 [Stage 4a (match_degree)] 	Percent of CPU this job got: 59%
@@ -264,7 +264,7 @@
 
 === [Stage 4b (match_degree/combine)] examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/match_degree/time_and_err.log ===
 [Stage 4b (match_degree/combine)] === 2026-04-21T05:01:49Z | pid=2673076 | host=cc-login2.campuscluster.illinois.edu | EXECUTED ===
-[Stage 4b (match_degree/combine)] 	Command being timed: "python /u/vltanh/ecsbmv2/network-generation/src/ec-sbm/common/combine_edgelists.py --edgelist-1 examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/gen_outlier/edge.csv --json-1 examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/gen_outlier/sources.json --edgelist-2 examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/match_degree/edges/degree_matching_edge.csv --name-2 match_degree --output-folder examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/match_degree --output-filename edge.csv"
+[Stage 4b (match_degree/combine)] 	Command being timed: "python /path/to/network-generation/src/ec-sbm/common/combine_edgelists.py --edgelist-1 examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/gen_outlier/edge.csv --json-1 examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/gen_outlier/sources.json --edgelist-2 examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/match_degree/edges/degree_matching_edge.csv --name-2 match_degree --output-folder examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/match_degree --output-filename edge.csv"
 [Stage 4b (match_degree/combine)] 	User time (seconds): 0.30
 [Stage 4b (match_degree/combine)] 	System time (seconds): 0.20
 [Stage 4b (match_degree/combine)] 	Percent of CPU this job got: 60%

@@ -1,4 +1,4 @@
-	Command being timed: "python /u/vltanh/ecsbmv2/network-generation/network_evaluation/network_stats/compute_cluster_stats.py --network examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/edge.csv --community examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/com.csv --outdir examples/output/synthetic_networks/stats/npso/sbm-flat-best+cc/dnc/0/cluster"
+	Command being timed: "python /path/to/network-generation/network_evaluation/network_stats/compute_cluster_stats.py --network examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/edge.csv --community examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/com.csv --outdir examples/output/synthetic_networks/stats/npso/sbm-flat-best+cc/dnc/0/cluster"
 	User time (seconds): 0.31
 	System time (seconds): 0.25
 	Percent of CPU this job got: 33%
