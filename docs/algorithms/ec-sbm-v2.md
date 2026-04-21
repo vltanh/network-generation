@@ -1,56 +1,66 @@
-# EC-SBM v2: the cleanup
+# EC-SBM v2
 
 [← back to index](../algorithms.md)
 
-v2 is what you get when you take [EC-SBM v1](./ec-sbm-v1.md), stare at its degree-matching behaviour for a while, and go "hmm, we can do better." The pipeline shape is the same — four stages, same stage names, same K_{k+1} constructive core — but the bookkeeping is cleaner, the outlier handling is unified, and there's a menu of degree-matching algorithms instead of one silent greedy.
+v2 is the cleanup of [EC-SBM v1](./ec-sbm-v1.md). The pipeline shape is the
+same (four stages, same names, same K_{k+1} constructive core), but the
+bookkeeping is more principled, the outlier handling is unified, and the
+degree-matching stage exposes a menu of algorithms instead of one silent
+greedy.
 
-## What's new
+## What changes from v1
 
-Three big things change in v2.
+**1. Stage 2 is constructive-only.** v1's `gen_clustered` built the
+K_{k+1} cores *and* called `gt.generate_sbm` on a mutated probs matrix. v2
+skips the SBM call here and writes only the constructive edges. The SBM
+sampling is deferred to stage 3a.
 
-**1. Stage 2 is constructive-only.** v1's `gen_clustered` both built the K_{k+1} cores *and* called `gt.generate_sbm` on a mutated probs matrix. v2 skips the SBM call here and writes only the constructive edges. The SBM filling happens later, on a proper residual.
+**2. Stage 3 is a residual SBM over all blocks.** v1's `gen_outlier` ran a
+second, outlier-only SBM. v2's `gen_outlier` is the *main* SBM call of the
+pipeline: it sees the full block structure plus outliers as extra blocks,
+subtracts whatever stage 2 already produced, and samples what's left. The
+file is still called `gen_outlier.py`, but it fills all residual edges, not
+just outlier-touching ones.
 
-**2. Stage 3 is a residual SBM over all blocks.** v1's `gen_outlier` ran a second, outlier-only SBM. v2's `gen_outlier` is the *main* SBM call — it sees the original block structure plus outliers as extra blocks, subtracts whatever stage 2 already spent, and samples what's left. The file's still called `gen_outlier.py` but the name is now misleading: it fills everything residual, not just outlier-touching edges.
+**3. Stage 4 has five matchers.** v1 had one heap-greedy that silently
+dropped stuck stubs. v2 exposes five algorithms via `--algorithm`
+(`greedy`, `true_greedy`, `random_greedy`, `rewire`, `hybrid`). Most log
+gridlock instead of hiding it. The registry default in
+[`generators/ec-sbm-v2.sh`](../../generators/ec-sbm-v2.sh) is `true_greedy`,
+though `hybrid` is usually the more robust choice.
 
-**3. Stage 4 has five matchers.** v1 had one heap greedy that silently dropped stuck stubs. v2 exposes five algorithms via `--algorithm`, most of which log their gridlock count. The default is `hybrid` (rewire + true_greedy fallback).
+## The K_{k+1} core
 
-## The K_{k+1} core (still the star of the show)
+Phase 1 and phase 2 of `generate_cluster` are algorithmically identical to
+v1. Sort cluster nodes by degree desc. Top k+1 form a complete subgraph.
+Each remaining node attaches to up to k partners, top-of-processed first
+and degree-weighted-random as fallback. Same `ensure_edge_capacity` rule:
+if the budget would block a required edge, inflate the budget.
 
-Phase 1 and phase 2 of `generate_cluster` are algorithmically identical to v1. Sort cluster nodes by degree descending. Top k+1 form a complete subgraph (the mathematically guaranteed k-edge-connected core). Each remaining node attaches to up to k partners — top-of-processed first, degree-weighted-random as fallback.
+The difference is that v2's stage 2 ends by writing the constructive edges
+to `edge.csv` and stopping. No SBM overlay, no dedup.
 
-The budget-inflation rule from v1 is still here:
+## Residual SBM (stage 3a)
 
-```python
-def ensure_edge_capacity(u, v):
-    if probs[b_u, b_v] == 0 or int_deg[v] == 0:
-        int_deg[u] += 1; int_deg[v] += 1
-        probs[b_u, b_v] += 1; probs[b_v, b_u] += 1
+This is where v2's accounting is cleaner. [`prepare_residual_sbm_inputs`](../../src/ec-sbm/v2/gen_outlier.py)
+computes, per block k:
+
+```
+D_k  = sum of target degrees in block k, minus stage-2 contributions, clamped at 0
+E_inter_k = row-sum of probs for row k (inter-block half-edges k owes)
+diff = D_k - E_inter_k
 ```
 
-The constructive phase never drops a required edge. It'll inflate degrees and block-pair budgets if necessary.
+Then it sets `probs[k, k] = diff` (the intra-block edges the SBM still
+needs to place). If `diff` is negative, stage 2 already pushed more
+intra-k half-edges than the block should have, so we add `|diff|` back to
+`out_degs` and set `probs[k, k] = 0` (the SBM cannot take back what is
+already there; it can only add). If `diff` is odd, bump by 1 and add a
+matching stub so graph-tool's even-half-edges-per-block constraint holds.
 
-What v2 skips: the `gt.generate_sbm` overlay. Stage 2 ends by writing the constructive edges to `edge.csv` and stopping.
-
-## The residual SBM (stage 3a)
-
-This is where v2's accounting gets clean. [`gen_outlier.py`'s `prepare_residual_sbm_inputs`](../../src/ec-sbm/v2/gen_outlier.py) computes, per block `k`:
-
-```
-D_k  = sum of residual degrees of nodes in k
-       (target degree - stage-2 contributions, clamped at 0)
-
-E_inter_k = row-sum of probs for row k
-            (number of inter-block half-edges k needs)
-
-diff = D_k − E_inter_k
-```
-
-Then it sets `probs[k, k] = diff` — the intra-block edges the SBM still needs to place. If `diff` is negative (stage 2 already pushed more intra-block half-edges than the block should have), we push `|diff|` extra residual stubs to let the SBM place more edges and set `probs[k, k] = 0`. If `diff` is odd, we bump by 1 and add a matching stub to even the parity (graph-tool requires even half-edge totals per block).
-
-Outliers get folded into the block matrix too, with behaviour controlled by `--gen-outlier-mode` (independent of profile's `--outlier-mode`):
-
-- `combined` (default): all outliers → one extra block.
-- `singleton`: each outlier → own block.
+Outliers fold into the block matrix under `--gen-outlier-mode` (default
+`combined`, same as profile's). `combined` puts all outliers in one extra
+block; `singleton` gives each its own. `excluded` is rejected at entry.
 
 Then:
 
@@ -58,81 +68,121 @@ Then:
 g = gt.generate_sbm(b, probs, out_degs, micro_ers=True, micro_degs=True)
 ```
 
-Seeds are `seed + 1` (stage 3 offset from the top-level `--seed`).
-
 ## Block-preserving rewire
 
-graph-tool's micro-SBM can emit self-loops and parallel edges. v1 just called `remove_parallel_edges + remove_self_loops` and called it a day — which silently drops degree. v2 has a more careful default: `--edge-correction rewire`.
+graph-tool's micro-SBM still emits self-loops and multi-edges. v1 called
+`remove_parallel_edges + remove_self_loops` and accepted the degree loss.
+v2's default is `--edge-correction rewire`, which does a 2-opt swap that
+keeps each node in its block:
 
-[`rewire_invalid_edges`](../../src/ec-sbm/v2/gen_outlier.py) is a 2-opt swap that preserves the block structure:
+1. Bucket every valid edge by its block-pair `(A, B)`, where
+   `A = min(b_u, b_v)`, `B = max(b_u, b_v)`.
+2. For each invalid edge (self-loop or duplicate), pick a random valid
+   edge from the same block-pair bucket.
+3. Swap endpoints so each node stays in its home block. Inter-block
+   (A != B) uniquely determines the swap; intra-block (A == B) flips a
+   coin between two valid swaps.
+4. Accept only if both new edges are valid; otherwise requeue.
 
-1. Bucket every valid edge by its block-pair `(A, B)` where `A = min(b_u, b_v)`, `B = max(b_u, b_v)`.
-2. For each invalid edge (self-loop or duplicate), pick a random valid edge from the same block-pair bucket.
-3. Swap endpoints so **each node stays in its home block**:
-   - If `A ≠ B` (inter-block): the swap is determined — pair each block-A node with the other edge's block-B node.
-   - If `A = B` (intra-block): there are two valid swaps; flip a coin.
-4. Accept only if both new edges are valid. Otherwise requeue.
+Up to 10 retry passes with a stagnation detector that early-breaks when the
+queue stops shrinking. Unresolved edges are dropped with a `WARN`.
 
-Up to 10 retry passes with a stagnation detector that early-breaks when queue size stops shrinking. Unresolved edges are dropped with a WARN.
-
-The point: rewired edges don't change any node's block membership, and they don't (much) change the block-pair edge counts — so the SBM's constraints are preserved while the multi-edges go away.
-
-`--edge-correction drop` skips the rewire and just dedups. Faster, loses more degrees. Keep `rewire` as default unless benchmarking.
+`--edge-correction drop` skips the rewire and just dedups. Faster, loses
+more degrees. Keep `rewire` as default unless you are benchmarking.
 
 ## The matcher menu (stage 4a)
 
-After stage 3 combines clustered + residual, some nodes still have residual stubs. The five algorithms, in rough order of sophistication:
+After stage 3 combines clustered + residual, some nodes still have
+residual stubs. Algorithms:
 
-**`greedy`** — identical to v1's heap-based greedy. Pop max-degree `u`, connect to `min(residual, |non-neighbors|)` partners via `set.pop()`. Stuck stubs dropped silently.
+- **`greedy`**: same as v1's heap-based greedy. Pop max-degree u, connect
+  to `min(residual, non-neighbors)` partners via `set.pop()`. Silent
+  gridlock.
+- **`true_greedy`**: max-heap with dynamic re-push. Pop u, pick
+  v = argmax over `current_degrees` among valid targets, push updated
+  residuals back. Logs gridlock.
+- **`random_greedy`**: weighted-random u (by residual), weighted-random v
+  from valid targets. Useful for comparing bias vs deterministic greedy.
+- **`rewire`**: configuration-model pairing + 2-opt repair. Build a flat
+  stub list (each node repeated `residual` times), shuffle, pair adjacent.
+  Invalid pairs queue for the same `run_rewire_attempts` used by
+  gen_outlier.
+- **`hybrid`**: run `rewire` first, then `true_greedy` on whatever rewire
+  could not place. Rewire handles the bulk unbiased, greedy handles the
+  stuck tail deterministically.
 
-**`true_greedy`** — max-heap with dynamic re-push. Pop `u`, pick `v = argmax(current_degrees)` over valid targets, push updated residuals back. Gridlock is logged, not silent.
+## Why there is one SBM, not two
 
-**`random_greedy`** — weighted-random `u` (by residual), weighted-random `v` from valid targets. Useful for inspecting bias differences against `true_greedy`.
+If you've read the [v1 post](./ec-sbm-v1.md), v1 runs two separate SBM
+samplers: one for the clustered phase, one for outliers. v2 collapses
+these into one.
 
-**`rewire`** — configuration model + 2-opt repair. Build a stub list (each node repeated `residual` times), shuffle, pair adjacent. Invalid pairs (self-loops, duplicates, already-adjacent) queue for 2-opt rewire against the valid pool. Same retry utility as the gen_outlier rewire.
+Two reasons.
 
-**`hybrid`** (v2 default) — run `rewire` first, then `true_greedy` on whatever rewire couldn't place. Most robust choice in practice: rewire handles the bulk unbiased, greedy handles the stuck tail deterministically.
+**Singleton outlier clusters do nothing.** A cluster of size 1 has no
+internal edges (no partner), so the constructive phase is a no-op, the
+K_{k+1} core is empty, and phase 2 has nothing to process. Assigning each
+outlier to its own block is algorithmically equivalent to folding them all
+into one block: same subgraph either way. The real design question is
+whether we want outliers to have community structure at all, or to be
+uniform background.
 
-## Why there's one SBM, not two
+v2's answer: fold outliers into one combined block (`--gen-outlier-mode
+combined`). Clean accounting, one SBM call.
 
-If you've read the [v1 post](./ec-sbm-v1.md), you know it runs two separate SBM samplers: one for the clustered phase, one for outliers. v2 collapses these into one. The reasoning is worth spelling out.
+**One SBM is simpler than two.** With outliers in a single combined block,
+the residual SBM over all blocks (real clusters + one outlier block)
+subsumes what v1 needed two SBM calls to express. Fewer SBM calls means
+less double-sampling drift and faster runtime.
 
-**Singleton-outlier clusters don't do anything useful.** A cluster of size 1 has no internal edges (there's no one to connect to), so the constructive phase is a no-op, the K_{k+1} core is empty, and phase-2 has nothing to process. Assigning each outlier to its own block is algorithmically equivalent to folding them all into a single block — same subgraph either way. The real design question is: do we want outliers to *have* community structure, or not?
+## What you get on the shipped example
 
-v2's answer: **fold outliers into one combined block** (the `--gen-outlier-mode combined` default). This strips them of any meaningful community membership and lets them participate in the global connectivity pattern through the SBM's inter-block edges. One block, one SBM call, clean accounting.
+Default run on dnc + sbm-flat-best+cc at `--seed 1` with the pipeline's
+`--edge-correction rewire --algorithm true_greedy`:
 
-## What you get
+| Stat | Input | v2 output | Note |
+| --- | --- | --- | --- |
+| N | 906 | 906 | exact |
+| Edges | 10429 | 10346 | within 0.8% |
+| Mean degree | 23.02 | 23.03 | |
+| Global clustering coeff. | 0.548 | 0.513 | highest of the SBM family here |
+| Mean k-core | 15.99 | 14.74 | |
+
+## Output guarantees
 
 - **N** exact after the outlier transform.
-- **Per-cluster edge-connectivity ≥ k(C)** by construction.
+- **k-edge-connectivity at least k(C) per cluster** by construction.
 - **Block structure** exact.
-- **Degree sequence** targeted; much tighter than v1 because of residual accounting. `hybrid` matcher minimizes drop.
-- **Inter-cluster edge counts** track the profile closely, modulo rewire's small perturbations.
-- **Clustering coefficient**: not targeted, but the K_{k+1} cores push it up somewhat vs plain SBM.
+- **Degree sequence** targeted; tracks more tightly than v1 because of
+  the residual accounting. `hybrid` minimizes drop.
+- **Inter-cluster edge counts** closer to the profile than v1 because
+  stage 3a builds probs from the original edges minus stage-2
+  contributions.
+- **Clustering coefficient** not targeted; the K_{k+1} cores push it up
+  above plain SBM.
 
 ## Determinism
 
-Three RNGs seeded per stage with offsets `seed` / `seed+1` / `seed+2`. `PYTHONHASHSEED=0` exported by `pipeline.sh:45`. Load-bearing for:
-
-- `greedy`'s `set.pop()` (as in v1).
-- `valid_pool[bp]` iteration inside the rewire loop.
-- `current_degrees` dict iteration in `true_greedy`'s `valid_targets` list comprehension.
-
-Same `--seed 0` footgun as elsewhere; default is `--seed 1`.
+Three RNGs (`random`, `numpy`, `graph-tool`) seeded per stage with
+offsets `seed` / `seed+1` / `seed+2`. `PYTHONHASHSEED=0` is load-bearing
+for `greedy`'s `set.pop()`, `valid_pool[bp]` iteration in the rewire
+loop, and `current_degrees` dict iteration in `true_greedy`'s
+`valid_targets` list comprehension. Same `--seed 0` trap as plain SBM.
 
 ## Cost
 
-On the dnc example, single-threaded, hybrid + rewire:
+10 seeds x 10 kept runs on 4 cores, 16 GiB cgroup cap:
 
-- Kept mean: ~8.1 s
-- Cold: ~8.5 s
-- Std: ~1 s (dominated by NFS noise on our shared host — per-seed medians fall in a 7.5-8.8 s band)
+- kept mean: 2.39 s
+- kept std: 0.10 s
 
-Faster than v1 on average because v1 does *two* `gt.generate_sbm` calls (stage 2 overlay + stage 3 outlier) while v2 does only one (stage 3 residual).
+Faster than v1 (2.83 s) because v1 runs two `gt.generate_sbm` calls and
+v2 runs one.
 
 ## Provenance bands
 
-Every `OUTPUT_DIR/edge.csv` comes with a `sources.json` that maps three provenance labels to inclusive 1-based row ranges:
+Every `OUTPUT_DIR/edge.csv` carries a `sources.json` that maps three
+provenance labels to inclusive 1-based row ranges:
 
 ```json
 {
@@ -142,15 +192,17 @@ Every `OUTPUT_DIR/edge.csv` comes with a `sources.json` that maps three provenan
 }
 ```
 
-Stage 2 wrote rows 1-42; stage 3a's residual SBM wrote 43-100; stage 4a's matcher added 101-120. This is the main hook for visualization: color edges by provenance to show *which stage placed each edge*.
+Stage 2 wrote rows 1-42, stage 3a's residual SBM wrote 43-100, stage 4a's
+matcher added 101-120. Colour edges by provenance to see what each stage
+placed.
 
 ## Where to look next
 
 - [Source: `src/ec-sbm/v2/gen_clustered.py`](../../src/ec-sbm/v2/gen_clustered.py)
 - [Source: `src/ec-sbm/v2/gen_outlier.py`](../../src/ec-sbm/v2/gen_outlier.py)
-- [Source: `src/ec-sbm/v2/match_degree.py`](../../src/ec-sbm/v2/match_degree.py)
-- [Source: `src/ec-sbm/v2/utils.py`](../../src/ec-sbm/v2/utils.py)
+- [Source: `src/match_degree.py`](../../src/match_degree.py)
 - [Source: `src/ec-sbm/common/profile.py`](../../src/ec-sbm/common/profile.py)
-- [EC-SBM v1 post (the predecessor)](./ec-sbm-v1.md)
+- [Interactive GUI: ec-sbm-v2 steps at default settings](./ec-sbm-v2.html)
+- [EC-SBM v1 post](./ec-sbm-v1.md)
 - [Plain SBM post](./sbm.md)
 - [Index of all generators](../algorithms.md)

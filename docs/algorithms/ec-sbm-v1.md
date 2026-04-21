@@ -1,127 +1,201 @@
-# EC-SBM v1: the SBM that actually stays connected
+# EC-SBM v1
 
 [← back to index](../algorithms.md)
 
-If plain SBM has a weakness beyond "tree-like", it's that clusters can come out *weaker* than the input in a structural sense: the sampler is free to concentrate intra-block edges on a few pairs, leaving the cluster vulnerable to a small edge cut. For some downstream analyses (robustness, minimum-cut attacks, densest-subgraph searches) that's a dealbreaker.
+Plain SBM can produce clusters that are structurally weaker than the input:
+the sampler is free to concentrate intra-block edges on a few pairs, leaving
+the cluster vulnerable to a small edge cut. For downstream work on robustness
+or minimum-cut attacks that matters.
 
-EC-SBM — edge-connected SBM — fixes it with a hybrid: **hand-build a provably k-edge-connected core per cluster, then let graph-tool fill the rest of the budget**. v1 is the first implementation; v2 (covered separately) is a later cleanup.
+EC-SBM (edge-connected SBM) adds a constraint: the output cluster's
+edge-connectivity is at least as high as the input's. v1 is the first
+implementation; v2 is the cleanup.
 
 ## What "k-edge-connected" means here
 
-For a cluster C, we measure k(C) = the minimum number of edges you'd have to remove from the *input's* induced subgraph on C to disconnect it. Then we promise: **the output cluster has at least that same k-edge-connectivity**. "At least" because our construction can only add edges, never remove.
+For a cluster C, k(C) is the minimum number of edges you would remove from
+the *input's* induced subgraph on C to disconnect it. EC-SBM promises that
+the output's cluster C has edge-connectivity at least k(C). The "at least"
+is because the construction only adds edges, never removes them.
 
-The min-cut is measured at profile time by `pymincut` using the Nagamochi–Ibaraki algorithm (the `"noi"` method with the `"bqueue"` heap variant). Singleton clusters get k=0 by definition.
+k(C) is measured at profile time by
+[`pymincut`](https://github.com/llekha/pymincut)'s Nagamochi-Ibaraki algorithm
+(the `"noi"` method with `"bqueue"`). Singleton clusters get k=0 by definition.
 
-## The four-stage pipeline
+## The four stages
 
-Unlike the simple generators (one profile step, one gen step), EC-SBM v1 has four stages with seed offsets for each:
+Unlike the simple generators (one profile, one gen), EC-SBM v1 runs four
+stages with a separate seed offset per stage:
 
 ```
-Stage 1 (profile)             → profile files + mincut.csv + com.csv
-Stage 2 (gen_clustered)       → clustered edges
-Stage 3a (gen_outlier)        → outlier-incident edges
-Stage 3b (combine)            → stage-2 + stage-3a merged, deduped
-Stage 4a (match_degree)       → top-up edges for degree deficit
-Stage 4b (combine)            → final merge with provenance
+Stage 1 (profile)        profile files + mincut.csv + com.csv
+Stage 2 (gen_clustered)  clustered edges
+Stage 3a (gen_outlier)   outlier-incident edges
+Stage 3b (combine)       stage-2 + stage-3a merged, deduped, sources.json
+Stage 4a (match_degree)  top-up edges for degree deficit
+Stage 4b (combine)       final edge.csv + sources.json
 ```
 
-Each stage uses a distinct seed (`seed`, `seed+1`, `seed+2`) so its sampler trajectory is independent. The combined result carries a `sources.json` alongside `edge.csv` telling you which row range came from which stage — useful for visualization.
+Offsets: `seed`, `seed+1`, `seed+2`. The combined `edge.csv` carries a
+`sources.json` that maps each stage's label to an inclusive 1-based row range.
 
-A note before we continue: v1 *forces* `--outlier-mode excluded` at profile time. You'll get an error if you try `combined` or `singleton`. Outliers are handled in stage 3a through a completely separate mechanism.
+v1 also *forces* `--outlier-mode excluded` at profile time. Passing
+`combined` or `singleton` errors out. Outliers get a dedicated SBM pass in
+stage 3a.
 
-## Stage 2: building a k-edge-connected core
+## Stage 2: building the k-edge-connected core
 
-This is where EC-SBM earns its name. [`gen_clustered.py`'s `generate_cluster`](../../src/ec-sbm/v1/gen_clustered.py) runs per-cluster with two phases:
+[`src/ec-sbm/common/gen_clustered_core.py`](../../src/ec-sbm/common/gen_clustered_core.py)'s
+`generate_cluster` runs per cluster in two phases.
 
-**Phase 1 — the K_{k+1} core.** Take the k+1 highest-degree nodes in the cluster. Make them a complete subgraph. That's k(k+1)/2 edges. A complete graph on k+1 vertices is, by elementary graph theory, exactly k-edge-connected. So if your cluster is any superset of these k+1 nodes, edge-connectivity ≥ k.
+**Phase 1: the K_{k+1} core.** Take the k+1 highest-degree nodes in the
+cluster. Wire them into a complete subgraph. That is k(k+1)/2 edges. A
+complete graph on k+1 vertices is k-edge-connected, so every cluster that
+contains these k+1 nodes is automatically k-edge-connected.
 
-**Phase 2 — attach the rest.** Walk the remaining nodes in degree-descending order. For each new node `u`:
+**Phase 2: attach the rest.** Walk remaining nodes in descending-degree order.
+For each new node u:
 
-1. Try to wire `u` to the k highest-degree already-placed nodes, skipping any whose residual budget is exhausted.
-2. If fewer than k were reachable that way, fall back to weighted-random choice over remaining candidates (weights = original profile degree).
+1. Try to wire u to the k highest-degree already-processed nodes, skipping
+   any whose residual degree is zero.
+2. If fewer than k partners were reachable, fall back to a numpy-weighted
+   random choice over the remaining candidates (weights = *original* profile
+   degree, not residual).
 
-Whenever we'd like to add an edge but the block-pair budget is zero or the partner is out of residual stubs, we call `ensure_edge_capacity`:
+When an edge is required but the block-pair budget is zero or the partner is
+out of residual stubs, `ensure_edge_capacity` fires:
 
 ```python
 if probs[b_u, b_v] == 0 or int_deg[v] == 0:
-    int_deg[u] += 1
-    int_deg[v] += 1
-    probs[b_u, b_v] += 1
-    probs[b_v, b_u] += 1
+    int_deg[u] += 1; int_deg[v] += 1
+    probs[b_u, b_v] += 1; probs[b_v, b_u] += 1
 ```
 
-That is: **we never drop a required edge**. If the budget can't absorb it, we inflate the budget. This is the knob that makes v1's degree sequence an approximate, not exact, match.
+The constructive phase never drops a required edge. If the budget would
+block it, the budget is inflated. That is the knob that makes the output
+degree sequence approximate rather than exact.
 
 ## Stage 2, continued: the SBM overlay
 
-After the constructive pass, `synthesize_sbm_network`:
+After the constructive pass, v1's `gen_clustered.py` calls
+`gt.generate_sbm` on the *mutated* probs and degree arrays, then overlays
+the constructive edges and simplifies:
 
 ```python
 g = gt.generate_sbm(b, probs.tocsr(), out_degs=deg, ...)
-g.add_edge_list(edges)   # overlay constructive on top
+g.add_edge_list(edges)
 gt.remove_parallel_edges(g)
 gt.remove_self_loops(g)
 ```
 
-A subtle point: by this time, `probs` and `deg` have been *mutated* by the constructive phase — decremented each time we applied an edge, sometimes inflated. The SBM call is effectively sampling the *residual*, not the original profile. Then we overlay the constructive edges, and the dedup handles any (rare) collisions.
+The subtle point: `probs` and `deg` have been decremented (and sometimes
+inflated) by the constructive phase. The SBM call samples the *residual*,
+not the original profile. The constructive edges are then overlaid. If an
+SBM-sampled edge collides with a constructive edge, `remove_parallel_edges`
+drops one.
 
-The clustered SBM doesn't see outliers at all because profile is forced `excluded`.
+This double-accounting (constructive picks some edges, SBM picks more in the
+same cells, dedup drops the collisions) is the main reason v2 exists.
 
-## Stage 3: outliers, handled separately
+## Stage 3a: outlier-only SBM
 
-[`gen_outlier.py`](../../src/ec-sbm/v1/gen_outlier.py) re-reads the original edgelist and clustering, figures out which nodes are outliers (node IDs in the edgelist but not in the clustering), and treats **each outlier as its own block**. Then it samples an SBM on just the outlier-incident edges — edges where at least one endpoint is an outlier.
+[`src/ec-sbm/v1/gen_outlier.py`](../../src/ec-sbm/v1/gen_outlier.py)
+re-reads the original edgelist + clustering, identifies outliers (nodes in
+the edgelist but not in the clustering), and treats each outlier as its own
+size-1 block. It then samples an SBM on just the outlier-incident edges.
 
-This is independent of stage 2. The clustered SBM filled in the between- and within-cluster edges; this stage covers everything that touches the outliers.
+Non-outlier-incident edges are not touched: the clustered SBM already handled
+those in stage 2.
 
-A separate combine step then concatenates stage-2 and stage-3a edgelists, dedups them undirected (keeping the first-seen row so stage-2 takes priority), and writes a `sources.json` remembering which rows came from which phase.
+## Stage 3b: combine clustered + outliers
 
-## Stage 4: degree matching
+[`src/combine_edgelists.py`](../../src/combine_edgelists.py) concatenates
+stage-2 and stage-3a edgelists, labels each row with provenance (`"clustered"`
+or `"outlier"`), undirected-dedups with first-seen wins (so stage 2 takes
+priority), emits `edge.csv` plus a `sources.json` with inclusive 1-based row
+ranges per provenance band.
 
-After all the constructive + SBM + dedup, some nodes will still be short of their target degree (from the original edgelist). [`match_degree.py`](../../src/ec-sbm/v1/match_degree.py) runs a heap-based max-degree greedy to top them off:
+## Stage 4a: heap-greedy degree matching
 
-1. Start with a max-heap of `(−residual_degree, node_id)` for every node still missing stubs.
-2. Pop the node with the highest residual, `u`. Look at its *available non-neighbors* — nodes that (a) aren't already connected to `u`, (b) aren't `u` itself, (c) still have residual.
-3. Add an edge from `u` to each of up to `min(residual[u], |non-neighbors|)` partners, picked by `set.pop()` (arbitrary order — this is where `PYTHONHASHSEED=0` earns its keep).
-4. Decrement partner residuals; remove from heap if zero. Remove `u` from the heap unconditionally.
+Some nodes are still short of their target degree after stage 3b, because
+dedup removed their edges. Stage 4a tops them off using the shared
+[`src/match_degree.py`](../../src/match_degree.py) tool. v1 hardcodes
+`--match-degree-algorithm greedy` for byte-compat with the original v1
+implementation:
 
-If `u` runs out of valid partners before residual hits zero, the remaining stubs are silently dropped. v1 doesn't log this — v2 does (it's one of the main reasons v2 exists).
+1. Build a max-heap of `(-residual_degree, node_id)` for nodes still short.
+2. Pop u. Compute u's available non-neighbors (live nodes minus u and its
+   current neighbors).
+3. Pop partners via `set.pop()` until u's residual is zero or candidates run
+   out. Each pair becomes an edge; decrement both residuals.
+4. If u runs out of valid partners before hitting zero, the remaining stubs
+   are dropped silently. v1 does not log this.
 
-## What you get
+`set.pop()` picks an arbitrary element, so `PYTHONHASHSEED=0` is load-bearing
+here.
 
-- **N exact** after the `excluded` outlier transform.
-- **k-edge-connectivity ≥ k(C) per cluster**: mathematically from the K_{k+1} core.
-- **Block structure exact**: nodes stay in their input clusters.
-- **Degree sequence approximate**: inflation pushes up, dedup and gridlock push down.
-- **Inter-cluster counts approximate**: overlay and dedup perturb them.
-- **Clustering coefficient**: not targeted (but tends higher than plain SBM because of the K_{k+1} cores, which are dense).
+## Stage 4b: final combine
+
+Merge stage-3b's `edge.csv` with stage-4a's `degree_matching_edge.csv` using
+`combine_edgelists.py`. Pass stage-3b's `sources.json` as `--json-1` so all
+three provenance bands (`clustered`, `outlier`, `match_degree`) land in the
+final `sources.json`.
+
+## What you get on the shipped example
+
+Default run on dnc + sbm-flat-best+cc at `--seed 1`:
+
+| Stat | Input | v1 output | Note |
+| --- | --- | --- | --- |
+| N | 906 | 906 | exact |
+| Edges | 10429 | 10422 | within 0.07% (match-degree fills most of the dedup loss) |
+| Mean degree | 23.02 | 23.01 | tracks the edge count |
+| Global clustering coeff. | 0.548 | 0.424 | higher than plain SBM (0.341) thanks to K_{k+1} cores |
+| Mean k-core | 15.99 | 13.84 | |
+
+`com.csv` is a stage-1 passthrough with singleton clusters dropped, so the
+block structure matches the input exactly.
+
+## Output guarantees
+
+- **N** exact after the `excluded` outlier transform.
+- **k-edge-connectivity at least k(C) per cluster** by K_{k+1} construction.
+- **Block structure** exact.
+- **Degree sequence** approximate: inflation pushes up, dedup and gridlock
+  push down.
+- **Inter-cluster edge counts** approximate: overlay + dedup perturb them.
+- **Clustering coefficient** not targeted, but higher than plain SBM because
+  the K_{k+1} cores are dense.
 
 ## Determinism
 
-Three RNGs (`random`, `numpy`, `graph-tool`), seeded per stage with offsets `seed` / `seed+1` / `seed+2`. `PYTHONHASHSEED=0` is exported by `pipeline.sh` and is load-bearing — without it, `set.pop()` in `match_degree` picks different elements on different runs.
-
-Same `--seed 0` footgun as plain SBM (graph-tool treats 0 as "use entropy"). Default is `--seed 1`.
+Three RNGs seeded per stage (`random`, `numpy`, `graph-tool`) with offsets
+`seed` / `seed+1` / `seed+2`. `PYTHONHASHSEED=0` is load-bearing for
+`set.pop()` in match_degree and for the candidate-set iteration in
+`gen_clustered`'s phase-2 fallback. Same `--seed 0` trap as plain SBM.
 
 ## Cost
 
-On the dnc example, single-threaded:
+10 seeds x 10 kept runs on 4 cores, 16 GiB cgroup cap:
 
-- Kept mean: ~9.8 s
-- Cold: ~10.7 s
+- kept mean: 2.83 s
+- kept std: 0.05 s
 
-Slower than SBM because of the per-cluster sort loops and the extra stages.
+## v1 vs v2
 
-## When to use v1 vs v2
-
-Short answer: prefer v2. It's the architectural successor. v1 stays in the repo for comparison and because its outputs are byte-different at equal seeds (v2 isn't a bug-for-bug clone).
-
-Long answer: v1's overlay-on-mutated-probs design makes degree accounting hard to reason about. v2 does residual accounting properly and has five matcher algorithms for the top-up stage. See the [v2 blog post](./ec-sbm-v2.md) for the difference.
+Short answer: prefer v2. v2 has cleaner residual accounting (one SBM call on
+the residual instead of an overlay on mutated probs) and a choice of five
+matcher algorithms, most of which log gridlock rather than dropping stubs
+silently. v1 stays in the repo for comparison. See
+[ec-sbm-v2](./ec-sbm-v2.md) for the details.
 
 ## Where to look next
 
 - [Source: `src/ec-sbm/v1/gen_clustered.py`](../../src/ec-sbm/v1/gen_clustered.py)
 - [Source: `src/ec-sbm/v1/gen_outlier.py`](../../src/ec-sbm/v1/gen_outlier.py)
-- [Source: `src/ec-sbm/v1/match_degree.py`](../../src/ec-sbm/v1/match_degree.py)
+- [Source: `src/match_degree.py`](../../src/match_degree.py)
 - [Source: `src/ec-sbm/common/profile.py`](../../src/ec-sbm/common/profile.py)
+- [Interactive GUI: ec-sbm-v1 steps at default settings](./ec-sbm-v1.html)
 - [EC-SBM v2 post](./ec-sbm-v2.md)
 - [Plain SBM post](./sbm.md)
 - [Index of all generators](../algorithms.md)
