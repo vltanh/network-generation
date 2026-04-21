@@ -23,16 +23,8 @@ Build deps: C++ toolchain, `openmpi`, `cmake >= 3.2` and `< 4.0`.
 conda create -n ecsbm python=3.11 numpy pandas scipy setuptools wheel pybind11 -y
 conda activate ecsbm
 conda install -c conda-forge graph-tool -y
-pip install 'cmake<4'       # or: conda install cmake=3.31
-pip install --no-build-isolation git+https://github.com/vikramr2/python-mincut
+pip install 'cmake<4' && pip install --no-build-isolation git+https://github.com/vikramr2/python-mincut
 ```
-
-`pymincut` is built from source at `pip install` time. Two things to watch:
-
-1. **cmake must be < 4.0.** The build breaks on cmake 4.x. `pip install 'cmake<4'` puts a 3.x binary ahead of system cmake on PATH.
-2. **Use `--no-build-isolation` when installing pymincut.** Without it, pip spins up an isolated build env that pulls an unpinned (latest, 4.x) cmake, ignoring the one you just installed. `--no-build-isolation` tells pip to use the current env's cmake / setuptools / pybind11 instead.
-
-Both versions share the same env.
 
 ## `abcd` / `abcd+o`
 
@@ -121,5 +113,5 @@ git submodule update --init --recursive network_evaluation
 conda install -c conda-forge graph-tool   # if not already installed for sbm, ec-sbm
 conda install scipy scikit-learn tqdm matplotlib seaborn -y
 pip install networkit                     # if not already installed for npso
-pip install git+https://github.com/vikramr2/python-mincut   # if not already installed for ec-sbm
+pip install 'cmake<4' && pip install --no-build-isolation git+https://github.com/vikramr2/python-mincut   # if not already installed for ec-sbm
 ```

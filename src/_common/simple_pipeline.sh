@@ -9,7 +9,7 @@
 #   GEN_CLI_ARGS (flags for gen.py beyond --output-folder/--seed).
 # Optional: GEN_PROFILE_CLI_ARGS, GEN_EXTRA_STAGE2_INPUTS,
 #   GEN_TOPLEVEL_PARAMS / GEN_PROFILE_PARAMS / GEN_STAGE2_PARAMS (key=value lists),
-#   GEN_MATCH_DEGREE_ENABLE (0|1, default 0 — add post-gen match_degree + combine stages),
+#   GEN_MATCH_DEGREE_ENABLE (0|1, default 0; add post-gen match_degree + combine stages),
 #   GEN_MATCH_DEGREE_ALGORITHM (greedy|true_greedy|random_greedy|rewire|hybrid, default hybrid).
 
 set -u
@@ -28,6 +28,7 @@ fi
 : "${GEN_EXTRA_STAGE2_INPUTS:=}"
 : "${GEN_MATCH_DEGREE_ENABLE:=0}"
 : "${GEN_MATCH_DEGREE_ALGORITHM:=hybrid}"
+: "${GEN_MATCH_DEGREE_USE_REMAP:=0}"
 
 if ! declare -p GEN_PROFILE_CLI_ARGS >/dev/null 2>&1; then
     GEN_PROFILE_CLI_ARGS=()
@@ -165,18 +166,24 @@ if [ "${GEN_MATCH_DEGREE_ENABLE}" = "1" ]; then
     STG3_PARAMS="${STG3_EDGES_DIR}/params.txt"
     write_params_file "${STG3_PARAMS}" \
         "seed=$((SEED + 1))" \
-        "algorithm=${GEN_MATCH_DEGREE_ALGORITHM}"
+        "match_degree_algorithm=${GEN_MATCH_DEGREE_ALGORITHM}" \
+        "use_remap=${GEN_MATCH_DEGREE_USE_REMAP}"
 
     IN_3="${STG2_DIR}/edge.csv ${INPUT_EDGELIST} ${INPUT_CLUSTERING} ${STG3_PARAMS}"
     OUT_3="${STG3_EDGES_DIR}/degree_matching_edge.csv"
+
+    STG3_REMAP_FLAG=()
+    if [ "${GEN_MATCH_DEGREE_USE_REMAP}" = "1" ]; then
+        STG3_REMAP_FLAG=(--remap)
+    fi
 
     if ! is_step_done "${STG3_EDGES_DIR}/done" "${OUT_3}"; then
         run_stage "${STG3_EDGES_DIR}/time_and_err.log" \
             python "${SRC_DIR}/match_degree.py" \
             --input-edgelist "${STG2_DIR}/edge.csv" \
             --ref-edgelist   "${INPUT_EDGELIST}" \
-            --ref-clustering "${INPUT_CLUSTERING}" \
-            --algorithm      "${GEN_MATCH_DEGREE_ALGORITHM}" \
+            --match-degree-algorithm "${GEN_MATCH_DEGREE_ALGORITHM}" \
+            "${STG3_REMAP_FLAG[@]}" \
             --output-folder  "${STG3_EDGES_DIR}" \
             --seed           "$((SEED + 1))"
         mark_done "${STG3_EDGES_DIR}/done" "Stage 3 (match_degree)" "${IN_3}" "${OUT_3}"

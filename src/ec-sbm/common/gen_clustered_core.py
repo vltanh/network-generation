@@ -1,4 +1,4 @@
-"""Shared k-edge-connected cluster construction — used by v1 + v2.
+"""Shared k-edge-connected cluster construction, used by v1 + v2.
 
 Extracted from the near-identical inner loops of
 `src/ec-sbm/v1/gen_clustered.py` and `src/ec-sbm/v2/gen_clustered.py`.
