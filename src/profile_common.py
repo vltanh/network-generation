@@ -264,32 +264,6 @@ def export_com_csv(out_dir, node2com):
     )
 
 
-def export_outlier_mode(out_dir, mode, drop_outlier_outlier_edges):
-    """Write the chosen outlier handling to outlier_mode.txt.
-
-    Two lines: mode, then drop_outlier_outlier_edges as lowercase true/false.
-    """
-    with open(f"{out_dir}/outlier_mode.txt", "w") as f:
-        f.write(f"{mode}\n{'true' if drop_outlier_outlier_edges else 'false'}\n")
-
-
-def read_outlier_mode(path):
-    """Read an outlier_mode.txt produced by `export_outlier_mode`.
-
-    Returns (mode, drop_outlier_outlier_edges) as (str, bool).
-    """
-    with open(path) as f:
-        lines = [ln.strip() for ln in f.read().splitlines() if ln.strip()]
-    if len(lines) != 2:
-        raise ValueError(f"{path}: expected 2 non-empty lines, got {len(lines)}")
-    mode, drop_oo = lines
-    if mode not in OUTLIER_MODES:
-        raise ValueError(f"{path}: unknown mode {mode!r}")
-    if drop_oo not in ("true", "false"):
-        raise ValueError(f"{path}: drop_outlier_outlier_edges must be true/false")
-    return mode, drop_oo == "true"
-
-
 # ---------------------------------------------------------------------------
 # Edge-count matrix (sbm + ec-sbm share this)
 # ---------------------------------------------------------------------------

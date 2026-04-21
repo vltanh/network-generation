@@ -9,7 +9,7 @@ import graph_tool.all as gt
 from scipy.sparse import dok_matrix
 
 from pipeline_common import standard_setup, timed, write_edge_tuples_csv
-from profile_common import read_outlier_mode
+from params_common import read_params
 from utils import normalize_edge, run_rewire_attempts
 
 
@@ -300,13 +300,15 @@ def parse_args():
     parser.add_argument("--orig-clustering", type=str, required=True)
     parser.add_argument("--exist-edgelist", type=str, required=True)
     parser.add_argument(
-        "--outlier-mode",
+        "--profile-params",
         type=str,
         required=True,
         help=(
-            "Path to outlier_mode.txt written by the profile stage. "
-            "The residual-SBM uses the mode there to place outlier edges "
-            "consistently with how the profile folded them."
+            "Path to params.txt written by the profile stage. "
+            "The residual-SBM uses the outlier_mode there to place outlier "
+            "edges consistently with how the profile folded them. "
+            "A follow-up commit will replace this with a direct "
+            "--gen-outlier-mode CLI arg so v2 can decouple the two modes."
         ),
     )
     parser.add_argument(
@@ -328,10 +330,11 @@ def parse_args():
 
 def main():
     args = parse_args()
-    outlier_mode, _drop_oo = read_outlier_mode(args.outlier_mode)
+    profile_params = read_params(args.profile_params)
+    outlier_mode = profile_params["outlier_mode"]
     if outlier_mode == "excluded":
         raise SystemExit(
-            "ec-sbm v2 gen_outlier does not support --outlier-mode excluded; "
+            "ec-sbm v2 gen_outlier does not support outlier_mode=excluded; "
             "if outliers are excluded, there are no outlier edges to generate."
         )
     run_outlier_generation(

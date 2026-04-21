@@ -49,7 +49,7 @@ SETUP="${OUTPUT_DIR}/.state/setup"
 
 GEN_NAME="abcd+o"
 GEN_SCRIPT_DIR="${SCRIPT_DIR}"
-GEN_PROFILE_OUTPUTS=(degree.csv cluster_sizes.csv mixing_parameter.txt n_outliers.txt outlier_mode.txt)
+GEN_PROFILE_OUTPUTS=(degree.csv cluster_sizes.csv mixing_parameter.txt n_outliers.txt params.txt)
 # shellcheck disable=SC2034
 GEN_PROFILE_CLI_ARGS=(--outlier-mode "${OUTLIER_MODE}" "${DROP_OO}")
 # shellcheck disable=SC2034
@@ -58,7 +58,6 @@ GEN_CLI_ARGS=(
     --cluster-sizes     "${SETUP}/cluster_sizes.csv"
     --mixing-parameter  "${SETUP}/mixing_parameter.txt"
     --n-outliers        "${SETUP}/n_outliers.txt"
-    --outlier-mode      "${SETUP}/outlier_mode.txt"
     --abcd-dir          "${ABCD_DIR}"
 )
 

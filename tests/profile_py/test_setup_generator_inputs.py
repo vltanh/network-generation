@@ -37,27 +37,28 @@ _GENERATORS = {
 
 
 # Expected output filenames per generator.  Every generator writes
-# outlier_mode.txt post-refactor so downstream stages and reproductions
-# know what outlier policy shaped the other artifacts.
+# params.txt post-migration so downstream stages and reproductions know
+# what policy/parameters shaped the other artifacts.  params.txt
+# replaces the narrower outlier_mode.txt.
 EXPECTED_OUTPUTS = {
     "sbm": {
         "node_id.csv", "cluster_id.csv", "assignment.csv",
-        "degree.csv", "edge_counts.csv", "outlier_mode.txt",
+        "degree.csv", "edge_counts.csv", "params.txt",
     },
     "ecsbm": {
         "node_id.csv", "cluster_id.csv", "assignment.csv",
         "degree.csv", "edge_counts.csv", "mincut.csv", "com.csv",
-        "outlier_mode.txt",
+        "params.txt",
     },
     "abcd": {"degree.csv", "cluster_sizes.csv",
-             "mixing_parameter.txt", "outlier_mode.txt"},
+             "mixing_parameter.txt", "params.txt"},
     "abcd+o": {
         "degree.csv", "cluster_sizes.csv",
-        "mixing_parameter.txt", "n_outliers.txt", "outlier_mode.txt",
+        "mixing_parameter.txt", "n_outliers.txt", "params.txt",
     },
     "lfr": {"degree.csv", "cluster_sizes.csv",
-            "mixing_parameter.txt", "outlier_mode.txt"},
-    "npso": {"degree.csv", "cluster_sizes.csv", "outlier_mode.txt"},
+            "mixing_parameter.txt", "params.txt"},
+    "npso": {"degree.csv", "cluster_sizes.csv", "params.txt"},
 }
 
 

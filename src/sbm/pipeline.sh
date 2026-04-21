@@ -44,7 +44,7 @@ SETUP="${OUTPUT_DIR}/.state/setup"
 
 GEN_NAME="sbm"
 GEN_SCRIPT_DIR="${SCRIPT_DIR}"
-GEN_PROFILE_OUTPUTS=(node_id.csv cluster_id.csv assignment.csv degree.csv edge_counts.csv outlier_mode.txt)
+GEN_PROFILE_OUTPUTS=(node_id.csv cluster_id.csv assignment.csv degree.csv edge_counts.csv params.txt)
 # shellcheck disable=SC2034
 GEN_PROFILE_CLI_ARGS=(--outlier-mode "${OUTLIER_MODE}")
 if [ -n "${DROP_OO}" ]; then

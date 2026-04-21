@@ -23,6 +23,7 @@ from collections import defaultdict
 
 from pymincut.pygraph import PyGraph
 
+from params_common import write_params
 from pipeline_common import standard_setup, timed
 from profile_common import (
     OUTLIER_MODES,
@@ -36,7 +37,6 @@ from profile_common import (
     export_degree,
     export_edge_count,
     export_node_id,
-    export_outlier_mode,
     identify_outliers,
     read_clustering,
     read_edgelist,
@@ -122,7 +122,11 @@ def setup_inputs(edgelist_path, clustering_path, output_dir,
         )
         export_mincut(output_dir, mcs)
         export_com_csv(output_dir, node2com)
-        export_outlier_mode(output_dir, outlier_mode, drop_outlier_outlier_edges)
+        write_params(
+            output_dir,
+            outlier_mode=outlier_mode,
+            drop_outlier_outlier_edges=drop_outlier_outlier_edges,
+        )
 
 
 def parse_args():

@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 
+from params_common import write_params
 from pipeline_common import standard_setup, timed
 from profile_common import (
     OUTLIER_MODES,
@@ -27,7 +28,6 @@ from profile_common import (
     export_degree,
     export_edge_count,
     export_node_id,
-    export_outlier_mode,
     identify_outliers,
     read_clustering,
     read_edgelist,
@@ -63,7 +63,11 @@ def setup_inputs(edgelist_path, clustering_path, output_dir,
             nodes, neighbors, node2com, cluster_id2iid,
         )
         export_edge_count(output_dir, edge_counts)
-        export_outlier_mode(output_dir, outlier_mode, drop_outlier_outlier_edges)
+        write_params(
+            output_dir,
+            outlier_mode=outlier_mode,
+            drop_outlier_outlier_edges=drop_outlier_outlier_edges,
+        )
 
 
 def parse_args():
