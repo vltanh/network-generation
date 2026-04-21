@@ -1,5 +1,5 @@
 #!/bin/bash
-# SBM pipeline — thin wrapper that delegates to src/_common/simple_pipeline.sh.
+# SBM pipeline: thin wrapper that delegates to src/_common/simple_pipeline.sh.
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 if [[ "${SCRIPT_DIR}" == *"/slurmd/job"* ]]; then
@@ -13,9 +13,10 @@ N_THREADS=1
 KEEP_STATE=0
 OUTLIER_MODE="combined"
 DROP_OO_BOOL="false"
-# sbm's stage-2 edge.csv is keyed by input node IDs, so the post-gen
-# match_degree stage can use the input edgelist as ref directly.
-MATCH_DEGREE_ENABLE=1
+# sbm's output already uses input node IDs so remap defaults off.
+# match_degree is opt-in for users who want per-node degree top-up.
+REMAP_ENABLE=0
+MATCH_DEGREE_ENABLE=0
 MATCH_DEGREE_ALGORITHM="hybrid"
 
 while [[ "$#" -gt 0 ]]; do
@@ -30,9 +31,11 @@ while [[ "$#" -gt 0 ]]; do
         --outlier-mode) OUTLIER_MODE="$2"; shift ;;
         --drop-outlier-outlier-edges) DROP_OO_BOOL="true" ;;
         --keep-outlier-outlier-edges) DROP_OO_BOOL="false" ;;
+        --remap) REMAP_ENABLE=1 ;;
+        --no-remap) REMAP_ENABLE=0 ;;
         --match-degree) MATCH_DEGREE_ENABLE=1 ;;
         --no-match-degree) MATCH_DEGREE_ENABLE=0 ;;
-        --algorithm) MATCH_DEGREE_ALGORITHM="$2"; shift ;;
+        --match-degree-algorithm) MATCH_DEGREE_ALGORITHM="$2"; shift ;;
         *) echo "Unknown parameter passed: $1"; exit 1 ;;
     esac
     shift
@@ -63,6 +66,7 @@ GEN_CLI_ARGS=(
 
 GEN_MATCH_DEGREE_ENABLE="${MATCH_DEGREE_ENABLE}"
 GEN_MATCH_DEGREE_ALGORITHM="${MATCH_DEGREE_ALGORITHM}"
+GEN_MATCH_DEGREE_USE_REMAP="${REMAP_ENABLE}"
 
 # Per-stage params.txt fingerprints (see _common/state.sh:write_params_file).
 # shellcheck disable=SC2034
@@ -73,6 +77,7 @@ GEN_TOPLEVEL_PARAMS=(
     "drop_outlier_outlier_edges=${DROP_OO_BOOL}"
     "match_degree_enable=${MATCH_DEGREE_ENABLE}"
     "match_degree_algorithm=${MATCH_DEGREE_ALGORITHM}"
+    "match_degree_use_remap=${REMAP_ENABLE}"
 )
 # shellcheck disable=SC2034
 GEN_PROFILE_PARAMS=(

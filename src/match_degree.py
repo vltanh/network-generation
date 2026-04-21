@@ -1,8 +1,8 @@
-"""Generator-agnostic degree-matching top-up.
+"""Generator-agnostic match-degree stage, with optional --remap mode.
 
-Given an input edgelist (the current pipeline output) and a reference
-edgelist + clustering (defining the target per-node degree), add edges
-to minimize the residual degree deficit. Five algorithms:
+Given an input edgelist (current pipeline output) and a reference
+edgelist (defining the target per-node degree), add edges to minimize
+the residual degree deficit. Five algorithms:
 
   - greedy        : heap, static candidate set, `set.pop()` partners (silent gridlock)
   - true_greedy   : heap, dynamic re-push; logs gridlock
@@ -10,9 +10,21 @@ to minimize the residual degree deficit. Five algorithms:
   - rewire        : configuration-model pairing + 2-opt rewire
   - hybrid        : rewire → true_greedy fallback on stuck stubs (default)
 
-Originally lived under `src/ec-sbm/v2/match_degree.py`. Promoted to
-`src/match_degree.py` to make the tool usable by any generator that needs
-post-sampling degree cleanup.
+Two target-degree modes:
+
+  - Default: target_deg[node] = count of that node's edges in --ref-edgelist.
+    Requires input and ref to share a node-ID space (ec-sbm case).
+
+  - --remap: input IDs may not align with ref IDs (abcd / abcd+o / lfr /
+    npso). Sort both input and ref node sets by descending degree, pair
+    rank-by-rank (rearrangement inequality → L1- and L2-optimal pairing),
+    and look up target_deg[input_node] = ref_deg[rank-paired-ref-node].
+    The algorithm runs entirely in the input's ID space; match-degree
+    edges are emitted in that space. No edges or cluster assignments are
+    rewritten on disk.
+
+Output: `degree_matching_edge.csv` with columns (source, target), keyed
+by the input edgelist's ID space.
 """
 import argparse
 import logging
@@ -31,10 +43,15 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Degree Matching")
     parser.add_argument("--input-edgelist", type=str, required=True)
     parser.add_argument("--ref-edgelist", type=str, required=True)
-    parser.add_argument("--ref-clustering", type=str, required=True)
     parser.add_argument("--output-folder", type=str, required=True)
+    parser.add_argument("--remap", action="store_true",
+                        help="Pair input node IDs to ref node IDs by "
+                             "descending-degree rank instead of assuming a "
+                             "shared ID space. Target degree per input node is "
+                             "the ref degree of its rank-paired ref node. "
+                             "Top-up edges stay in the input's ID space.")
     parser.add_argument(
-        "--algorithm", type=str,
+        "--match-degree-algorithm", dest="match_degree_algorithm", type=str,
         choices=["greedy", "true_greedy", "random_greedy", "rewire", "hybrid"],
         default="hybrid",
     )
@@ -42,15 +59,25 @@ def parse_args():
     return parser.parse_args()
 
 
-def load_reference_topologies(orig_edgelist_fp, orig_clustering_fp):
+def load_reference_topologies(orig_edgelist_fp, input_edgelist_fp=None):
+    """Direct-ID mode: node_id2iid + out_degs keyed by ref IDs.
+
+    If an input edgelist path is given, its endpoints are unioned into the
+    node set so nodes that are present in the input edgelist but isolated
+    in the ref edgelist stay tracked. Such nodes get target degree 0;
+    their stage-2 edges still decrement their partners' residuals.
+    """
     df_orig_edges = pd.read_csv(orig_edgelist_fp, dtype=str)
-    df_orig_clusters = pd.read_csv(orig_clustering_fp, dtype=str)
 
     all_orig_nodes = (
         set(df_orig_edges["source"])
         .union(set(df_orig_edges["target"]))
-        .union(set(df_orig_clusters["node_id"]))
     )
+    if input_edgelist_fp is not None:
+        df_in = pd.read_csv(input_edgelist_fp, dtype=str)
+        all_orig_nodes = all_orig_nodes.union(
+            set(df_in["source"]).union(set(df_in["target"]))
+        )
 
     node_id2iid = {u: i for i, u in enumerate(all_orig_nodes)}
     node_iid2id = {i: u for u, i in node_id2iid.items()}
@@ -60,6 +87,39 @@ def load_reference_topologies(orig_edgelist_fp, orig_clustering_fp):
         out_degs[node_id2iid[src]] += 1
         out_degs[node_id2iid[tgt]] += 1
 
+    return node_id2iid, node_iid2id, out_degs
+
+
+def load_remap_topologies(input_edgelist_fp, ref_edgelist_fp):
+    """Remap mode: node_id2iid keyed by INPUT IDs; target degrees come from
+    pairing input and ref nodes rank-by-rank on descending degree.
+    """
+    in_df = pd.read_csv(input_edgelist_fp, dtype=str)
+    ref_df = pd.read_csv(ref_edgelist_fp, dtype=str)
+
+    in_endpoints = pd.concat([in_df["source"], in_df["target"]], ignore_index=True)
+    ref_endpoints = pd.concat([ref_df["source"], ref_df["target"]], ignore_index=True)
+
+    in_deg_series = in_endpoints.value_counts()
+    ref_deg_series = ref_endpoints.value_counts()
+
+    in_nodes = sorted(in_deg_series.index, key=lambda n: (-int(in_deg_series[n]), n))
+    ref_nodes = sorted(ref_deg_series.index, key=lambda n: (-int(ref_deg_series[n]), n))
+
+    if len(in_nodes) != len(ref_nodes):
+        logging.warning(
+            f"Remap: |input nodes|={len(in_nodes)} vs |ref nodes|={len(ref_nodes)}; "
+            f"pairing first {min(len(in_nodes), len(ref_nodes))} ranks, dropping excess."
+        )
+
+    n_pair = min(len(in_nodes), len(ref_nodes))
+    node_id2iid = {u: i for i, u in enumerate(in_nodes[:n_pair])}
+    node_iid2id = {i: u for u, i in node_id2iid.items()}
+
+    out_degs = {
+        node_id2iid[in_nodes[i]]: int(ref_deg_series[ref_nodes[i]])
+        for i in range(n_pair)
+    }
     return node_id2iid, node_iid2id, out_degs
 
 
@@ -373,13 +433,20 @@ def main():
     np.random.seed(args.seed)
 
     logging.info(
-        f"--- Starting Degree Matching ({args.algorithm.upper()} mode) ---"
+        f"--- Starting Degree Matching ({args.match_degree_algorithm.upper()}"
+        f"{' + remap' if args.remap else ''} mode) ---"
     )
 
-    with timed("Loaded reference topologies"):
-        node_id2iid, node_iid2id, out_degs = load_reference_topologies(
-            args.ref_edgelist, args.ref_clustering
-        )
+    if args.remap:
+        with timed("Loaded rank-paired target degrees"):
+            node_id2iid, node_iid2id, out_degs = load_remap_topologies(
+                args.input_edgelist, args.ref_edgelist
+            )
+    else:
+        with timed("Loaded reference topologies"):
+            node_id2iid, node_iid2id, out_degs = load_reference_topologies(
+                args.ref_edgelist, args.input_edgelist
+            )
 
     with timed("Subtracted existing edges"):
         exist_neighbor, updated_out_degs = subtract_existing_edges(
@@ -387,24 +454,24 @@ def main():
         )
 
     with timed("Degree matching"):
-        if args.algorithm == "greedy":
+        if args.match_degree_algorithm == "greedy":
             degree_edges = match_missing_degrees_greedy(updated_out_degs, exist_neighbor)
-        elif args.algorithm == "true_greedy":
+        elif args.match_degree_algorithm == "true_greedy":
             degree_edges = match_missing_degrees_true_greedy(
                 updated_out_degs, exist_neighbor
             )
-        elif args.algorithm == "random_greedy":
+        elif args.match_degree_algorithm == "random_greedy":
             degree_edges = match_missing_degrees_random_greedy(
                 updated_out_degs, exist_neighbor
             )
-        elif args.algorithm == "rewire":
+        elif args.match_degree_algorithm == "rewire":
             degree_edges, _ = match_missing_degrees_rewire(
                 updated_out_degs, exist_neighbor, max_retries=10
             )
-        elif args.algorithm == "hybrid":
+        elif args.match_degree_algorithm == "hybrid":
             degree_edges = match_missing_degrees_hybrid(updated_out_degs, exist_neighbor)
         else:
-            logging.error(f"Unknown algorithm choice: {args.algorithm}")
+            logging.error(f"Unknown algorithm choice: {args.match_degree_algorithm}")
             return
 
         logging.info(f"Added {len(degree_edges)} edges")

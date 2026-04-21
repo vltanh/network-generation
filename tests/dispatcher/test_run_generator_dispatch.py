@@ -187,9 +187,9 @@ FLAG_MATRIX = [
     ("ec-sbm-v2", "--outlier-mode", None, False),
     ("ec-sbm-v2", "--gen-outlier-mode", None, False),
     ("ec-sbm-v2", "--edge-correction", "rewire", True),
-    ("ec-sbm-v2", "--algorithm", "hybrid", True),
+    ("ec-sbm-v2", "--match-degree-algorithm", "hybrid", True),
     ("ec-sbm-v1", "--outlier-mode", None, False),
-    ("sbm", "--algorithm", None, False),
+    ("sbm", "--match-degree-algorithm", None, False),
 ]
 
 

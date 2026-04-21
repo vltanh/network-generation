@@ -206,7 +206,7 @@ fi
 echo "=== Starting Stage 4: Degree Matching & Final Combine ==="
 
 # 4a. Match Degrees
-# v1 uses the shared match_degree tool with --algorithm greedy to preserve
+# v1 uses the shared match_degree tool with --match-degree-algorithm greedy to preserve
 # byte-compat with the original v1 heap-greedy behavior. (v2's default is hybrid.)
 STG_MATCH_DEGREE_EDGES_PARAMS="${STG_MATCH_DEGREE_EDGES_DIR}/params.txt"
 write_params_file "${STG_MATCH_DEGREE_EDGES_PARAMS}" \
@@ -221,8 +221,7 @@ if ! is_step_done "${STG_MATCH_DEGREE_EDGES_DIR}/done" "${OUT_MATCH_DEGREE}"; th
         python "${SRC_DIR}/match_degree.py" \
         --input-edgelist "${STG_GEN_OUTLIER_DIR}/edge.csv" \
         --ref-edgelist "${INPUT_EDGELIST}" \
-        --ref-clustering "${INPUT_CLUSTERING}" \
-        --algorithm "greedy" \
+        --match-degree-algorithm "greedy" \
         --output-folder "${STG_MATCH_DEGREE_EDGES_DIR}" \
         --seed "$((SEED + 2))"
     mark_done "${STG_MATCH_DEGREE_EDGES_DIR}/done" "Stage 4a (match_degree)" "${IN_MATCH_DEGREE}" "${OUT_MATCH_DEGREE}"

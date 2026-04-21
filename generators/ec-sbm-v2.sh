@@ -3,7 +3,7 @@ GEN_REQUIRED_DIR_VAR=""
 GEN_REQUIRED_DIR_FLAG=""
 GEN_EXTRA_ARGS=(
     --edge-correction "rewire"
-    --algorithm "hybrid"
+    --match-degree-algorithm "hybrid"
     --n-threads "${n_threads}"
     --seed "${seed}"
     --timeout "${timeout_duration}"

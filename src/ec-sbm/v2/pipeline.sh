@@ -29,7 +29,7 @@ while [[ "$#" -gt 0 ]]; do
         --keep-outlier-outlier-edges) DROP_OO_BOOL="false" ;;
         --gen-outlier-mode) GEN_OUTLIER_MODE="$2"; shift ;;
         --edge-correction) EDGE_CORRECTION="$2"; shift ;;
-        --algorithm) ALGORITHM="$2"; shift ;;
+        --match-degree-algorithm) ALGORITHM="$2"; shift ;;
         --timeout) TIMEOUT="$2"; shift ;;
         --n-threads) N_THREADS="$2"; shift ;;
         --keep-state) KEEP_STATE=1 ;;
@@ -228,8 +228,7 @@ if ! is_step_done "${STG_MATCH_DEGREE_EDGES_DIR}/done" "${OUT_MATCH_DEGREE}"; th
         python "${SRC_DIR}/match_degree.py" \
         --input-edgelist "${STG_GEN_OUTLIER_DIR}/edge.csv" \
         --ref-edgelist "${INPUT_EDGELIST}" \
-        --ref-clustering "${INPUT_CLUSTERING}" \
-        --algorithm "${ALGORITHM}" \
+        --match-degree-algorithm "${ALGORITHM}" \
         --output-folder "${STG_MATCH_DEGREE_EDGES_DIR}" \
         --seed "$((SEED + 2))"
     mark_done "${STG_MATCH_DEGREE_EDGES_DIR}/done" "Stage 4a (match_degree)" "${IN_MATCH_DEGREE}" "${OUT_MATCH_DEGREE}"
