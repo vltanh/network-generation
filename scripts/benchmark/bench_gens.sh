@@ -19,7 +19,7 @@ SEEDS_DEFAULT="1 2 3 4 5 6 7 8 9 10"
 RUNS=10
 WARMUP=2  # warmup runs are executed and recorded, but reported separately
 OUT_BASE="/tmp/bench_gens_out"
-RESULTS_FILE="$REPO_ROOT/scripts/benchmark/results.csv"
+RESULTS_FILE="$REPO_ROOT/examples/benchmark/results.csv"
 INPUT_EDGELIST="examples/input/empirical_networks/networks/dnc/dnc.csv"
 INPUT_CLUSTERING="examples/input/reference_clusterings/clusterings/sbm-flat-best+cc/dnc/com.csv"
 # Env bin dirs prepended to PATH inside the per-gen inner shell. Default to
@@ -45,7 +45,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 mkdir -p "$OUT_BASE" "$(dirname "$RESULTS_FILE")"
-echo "gen,seed,phase,run,time_s,edge_sha256,com_sha256" > "$RESULTS_FILE"
+echo "gen,seed,phase,run,time_s,peak_rss_kb,edge_sha256,com_sha256" > "$RESULTS_FILE"
 
 # Run all (seed, run) combos for one gen inside a single shell so env init and
 # subprocess warmups are amortized.
@@ -78,33 +78,41 @@ for seed in $SEEDS; do
     fi
     out_dir="$OUT_BASE/$gen"
     rm -rf "\$out_dir"
+    rss_log="/tmp/bench_rss.log"
     start=\$(date +%s.%N)
-    ./run_generator.sh \
-      --generator "$gen" \
-      --network dnc \
-      --clustering-id sbm-flat-best+cc \
-      --run-id 0 \
-      --seed \$seed \
-      --input-edgelist   "$INPUT_EDGELIST" \
-      --input-clustering "$INPUT_CLUSTERING" \
-      --output-dir       "\$out_dir" \
-      >/tmp/bench_last.log 2>&1
+    /usr/bin/time -v -o "\$rss_log" \
+      ./run_generator.sh \
+        --generator "$gen" \
+        --network dnc \
+        --clustering-id sbm-flat-best+cc \
+        --run-id 0 \
+        --seed \$seed \
+        --input-edgelist   "$INPUT_EDGELIST" \
+        --input-clustering "$INPUT_CLUSTERING" \
+        --output-dir       "\$out_dir" \
+        >/tmp/bench_last.log 2>&1
     rc=\$?
     end=\$(date +%s.%N)
     elapsed=\$(awk "BEGIN{printf \"%.3f\", \$end - \$start}")
+    # /usr/bin/time -v measures the run_generator.sh process's peak RSS.
+    # Per-stage Python children are shorter-lived, so this is a lower bound
+    # on true per-gen peak memory; cgroup memory.peak (captured at the outer
+    # driver) is the accurate whole-tree peak.
+    peak_rss_kb=\$(awk '/Maximum resident set size/ {print \$NF}' "\$rss_log" 2>/dev/null)
+    : "\${peak_rss_kb:=0}"
     edge="\$out_dir/networks/$gen/sbm-flat-best+cc/dnc/0/edge.csv"
     com="\$out_dir/networks/$gen/sbm-flat-best+cc/dnc/0/com.csv"
     if [[ \$rc -ne 0 || ! -f "\$edge" ]]; then
-      echo "$gen,\$seed,\$phase,\$r,FAIL,," >> "$RESULTS_FILE"
+      echo "$gen,\$seed,\$phase,\$r,FAIL,\$peak_rss_kb,," >> "$RESULTS_FILE"
       echo "FAIL: gen=$gen seed=\$seed phase=\$phase run=\$r rc=\$rc" >&2
       tail -20 /tmp/bench_last.log >&2
       continue
     fi
     edge_h=\$(sha256sum "\$edge" | awk '{print \$1}')
     com_h=\$(sha256sum "\$com" | awk '{print \$1}')
-    echo "$gen,\$seed,\$phase,\$r,\$elapsed,\$edge_h,\$com_h" >> "$RESULTS_FILE"
-    printf "%s\tseed=%s\t%s\trun=%d\ttime=%s\tedge=%s\tcom=%s\n" \
-      "$gen" "\$seed" "\$phase" "\$r" "\$elapsed" "\${edge_h:0:12}" "\${com_h:0:12}"
+    echo "$gen,\$seed,\$phase,\$r,\$elapsed,\$peak_rss_kb,\$edge_h,\$com_h" >> "$RESULTS_FILE"
+    printf "%s\tseed=%s\t%s\trun=%d\ttime=%s\trss=%sK\tedge=%s\tcom=%s\n" \
+      "$gen" "\$seed" "\$phase" "\$r" "\$elapsed" "\$peak_rss_kb" "\${edge_h:0:12}" "\${com_h:0:12}"
   done
 done
 ZSH
