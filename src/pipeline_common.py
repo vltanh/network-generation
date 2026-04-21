@@ -7,11 +7,7 @@ import pandas as pd
 
 
 def setup_logging(log_filepath: Path):
-    """
-    Universal logging function.
-    Forces output exclusively to the provided log_filepath with timestamps.
-    Prevents any standard error/console leakage.
-    """
+    """Route root logger to `log_filepath` with timestamps; no console output."""
     log_filepath.parent.mkdir(parents=True, exist_ok=True)
 
     logger = logging.getLogger()
@@ -52,13 +48,9 @@ def write_edge_tuples_csv(path, edges, node_iid2id=None):
 
 
 def load_probs_matrix(edge_counts_path, num_clusters):
-    """Load an (r, c, w) edge-counts CSV into a num_clusters x num_clusters
-    dok_matrix.  Returns a zero matrix if the file is empty (the empirical
-    graph has no cross-cluster structure to preserve).
-
-    scipy is imported lazily: only sbm + ec-sbm v1/v2 gen_clustered.py call
-    this function. Keeping the top-level import out lets abcd/abcd+o/lfr/npso
-    install without scipy.
+    """Load (r, c, w) edge-counts CSV into a num_clusters² dok_matrix.
+    Empty file → zero matrix. scipy lazy-imported to keep abcd/lfr/npso
+    installs scipy-free.
     """
     from scipy.sparse import dok_matrix
 

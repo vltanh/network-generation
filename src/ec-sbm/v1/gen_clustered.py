@@ -201,32 +201,14 @@ def run_ecsbm_generation(
 
 def parse_args():
     parser = argparse.ArgumentParser(description="EC-SBM Graph Generator")
-    parser.add_argument(
-        "--node-id", type=str, required=True, help="Path to node_id.csv"
-    )
-    parser.add_argument(
-        "--cluster-id", type=str, required=True, help="Path to cluster_id.csv"
-    )
-    parser.add_argument(
-        "--assignment", type=str, required=True, help="Path to assignment.csv"
-    )
-    parser.add_argument("--degree", type=str, required=True, help="Path to degree.csv")
-    parser.add_argument("--mincut", type=str, required=True, help="Path to mincut.csv")
-    parser.add_argument(
-        "--edge-counts", type=str, required=True, help="Path to edge_counts.csv"
-    )
-    parser.add_argument(
-        "--output-folder",
-        type=str,
-        required=True,
-        help="Output directory for generated network",
-    )
-    parser.add_argument(
-        "--seed",
-        type=int,
-        default=1,
-        help="RNG seed for numpy/random/graph-tool",
-    )
+    parser.add_argument("--node-id", type=str, required=True)
+    parser.add_argument("--cluster-id", type=str, required=True)
+    parser.add_argument("--assignment", type=str, required=True)
+    parser.add_argument("--degree", type=str, required=True)
+    parser.add_argument("--mincut", type=str, required=True)
+    parser.add_argument("--edge-counts", type=str, required=True)
+    parser.add_argument("--output-folder", type=str, required=True)
+    parser.add_argument("--seed", type=int, default=1)
     return parser.parse_args()
 
 

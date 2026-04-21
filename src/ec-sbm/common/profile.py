@@ -1,25 +1,10 @@
-"""EC-SBM profile: builds the inputs ec-sbm v1 and v2 gen_clustered.py consume.
+"""EC-SBM profile (shared by v1 and v2).
 
-Output contract:
-    node_id.csv, cluster_id.csv, assignment.csv, degree.csv, edge_counts.csv,
-    mincut.csv, com.csv
+Outputs: node_id.csv, cluster_id.csv, assignment.csv, degree.csv,
+edge_counts.csv, mincut.csv, com.csv. v1 is `excluded`-only; v2 accepts
+any outlier mode.
 
-EC-SBM profiles only the clustered subnetwork.  The outlier transform
-(identify + excluded/singleton/combined) replaces the old
-`_drop_singletons_and_outliers` hook: under `excluded` (default), size-1
-input clusters are promoted to outliers by `identify_outliers` and then
-dropped alongside the unclustered nodes by `apply_outlier_mode`. v1 is
-`excluded`-only (its downstream match-degree pipeline has no outlier
-model); v2 accepts any mode because its gen_outlier stage reads the
-profile-stage params.txt to shape the residual SBM.
-
-CLI precedence: individual flags (``--outlier-mode``/...) win over
-``--params-file`` when both are given. The pipeline writes params.txt
-itself and passes only ``--params-file``; standalone users pass per-knob
-flags directly.
-
-Deps: stdlib + pandas + pymincut (for mincut).  scipy / numpy are NOT
-required by this module — gen_clustered.py uses them separately.
+Deps: stdlib + pandas + pymincut.
 """
 from __future__ import annotations
 
@@ -55,12 +40,8 @@ DEFAULT_DROP_OO = False
 
 
 def compute_mincut(nodes, neighbors, node2com, comm_size_sorted, node_id2iid):
-    """
-    Compute the minimum edge cut for every cluster's induced subgraph.
-
-    For each cluster, the induced subgraph (only intra-cluster edges) is
-    passed to PyGraph.mincut.  Single-node clusters get min-cut 0.  The
-    result list is aligned with comm_size_sorted (index = cluster iid).
+    """Per-cluster min edge cut on the induced subgraph; singletons → 0.
+    Result list aligned with comm_size_sorted (index = cluster iid).
     """
     clusters_by_id = defaultdict(list)
     for u, c in node2com.items():
@@ -93,7 +74,6 @@ def compute_mincut(nodes, neighbors, node2com, comm_size_sorted, node_id2iid):
 
 
 def export_mincut(out_dir, mcs):
-    """Write per-cluster min-cut values (aligned with cluster_id.csv order) to mincut.csv."""
     pd.DataFrame(mcs).to_csv(f"{out_dir}/mincut.csv", index=False, header=False)
 
 
@@ -139,10 +119,7 @@ def parse_args():
     parser.add_argument("--edgelist", type=str, required=True)
     parser.add_argument("--clustering", type=str, required=True)
     parser.add_argument("--output-folder", type=str, required=True)
-    parser.add_argument(
-        "--params-file", type=str, default=None,
-        help="params.txt to read stage knobs from; CLI flags override."
-    )
+    parser.add_argument("--params-file", type=str, default=None)
     parser.add_argument(
         "--outlier-mode", choices=OUTLIER_MODES, default=None,
     )
