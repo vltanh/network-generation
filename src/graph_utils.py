@@ -1,3 +1,8 @@
+"""Generator-agnostic graph primitives.
+
+Shared between ec-sbm's constructive core / block-preserving rewire and the
+top-level degree-matching tool.
+"""
 import logging
 
 

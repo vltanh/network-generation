@@ -1,3 +1,19 @@
+"""Generator-agnostic degree-matching top-up.
+
+Given an input edgelist (the current pipeline output) and a reference
+edgelist + clustering (defining the target per-node degree), add edges
+to minimize the residual degree deficit. Five algorithms:
+
+  - greedy        : heap, static candidate set, `set.pop()` partners (silent gridlock)
+  - true_greedy   : heap, dynamic re-push; logs gridlock
+  - random_greedy : weighted-random u, weighted-random v
+  - rewire        : configuration-model pairing + 2-opt rewire
+  - hybrid        : rewire → true_greedy fallback on stuck stubs (default)
+
+Originally lived under `src/ec-sbm/v2/match_degree.py`. Promoted to
+`src/match_degree.py` to make the tool usable by any generator that needs
+post-sampling degree cleanup.
+"""
 import argparse
 import logging
 import heapq
@@ -8,7 +24,7 @@ import numpy as np
 import pandas as pd
 
 from pipeline_common import standard_setup, timed
-from utils import normalize_edge, run_rewire_attempts
+from graph_utils import normalize_edge, run_rewire_attempts
 
 
 def parse_args():
@@ -20,7 +36,7 @@ def parse_args():
     parser.add_argument(
         "--algorithm", type=str,
         choices=["greedy", "true_greedy", "random_greedy", "rewire", "hybrid"],
-        default="true_greedy",
+        default="hybrid",
     )
     parser.add_argument("--seed", type=int, default=1)
     return parser.parse_args()
@@ -357,7 +373,7 @@ def main():
     np.random.seed(args.seed)
 
     logging.info(
-        f"--- Starting Stage 6: Degree Matching ({args.algorithm.upper()} mode) ---"
+        f"--- Starting Degree Matching ({args.algorithm.upper()} mode) ---"
     )
 
     with timed("Loaded reference topologies"):

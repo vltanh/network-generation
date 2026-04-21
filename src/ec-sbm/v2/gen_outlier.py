@@ -10,7 +10,7 @@ from scipy.sparse import dok_matrix
 
 from pipeline_common import standard_setup, timed, write_edge_tuples_csv
 from params_common import read_params, resolve_param
-from utils import normalize_edge, run_rewire_attempts
+from graph_utils import normalize_edge, run_rewire_attempts
 
 # Gen-outlier's default is independent of the profile stage.
 DEFAULT_OUTLIER_MODE = "combined"
