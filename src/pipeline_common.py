@@ -69,9 +69,34 @@ def load_probs_matrix(edge_counts_path, num_clusters):
 
 
 def drop_singleton_clusters(com_df):
+    """Shipping guard for com.csv: drop clusters with ≤ 1 member."""
     counts = com_df["cluster_id"].value_counts()
     kept = counts[counts > 1].index
     n_dropped = len(counts) - len(kept)
     if n_dropped:
         logging.info(f"Dropping {n_dropped} singleton cluster(s) from com.csv")
     return com_df[com_df["cluster_id"].isin(kept)]
+
+
+def simplify_edges(edges_df):
+    """Shipping guard for edge.csv: drop self-loops + parallel edges.
+
+    Every generator's output is a simple undirected graph. This helper is
+    the canonical enforcement point, paired with `drop_singleton_clusters`
+    as the two "always run before writing the final CSV" steps.
+    """
+    edges_df = edges_df[edges_df["source"] != edges_df["target"]]
+    lo = edges_df[["source", "target"]].min(axis=1)
+    hi = edges_df[["source", "target"]].max(axis=1)
+    out = (
+        pd.DataFrame({"source": lo, "target": hi})
+        .drop_duplicates()
+        .reset_index(drop=True)
+    )
+    n_in = len(edges_df)
+    n_out = len(out)
+    if n_in != n_out:
+        logging.info(
+            f"simplify_edges: dropped {n_in - n_out} self-loops / parallel edges from edge.csv"
+        )
+    return out

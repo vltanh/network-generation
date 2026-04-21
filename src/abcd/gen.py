@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from pipeline_common import standard_setup, timed, drop_singleton_clusters
+from pipeline_common import standard_setup, timed, drop_singleton_clusters, simplify_edges
 
 
 def run_abcd_generation(
@@ -59,6 +59,7 @@ def run_abcd_generation(
     with timed("Export"):
         edge_df = pd.read_csv(edge_tsv, sep="\t", header=None, names=["source", "target"])
         com_df = pd.read_csv(com_tsv, sep="\t", header=None, names=["node_id", "cluster_id"])
+        edge_df = simplify_edges(edge_df)
         com_df = drop_singleton_clusters(com_df)
         edge_df.to_csv(output_dir / "edge.csv", index=False)
         com_df.to_csv(output_dir / "com.csv", index=False)

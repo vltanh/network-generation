@@ -12,7 +12,7 @@ import pandas as pd
 import powerlaw
 import networkit as nk
 
-from pipeline_common import standard_setup, timed, drop_singleton_clusters
+from pipeline_common import standard_setup, timed, drop_singleton_clusters, simplify_edges
 
 
 SEARCH_LOG_NAME = "search_log.json"
@@ -351,8 +351,9 @@ def run_npso_generation(
 
     # cluster_id == 1 is nPSO's outlier bucket.
     final_com = drop_singleton_clusters(best_com_df[best_com_df["cluster_id"] > 1])
+    final_edge = simplify_edges(best_edge_df)
 
-    best_edge_df.to_csv(output_dir / "edge.csv", index=False)
+    final_edge.to_csv(output_dir / "edge.csv", index=False)
     final_com.to_csv(output_dir / "com.csv", index=False)
 
     logging.info("nPSO generation complete.")

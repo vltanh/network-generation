@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from pipeline_common import standard_setup, timed, drop_singleton_clusters
+from pipeline_common import standard_setup, timed, drop_singleton_clusters, simplify_edges
 
 
 OUTLIER_LIFT_WARNING = "outlier nodes form a community"
@@ -87,6 +87,7 @@ def run_abcdo_generation(
         if n_outliers > 0 and not outliers_lifted:
             com_df = com_df[com_df["cluster_id"] != 1]
 
+        edge_df = simplify_edges(edge_df)
         com_df = drop_singleton_clusters(com_df)
         edge_df.to_csv(output_dir / "edge.csv", index=False)
         com_df.to_csv(output_dir / "com.csv", index=False)
