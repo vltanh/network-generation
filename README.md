@@ -2,6 +2,8 @@
 
 This script generates a synthetic network based on an empirical network and a reference clustering. It also supports computing the corresponding network and cluster statistics and comparing them against the original distributions.
 
+Seven generators are supported: `sbm`, `ec-sbm-v1`, `ec-sbm-v2`, `abcd`, `abcd+o`, `lfr`, `npso`. For a side-by-side comparison of what each one preserves (degrees, block structure, mixing parameter, clustering coefficient) and the runtime / reproducibility guarantees, see [docs/algorithms.md](docs/algorithms.md).
+
 ## 1. Custom Mode (Standard Usage)
 
 Use this mode to provide explicit file paths for your own datasets.
@@ -158,3 +160,27 @@ The macro-mode equivalent reads from and writes to the standard `data/` tree rat
 ## Installation
 
 Generators are independent, so install only the ones you plan to use. See [INSTALL.md](INSTALL.md) for per-generator steps.
+
+## Tests
+
+The test suite lives under `tests/` and is split by subsystem:
+
+- `tests/common` — state machine, per-stage params, profile/pipeline helpers (fast, no external tooling)
+- `tests/profile_py` — per-generator `profile.py` output contract (fast)
+- `tests/dispatcher` — `run_generator.sh` flag dispatch (fast, wrapper-only)
+- `tests/wrappers` — `--keep-state` wrapper contract (invokes pipelines)
+- `tests/simple_gens` — end-to-end runs for `sbm`, `abcd`, `abcd+o`, `lfr`, `npso`; skips gens whose externals aren't installed
+- `tests/ec_sbm` — end-to-end runs for `ec-sbm-v1` / `ec-sbm-v2`
+
+See [INSTALL.md](INSTALL.md) for generator-specific installation instructions. Activate the corresponding conda env before running tests that depend on a generator's externals.
+
+## Acknowledgements
+
+- **`sbm`**: [graph-tool](https://graph-tool.skewed.de/).
+- **`ec-sbm-v1`**: [illinois-or-research-analytics/ec-sbm](https://github.com/illinois-or-research-analytics/ec-sbm); uses [python-mincut](https://github.com/vikramr2/python-mincut).
+- **`ec-sbm-v2`**: extended from `ec-sbm-v1`.
+- **`abcd` / `abcd+o`**: [ABCDGraphGenerator.jl](https://github.com/bkamins/ABCDGraphGenerator.jl).
+- **`lfr`**: [LFR benchmark](https://www.santofortunato.net/resources).
+- **`npso`**: [nPSO_model](https://github.com/biomedical-cybernetics/nPSO_model).
+
+Portions of the code, documentation, and tests were written with the help of [Claude](https://www.anthropic.com/claude) via Claude Code.
