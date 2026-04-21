@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import powerlaw
 
-from pipeline_common import standard_setup, timed, drop_singleton_clusters
+from pipeline_common import standard_setup, timed, drop_singleton_clusters, simplify_edges
 
 
 def run_lfr_generation(
@@ -72,11 +72,8 @@ def run_lfr_generation(
         edge_df = pd.read_csv(network_dat, sep=r"\s+", header=None, names=["source", "target"])
         com_df = pd.read_csv(community_dat, sep=r"\s+", header=None, names=["node_id", "cluster_id"])
 
-        # LFR writes each edge twice; drop the reverse.
-        u = edge_df[["source", "target"]].min(axis=1)
-        v = edge_df[["source", "target"]].max(axis=1)
-        edge_df = pd.DataFrame({"source": u, "target": v}).drop_duplicates().reset_index(drop=True)
-
+        # simplify_edges handles LFR's undirected double-listing (each edge written twice).
+        edge_df = simplify_edges(edge_df)
         com_df = drop_singleton_clusters(com_df)
         edge_df.to_csv(output_dir / "edge.csv", index=False)
         com_df.to_csv(output_dir / "com.csv", index=False)
