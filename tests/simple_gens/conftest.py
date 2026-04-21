@@ -68,7 +68,9 @@ SPECS = [
 
 def _env() -> dict:
     env = os.environ.copy()
-    env["PATH"] = f"/u/vltanh/miniconda3/envs/nw/bin:{env.get('PATH', '')}"
+    prefix = os.environ.get("NW_TEST_PATH_PREFIX")
+    if prefix:
+        env["PATH"] = f"{prefix}:{env.get('PATH', '')}"
     env["OMP_NUM_THREADS"] = "1"
     return env
 
