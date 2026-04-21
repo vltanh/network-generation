@@ -245,6 +245,6 @@ distance computation.
 - [Source: `src/npso/matlab/run_npso.m`](../../src/npso/matlab/run_npso.m)
 - [Source: `src/npso/profile.py`](../../src/npso/profile.py)
 - [Upstream: nPSO_model](https://github.com/biomedical-cybernetics/nPSO_model)
-- [Interactive GUI: npso steps at default settings](./npso.html)
+- [Interactive GUI: npso steps at default settings](https://vltanh.me/netgen/npso.html)
 - [ABCD+o (also has a cluster_id=1 outlier convention)](./abcd+o.md)
 - [Index of all generators](../algorithms.md)

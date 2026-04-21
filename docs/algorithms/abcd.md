@@ -156,7 +156,7 @@ shell does not amortise startup the way it does with graph-tool.
 - [Source: `src/abcd/gen.py`](../../src/abcd/gen.py)
 - [Source: `src/abcd/profile.py`](../../src/abcd/profile.py)
 - [Upstream: ABCDGraphGenerator.jl](https://github.com/bkamins/ABCDGraphGenerator.jl)
-- [Interactive GUI: abcd steps at default settings](./abcd.html)
+- [Interactive GUI: abcd steps at default settings](https://vltanh.me/netgen/abcd.html)
 - [ABCD+o (outlier-enabled variant)](./abcd+o.md)
 - [LFR (the incumbent benchmark)](./lfr.md)
 - [Index of all generators](../algorithms.md)

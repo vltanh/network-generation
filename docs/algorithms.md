@@ -46,13 +46,13 @@ every step (K_{k+1} core, constructive attachments, SBM dedup, ξ split,
 temperature search, etc.) is visible. They are self-contained (no build
 step, no framework; vanilla JS + SVG) and work offline.
 
-- [sbm.html](./algorithms/sbm.html)
-- [ec-sbm-v1.html](./algorithms/ec-sbm-v1.html)
-- [ec-sbm-v2.html](./algorithms/ec-sbm-v2.html)
-- [abcd.html](./algorithms/abcd.html)
-- [abcd+o.html](./algorithms/abcd+o.html)
-- [lfr.html](./algorithms/lfr.html)
-- [npso.html](./algorithms/npso.html)
+- [sbm.html](https://vltanh.me/netgen/sbm.html)
+- [ec-sbm-v1.html](https://vltanh.me/netgen/ec-sbm-v1.html)
+- [ec-sbm-v2.html](https://vltanh.me/netgen/ec-sbm-v2.html)
+- [abcd.html](https://vltanh.me/netgen/abcd.html)
+- [abcd+o.html](https://vltanh.me/netgen/abcd+o.html)
+- [lfr.html](https://vltanh.me/netgen/lfr.html)
+- [npso.html](https://vltanh.me/netgen/npso.html)
 
 ## Summary: who guarantees what
 

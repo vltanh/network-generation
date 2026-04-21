@@ -195,7 +195,7 @@ silently. v1 stays in the repo for comparison. See
 - [Source: `src/ec-sbm/v1/gen_outlier.py`](../../src/ec-sbm/v1/gen_outlier.py)
 - [Source: `src/match_degree.py`](../../src/match_degree.py)
 - [Source: `src/ec-sbm/common/profile.py`](../../src/ec-sbm/common/profile.py)
-- [Interactive GUI: ec-sbm-v1 steps at default settings](./ec-sbm-v1.html)
+- [Interactive GUI: ec-sbm-v1 steps at default settings](https://vltanh.me/netgen/ec-sbm-v1.html)
 - [EC-SBM v2 post](./ec-sbm-v2.md)
 - [Plain SBM post](./sbm.md)
 - [Index of all generators](../algorithms.md)

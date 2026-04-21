@@ -148,5 +148,5 @@ Adding outliers does not meaningfully change runtime vs plain ABCD.
 - [Source: `src/abcd+o/profile.py`](../../src/abcd+o/profile.py)
 - [ABCD (base variant)](./abcd.md)
 - [Upstream: ABCDGraphGenerator.jl](https://github.com/bkamins/ABCDGraphGenerator.jl)
-- [Interactive GUI: abcd+o steps at default settings](./abcd+o.html)
+- [Interactive GUI: abcd+o steps at default settings](https://vltanh.me/netgen/abcd+o.html)
 - [Index of all generators](../algorithms.md)

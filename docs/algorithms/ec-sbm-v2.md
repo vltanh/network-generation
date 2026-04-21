@@ -202,7 +202,7 @@ placed.
 - [Source: `src/ec-sbm/v2/gen_outlier.py`](../../src/ec-sbm/v2/gen_outlier.py)
 - [Source: `src/match_degree.py`](../../src/match_degree.py)
 - [Source: `src/ec-sbm/common/profile.py`](../../src/ec-sbm/common/profile.py)
-- [Interactive GUI: ec-sbm-v2 steps at default settings](./ec-sbm-v2.html)
+- [Interactive GUI: ec-sbm-v2 steps at default settings](https://vltanh.me/netgen/ec-sbm-v2.html)
 - [EC-SBM v1 post](./ec-sbm-v1.md)
 - [Plain SBM post](./sbm.md)
 - [Index of all generators](../algorithms.md)

@@ -131,5 +131,5 @@ fastest of the seven at this input size.
 - [Source: `src/sbm/gen.py`](../../src/sbm/gen.py)
 - [Source: `src/sbm/profile.py`](../../src/sbm/profile.py)
 - [graph-tool's `generate_sbm` docs](https://graph-tool.skewed.de/static/doc/generation.html#graph_tool.generation.generate_sbm)
-- [Interactive GUI: sbm steps at default settings](./sbm.html)
+- [Interactive GUI: sbm steps at default settings](https://vltanh.me/netgen/sbm.html)
 - [Index of all generators](../algorithms.md)
