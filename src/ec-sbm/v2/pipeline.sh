@@ -20,7 +20,7 @@ SEED=1
 # the profile stage; the residual-SBM in stage 3a reads params.txt from the
 # profile dir and matches that choice when placing outlier edges.
 OUTLIER_MODE="combined"
-DROP_OO=""
+DROP_OO_BOOL="false"
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -28,8 +28,8 @@ while [[ "$#" -gt 0 ]]; do
         --input-clustering) INPUT_CLUSTERING="$2"; shift ;;
         --output-dir) OUTPUT_DIR="$2"; shift ;;
         --outlier-mode) OUTLIER_MODE="$2"; shift ;;
-        --drop-outlier-outlier-edges) DROP_OO="--drop-outlier-outlier-edges" ;;
-        --keep-outlier-outlier-edges) DROP_OO="--keep-outlier-outlier-edges" ;;
+        --drop-outlier-outlier-edges) DROP_OO_BOOL="true" ;;
+        --keep-outlier-outlier-edges) DROP_OO_BOOL="false" ;;
         --edge-correction) EDGE_CORRECTION="$2"; shift ;;
         --algorithm) ALGORITHM="$2"; shift ;;
         --timeout) TIMEOUT="$2"; shift ;;
@@ -64,11 +64,22 @@ source "${SHARED_DIR}/state.sh"
 # whose recorded hashes still match the originals + final outputs, skip
 # the whole pipeline — even though .state/ has been cleaned up.
 FINAL_DONE="${OUTPUT_DIR}/done"
-FINAL_IN="${INPUT_EDGELIST} ${INPUT_CLUSTERING}"
+FINAL_PARAMS="${OUTPUT_DIR}/params.txt"
+FINAL_IN="${INPUT_EDGELIST} ${INPUT_CLUSTERING} ${FINAL_PARAMS}"
 FINAL_OUT="${OUTPUT_DIR}/edge.csv ${OUTPUT_DIR}/com.csv ${OUTPUT_DIR}/sources.json"
 FINAL_LOG="${OUTPUT_DIR}/run.log"
 
 mkdir -p "${OUTPUT_DIR}"
+
+# Write top-level params.txt first — changes to any user-facing knob
+# invalidate the top-level done-file (FINAL_IN includes FINAL_PARAMS).
+write_params_file "${FINAL_PARAMS}" \
+    "seed=${SEED}" \
+    "n_threads=${N_THREADS}" \
+    "outlier_mode=${OUTLIER_MODE}" \
+    "drop_outlier_outlier_edges=${DROP_OO_BOOL}" \
+    "edge_correction=${EDGE_CORRECTION}" \
+    "algorithm=${ALGORITHM}"
 
 log_invocation_header "${FINAL_LOG}" "${SEED}" "${KEEP_STATE}"
 
@@ -117,13 +128,13 @@ mkdir -p "${STG_PROFILE_DIR}" "${STG_GEN_CLUSTERED_DIR}" \
 # ==========================================
 echo "=== Starting Stage 1: Profile ==="
 
-IN_PROFILE="${INPUT_EDGELIST} ${INPUT_CLUSTERING}"
-OUT_PROFILE="${STG_PROFILE_DIR}/node_id.csv ${STG_PROFILE_DIR}/cluster_id.csv ${STG_PROFILE_DIR}/assignment.csv ${STG_PROFILE_DIR}/degree.csv ${STG_PROFILE_DIR}/mincut.csv ${STG_PROFILE_DIR}/edge_counts.csv ${STG_PROFILE_DIR}/com.csv ${STG_PROFILE_DIR}/params.txt"
+STG_PROFILE_PARAMS="${STG_PROFILE_DIR}/params.txt"
+write_params_file "${STG_PROFILE_PARAMS}" \
+    "outlier_mode=${OUTLIER_MODE}" \
+    "drop_outlier_outlier_edges=${DROP_OO_BOOL}"
 
-PROFILE_CLI=(--outlier-mode "${OUTLIER_MODE}")
-if [ -n "${DROP_OO}" ]; then
-    PROFILE_CLI+=("${DROP_OO}")
-fi
+IN_PROFILE="${INPUT_EDGELIST} ${INPUT_CLUSTERING} ${STG_PROFILE_PARAMS}"
+OUT_PROFILE="${STG_PROFILE_DIR}/node_id.csv ${STG_PROFILE_DIR}/cluster_id.csv ${STG_PROFILE_DIR}/assignment.csv ${STG_PROFILE_DIR}/degree.csv ${STG_PROFILE_DIR}/mincut.csv ${STG_PROFILE_DIR}/edge_counts.csv ${STG_PROFILE_DIR}/com.csv"
 
 if ! is_step_done "${STG_PROFILE_DIR}/done" "${OUT_PROFILE}"; then
     run_stage "${STG_PROFILE_DIR}/time_and_err.log" \
@@ -131,7 +142,7 @@ if ! is_step_done "${STG_PROFILE_DIR}/done" "${OUT_PROFILE}"; then
         --edgelist "${INPUT_EDGELIST}" \
         --clustering "${INPUT_CLUSTERING}" \
         --output-folder "${STG_PROFILE_DIR}" \
-        "${PROFILE_CLI[@]}"
+        --params-file "${STG_PROFILE_PARAMS}"
     mark_done "${STG_PROFILE_DIR}/done" "Stage 1 (profile)" "${IN_PROFILE}" "${OUT_PROFILE}"
 else
     note_stage_skipped "${STG_PROFILE_DIR}/time_and_err.log"
@@ -143,7 +154,12 @@ fi
 # ==========================================
 echo "=== Starting Stage 2: Generate Clustered ==="
 
-IN_GEN_CLUSTERED="${OUT_PROFILE}"
+STG_GEN_CLUSTERED_PARAMS="${STG_GEN_CLUSTERED_DIR}/params.txt"
+write_params_file "${STG_GEN_CLUSTERED_PARAMS}" \
+    "seed=${SEED}" \
+    "n_threads=${N_THREADS}"
+
+IN_GEN_CLUSTERED="${OUT_PROFILE} ${STG_GEN_CLUSTERED_PARAMS}"
 OUT_GEN_CLUSTERED="${STG_GEN_CLUSTERED_DIR}/edge.csv"
 
 if ! is_step_done "${STG_GEN_CLUSTERED_DIR}/done" "${OUT_GEN_CLUSTERED}"; then
@@ -169,10 +185,16 @@ fi
 echo "=== Starting Stage 3: Outlier Generation & Combine ==="
 
 # 3a. Generate Outliers
-# gen_outlier.py reads params.txt from the stage-1 profile dir rather than
-# taking --outlier-mode on the CLI. A follow-up commit will separate the
-# profile-stage outlier mode from the gen-stage one.
-IN_GEN_OUTLIER="${INPUT_EDGELIST} ${INPUT_CLUSTERING} ${STG_GEN_CLUSTERED_DIR}/edge.csv ${STG_PROFILE_DIR}/params.txt"
+# gen_outlier.py reads the profile-stage params.txt to recover outlier_mode
+# rather than taking --outlier-mode on the CLI. A follow-up commit will
+# give gen_outlier its own --gen-outlier-mode so profile and gen stages
+# can be decoupled.
+STG_GEN_OUTLIER_EDGES_PARAMS="${STG_GEN_OUTLIER_EDGES_DIR}/params.txt"
+write_params_file "${STG_GEN_OUTLIER_EDGES_PARAMS}" \
+    "seed=$((SEED + 1))" \
+    "edge_correction=${EDGE_CORRECTION}"
+
+IN_GEN_OUTLIER="${INPUT_EDGELIST} ${INPUT_CLUSTERING} ${STG_GEN_CLUSTERED_DIR}/edge.csv ${STG_PROFILE_PARAMS} ${STG_GEN_OUTLIER_EDGES_PARAMS}"
 OUT_GEN_OUTLIER="${STG_GEN_OUTLIER_EDGES_DIR}/edge_outlier.csv"
 
 if ! is_step_done "${STG_GEN_OUTLIER_EDGES_DIR}/done" "${OUT_GEN_OUTLIER}"; then
@@ -181,7 +203,7 @@ if ! is_step_done "${STG_GEN_OUTLIER_EDGES_DIR}/done" "${OUT_GEN_OUTLIER}"; then
         --orig-edgelist "${INPUT_EDGELIST}" \
         --orig-clustering "${INPUT_CLUSTERING}" \
         --exist-edgelist "${STG_GEN_CLUSTERED_DIR}/edge.csv" \
-        --profile-params "${STG_PROFILE_DIR}/params.txt" \
+        --profile-params "${STG_PROFILE_PARAMS}" \
         --edge-correction "${EDGE_CORRECTION}" \
         --output-folder "${STG_GEN_OUTLIER_EDGES_DIR}" \
         --seed "$((SEED + 1))"
@@ -192,6 +214,8 @@ else
 fi
 
 # 3b. Combine Clustered + Outliers
+# combine_edgelists is a pure concatenation of its two inputs; no tunable
+# knobs, so no params.txt.
 IN_GEN_OUTLIER_COMBINE="${STG_GEN_CLUSTERED_DIR}/edge.csv ${STG_GEN_OUTLIER_EDGES_DIR}/edge_outlier.csv"
 OUT_GEN_OUTLIER_COMBINE="${STG_GEN_OUTLIER_DIR}/edge.csv ${STG_GEN_OUTLIER_DIR}/sources.json"
 
@@ -216,7 +240,12 @@ fi
 echo "=== Starting Stage 4: Degree Matching & Final Combine ==="
 
 # 4a. Match Degrees
-IN_MATCH_DEGREE="${STG_GEN_OUTLIER_DIR}/edge.csv ${INPUT_EDGELIST} ${INPUT_CLUSTERING}"
+STG_MATCH_DEGREE_EDGES_PARAMS="${STG_MATCH_DEGREE_EDGES_DIR}/params.txt"
+write_params_file "${STG_MATCH_DEGREE_EDGES_PARAMS}" \
+    "seed=$((SEED + 2))" \
+    "algorithm=${ALGORITHM}"
+
+IN_MATCH_DEGREE="${STG_GEN_OUTLIER_DIR}/edge.csv ${INPUT_EDGELIST} ${INPUT_CLUSTERING} ${STG_MATCH_DEGREE_EDGES_PARAMS}"
 OUT_MATCH_DEGREE="${STG_MATCH_DEGREE_EDGES_DIR}/degree_matching_edge.csv"
 
 if ! is_step_done "${STG_MATCH_DEGREE_EDGES_DIR}/done" "${OUT_MATCH_DEGREE}"; then
