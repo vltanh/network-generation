@@ -1,4 +1,7 @@
 drop_outlier_outlier_edges=true
+match_degree_algorithm=hybrid
+match_degree_enable=0
+match_degree_use_remap=1
 n_threads=1
 outlier_mode=singleton
 seed=1

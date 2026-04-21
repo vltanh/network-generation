@@ -1,4 +1,4 @@
-algorithm=true_greedy
+algorithm=hybrid
 drop_outlier_outlier_edges=false
 edge_correction=rewire
 gen_outlier_mode=combined

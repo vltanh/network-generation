@@ -1,24 +1,24 @@
-=== Invocation 2026-04-21T17:44:09Z | seed=1 | keep_state=1 | pid=2262523 | host=cc-login2.campuscluster.illinois.edu ===
+=== Invocation 2026-04-21T22:06:26Z | seed=1 | keep_state=1 | pid=622164 | host=nah-popos ===
 === [Stage 1 (profile)] examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/.state/setup/time_and_err.log ===
-[Stage 1 (profile)] === 2026-04-21T17:44:09Z | pid=2262523 | host=cc-login2.campuscluster.illinois.edu | EXECUTED ===
-[Stage 1 (profile)] 	Command being timed: "python /u/vltanh/ecsbmv2/network-generation/src/npso/profile.py --edgelist examples/input/empirical_networks/networks/dnc/dnc.csv --clustering examples/input/reference_clusterings/clusterings/sbm-flat-best+cc/dnc/com.csv --output-folder examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/.state/setup --params-file examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/.state/setup/params.txt"
-[Stage 1 (profile)] 	User time (seconds): 0.28
-[Stage 1 (profile)] 	System time (seconds): 0.28
-[Stage 1 (profile)] 	Percent of CPU this job got: 22%
-[Stage 1 (profile)] 	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:02.56
+[Stage 1 (profile)] === 2026-04-21T22:06:26Z | pid=622164 | host=nah-popos | EXECUTED ===
+[Stage 1 (profile)] 	Command being timed: "python /home/vltanh/Documents/network-generation/src/npso/profile.py --edgelist examples/input/empirical_networks/networks/dnc/dnc.csv --clustering examples/input/reference_clusterings/clusterings/sbm-flat-best+cc/dnc/com.csv --output-folder examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/.state/setup --params-file examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/.state/setup/params.txt"
+[Stage 1 (profile)] 	User time (seconds): 0.19
+[Stage 1 (profile)] 	System time (seconds): 0.02
+[Stage 1 (profile)] 	Percent of CPU this job got: 97%
+[Stage 1 (profile)] 	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:00.22
 [Stage 1 (profile)] 	Average shared text size (kbytes): 0
 [Stage 1 (profile)] 	Average unshared data size (kbytes): 0
 [Stage 1 (profile)] 	Average stack size (kbytes): 0
 [Stage 1 (profile)] 	Average total size (kbytes): 0
-[Stage 1 (profile)] 	Maximum resident set size (kbytes): 65792
+[Stage 1 (profile)] 	Maximum resident set size (kbytes): 86876
 [Stage 1 (profile)] 	Average resident set size (kbytes): 0
-[Stage 1 (profile)] 	Major (requiring I/O) page faults: 460
-[Stage 1 (profile)] 	Minor (reclaiming a frame) page faults: 16201
-[Stage 1 (profile)] 	Voluntary context switches: 3071
-[Stage 1 (profile)] 	Involuntary context switches: 51
+[Stage 1 (profile)] 	Major (requiring I/O) page faults: 0
+[Stage 1 (profile)] 	Minor (reclaiming a frame) page faults: 13820
+[Stage 1 (profile)] 	Voluntary context switches: 22
+[Stage 1 (profile)] 	Involuntary context switches: 50
 [Stage 1 (profile)] 	Swaps: 0
-[Stage 1 (profile)] 	File system inputs: 27000
-[Stage 1 (profile)] 	File system outputs: 48
+[Stage 1 (profile)] 	File system inputs: 0
+[Stage 1 (profile)] 	File system outputs: 24
 [Stage 1 (profile)] 	Socket messages sent: 0
 [Stage 1 (profile)] 	Socket messages received: 0
 [Stage 1 (profile)] 	Signals delivered: 0
@@ -27,31 +27,31 @@
 [Stage 1 (profile)] === exit=0 ===
 
 === [Stage 1 (profile)] examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/.state/setup/run.log ===
-[Stage 1 (profile)] 2026-04-21 12:44:12,188 - INFO - Input reading elapsed: 0.0339 seconds
-[Stage 1 (profile)] 2026-04-21 12:44:12,188 - INFO - Outlier transform elapsed: 0.0001 seconds
-[Stage 1 (profile)] 2026-04-21 12:44:12,190 - INFO - Mappings computation elapsed: 0.0015 seconds
-[Stage 1 (profile)] 2026-04-21 12:44:12,198 - INFO - Outputs export elapsed: 0.0073 seconds
+[Stage 1 (profile)] 2026-04-21 17:06:26,482 - INFO - Input reading elapsed: 0.0096 seconds
+[Stage 1 (profile)] 2026-04-21 17:06:26,482 - INFO - Outlier transform elapsed: 0.0001 seconds
+[Stage 1 (profile)] 2026-04-21 17:06:26,482 - INFO - Mappings computation elapsed: 0.0005 seconds
+[Stage 1 (profile)] 2026-04-21 17:06:26,484 - INFO - Outputs export elapsed: 0.0013 seconds
 
 === [Stage 2 (gen)] examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/.state/gen/time_and_err.log ===
-[Stage 2 (gen)] === 2026-04-21T17:44:12Z | pid=2262523 | host=cc-login2.campuscluster.illinois.edu | EXECUTED ===
-[Stage 2 (gen)] 	Command being timed: "python /u/vltanh/ecsbmv2/network-generation/src/npso/gen.py --input-edgelist examples/input/empirical_networks/networks/dnc/dnc.csv --degree examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/.state/setup/degree.csv --cluster-sizes examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/.state/setup/cluster_sizes.csv --npso-dir /u/vltanh/ecsbmv2/network-generation/externals/npso --n-threads 1 --output-folder examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/.state/gen --seed 1"
-[Stage 2 (gen)] 	User time (seconds): 1.63
-[Stage 2 (gen)] 	System time (seconds): 0.86
-[Stage 2 (gen)] 	Percent of CPU this job got: 18%
-[Stage 2 (gen)] 	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:13.19
+[Stage 2 (gen)] === 2026-04-21T22:06:26Z | pid=622164 | host=nah-popos | EXECUTED ===
+[Stage 2 (gen)] 	Command being timed: "python /home/vltanh/Documents/network-generation/src/npso/gen.py --input-edgelist examples/input/empirical_networks/networks/dnc/dnc.csv --degree examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/.state/setup/degree.csv --cluster-sizes examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/.state/setup/cluster_sizes.csv --npso-dir /home/vltanh/Documents/network-generation/externals/npso --n-threads 1 --output-folder examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/.state/gen --seed 1"
+[Stage 2 (gen)] 	User time (seconds): 1.23
+[Stage 2 (gen)] 	System time (seconds): 0.16
+[Stage 2 (gen)] 	Percent of CPU this job got: 22%
+[Stage 2 (gen)] 	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:06.21
 [Stage 2 (gen)] 	Average shared text size (kbytes): 0
 [Stage 2 (gen)] 	Average unshared data size (kbytes): 0
 [Stage 2 (gen)] 	Average stack size (kbytes): 0
 [Stage 2 (gen)] 	Average total size (kbytes): 0
-[Stage 2 (gen)] 	Maximum resident set size (kbytes): 278272
+[Stage 2 (gen)] 	Maximum resident set size (kbytes): 303336
 [Stage 2 (gen)] 	Average resident set size (kbytes): 0
-[Stage 2 (gen)] 	Major (requiring I/O) page faults: 9
-[Stage 2 (gen)] 	Minor (reclaiming a frame) page faults: 85509
-[Stage 2 (gen)] 	Voluntary context switches: 10160
-[Stage 2 (gen)] 	Involuntary context switches: 48
+[Stage 2 (gen)] 	Major (requiring I/O) page faults: 0
+[Stage 2 (gen)] 	Minor (reclaiming a frame) page faults: 78345
+[Stage 2 (gen)] 	Voluntary context switches: 1816
+[Stage 2 (gen)] 	Involuntary context switches: 113
 [Stage 2 (gen)] 	Swaps: 0
-[Stage 2 (gen)] 	File system inputs: 536
-[Stage 2 (gen)] 	File system outputs: 440
+[Stage 2 (gen)] 	File system inputs: 0
+[Stage 2 (gen)] 	File system outputs: 224
 [Stage 2 (gen)] 	Socket messages sent: 0
 [Stage 2 (gen)] 	Socket messages received: 0
 [Stage 2 (gen)] 	Signals delivered: 0
@@ -60,39 +60,39 @@
 [Stage 2 (gen)] === exit=0 ===
 
 === [Stage 2 (gen)] examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/.state/gen/run.log ===
-[Stage 2 (gen)] 2026-04-21 12:44:16,201 - INFO - Starting nPSO Generation...
-[Stage 2 (gen)] 2026-04-21 12:44:16,201 - INFO - Seed: 1 n_threads: 1
-[Stage 2 (gen)] 2026-04-21 12:44:16,290 - INFO - N=906 m=12 gamma=2.0 c=442 target_ccoeff=0.5482011904886444
-[Stage 2 (gen)] 2026-04-21 12:44:16,290 - INFO - Input loading + parameter computation elapsed: 0.0876 seconds
-[Stage 2 (gen)] 2026-04-21 12:44:16,292 - INFO - Starting persistent MATLAB engine session...
-[Stage 2 (gen)] 2026-04-21 12:44:22,331 - INFO - [iter 0] T=0.5
-[Stage 2 (gen)] 2026-04-21 12:44:23,091 - INFO - Generation elapsed: 0.7598 seconds
-[Stage 2 (gen)] 2026-04-21 12:44:23,097 - INFO - Global clustering coefficient: 0.0959388453563607
-[Stage 2 (gen)] 2026-04-21 12:44:23,101 - INFO - Step: 2.0  Best T: 0.5  Best ccoeff: 0.0959388453563607  Best diff: 0.45226234513228364
-[Stage 2 (gen)] 2026-04-21 12:44:23,101 - INFO - [iter 1] T=0.25
-[Stage 2 (gen)] 2026-04-21 12:44:23,798 - INFO - Generation elapsed: 0.6964 seconds
-[Stage 2 (gen)] 2026-04-21 12:44:23,803 - INFO - Global clustering coefficient: 0.09685808314685139
-[Stage 2 (gen)] 2026-04-21 12:44:23,808 - INFO - Step: 0.0009192377904906901  Best T: 0.25  Best ccoeff: 0.09685808314685139  Best diff: 0.45134310734179295
-[Stage 2 (gen)] 2026-04-21 12:44:23,808 - INFO - [iter 2] T=0.125
-[Stage 2 (gen)] 2026-04-21 12:44:24,085 - INFO - Generation elapsed: 0.2772 seconds
-[Stage 2 (gen)] 2026-04-21 12:44:24,091 - INFO - Global clustering coefficient: 0.09769032821139921
-[Stage 2 (gen)] 2026-04-21 12:44:24,095 - INFO - Step: 0.0008322450645478208  Best T: 0.125  Best ccoeff: 0.09769032821139921  Best diff: 0.4505108622772451
-[Stage 2 (gen)] 2026-04-21 12:44:24,096 - INFO - [iter 3] T=0.0625
-[Stage 2 (gen)] 2026-04-21 12:44:24,384 - INFO - Generation elapsed: 0.2888 seconds
-[Stage 2 (gen)] 2026-04-21 12:44:24,390 - INFO - Global clustering coefficient: 0.0988167930129827
-[Stage 2 (gen)] 2026-04-21 12:44:24,395 - INFO - Step: 0.0011264648015834877  Best T: 0.0625  Best ccoeff: 0.0988167930129827  Best diff: 0.44938439747566167
-[Stage 2 (gen)] 2026-04-21 12:44:24,395 - INFO - [iter 4] T=0.03125
-[Stage 2 (gen)] 2026-04-21 12:44:24,725 - INFO - Generation elapsed: 0.3301 seconds
-[Stage 2 (gen)] 2026-04-21 12:44:24,731 - INFO - Global clustering coefficient: 0.09830969689168513
-[Stage 2 (gen)] 2026-04-21 12:44:24,735 - INFO - Step: 0.0005070961212975678  Best T: 0.0625  Best ccoeff: 0.0988167930129827  Best diff: 0.44938439747566167
-[Stage 2 (gen)] 2026-04-21 12:44:24,735 - INFO - [iter 5] T=0.015625
-[Stage 2 (gen)] 2026-04-21 12:44:24,998 - INFO - Generation elapsed: 0.2636 seconds
-[Stage 2 (gen)] 2026-04-21 12:44:25,004 - INFO - Global clustering coefficient: 0.09804844048476406
-[Stage 2 (gen)] 2026-04-21 12:44:25,008 - INFO - Step: 0.00026125640692106766  Best T: 0.0625  Best ccoeff: 0.0988167930129827  Best diff: 0.44938439747566167
-[Stage 2 (gen)] 2026-04-21 12:44:25,008 - INFO - [iter 6] T=0.0078125
-[Stage 2 (gen)] 2026-04-21 12:44:25,270 - INFO - Generation elapsed: 0.2618 seconds
-[Stage 2 (gen)] 2026-04-21 12:44:25,276 - INFO - Global clustering coefficient: 0.09797572720239264
-[Stage 2 (gen)] 2026-04-21 12:44:25,280 - INFO - Step: 7.271328237141994e-05  Best T: 0.0625  Best ccoeff: 0.0988167930129827  Best diff: 0.44938439747566167
-[Stage 2 (gen)] 2026-04-21 12:44:25,286 - INFO - Dropping 124 singleton cluster(s) from com.csv
-[Stage 2 (gen)] 2026-04-21 12:44:25,296 - INFO - nPSO generation complete.
+[Stage 2 (gen)] 2026-04-21 17:06:27,580 - INFO - Starting nPSO Generation...
+[Stage 2 (gen)] 2026-04-21 17:06:27,581 - INFO - Seed: 1 n_threads: 1
+[Stage 2 (gen)] 2026-04-21 17:06:27,662 - INFO - N=906 m=12 gamma=2.0 c=442 target_ccoeff=0.5482011904886444
+[Stage 2 (gen)] 2026-04-21 17:06:27,663 - INFO - Input loading + parameter computation elapsed: 0.0820 seconds
+[Stage 2 (gen)] 2026-04-21 17:06:27,663 - INFO - Starting persistent MATLAB engine session...
+[Stage 2 (gen)] 2026-04-21 17:06:30,469 - INFO - [iter 0] T=0.5
+[Stage 2 (gen)] 2026-04-21 17:06:31,117 - INFO - Generation elapsed: 0.6485 seconds
+[Stage 2 (gen)] 2026-04-21 17:06:31,122 - INFO - Global clustering coefficient: 0.0959388453563607
+[Stage 2 (gen)] 2026-04-21 17:06:31,123 - INFO - Step: 2.0  Best T: 0.5  Best ccoeff: 0.0959388453563607  Best diff: 0.45226234513228364
+[Stage 2 (gen)] 2026-04-21 17:06:31,123 - INFO - [iter 1] T=0.25
+[Stage 2 (gen)] 2026-04-21 17:06:31,376 - INFO - Generation elapsed: 0.2531 seconds
+[Stage 2 (gen)] 2026-04-21 17:06:31,384 - INFO - Global clustering coefficient: 0.09685808314685139
+[Stage 2 (gen)] 2026-04-21 17:06:31,384 - INFO - Step: 0.0009192377904906901  Best T: 0.25  Best ccoeff: 0.09685808314685139  Best diff: 0.45134310734179295
+[Stage 2 (gen)] 2026-04-21 17:06:31,384 - INFO - [iter 2] T=0.125
+[Stage 2 (gen)] 2026-04-21 17:06:31,623 - INFO - Generation elapsed: 0.2382 seconds
+[Stage 2 (gen)] 2026-04-21 17:06:31,628 - INFO - Global clustering coefficient: 0.09769032821139921
+[Stage 2 (gen)] 2026-04-21 17:06:31,628 - INFO - Step: 0.0008322450645478208  Best T: 0.125  Best ccoeff: 0.09769032821139921  Best diff: 0.4505108622772451
+[Stage 2 (gen)] 2026-04-21 17:06:31,628 - INFO - [iter 3] T=0.0625
+[Stage 2 (gen)] 2026-04-21 17:06:31,858 - INFO - Generation elapsed: 0.2297 seconds
+[Stage 2 (gen)] 2026-04-21 17:06:31,865 - INFO - Global clustering coefficient: 0.0988167930129827
+[Stage 2 (gen)] 2026-04-21 17:06:31,865 - INFO - Step: 0.0011264648015834877  Best T: 0.0625  Best ccoeff: 0.0988167930129827  Best diff: 0.44938439747566167
+[Stage 2 (gen)] 2026-04-21 17:06:31,865 - INFO - [iter 4] T=0.03125
+[Stage 2 (gen)] 2026-04-21 17:06:32,113 - INFO - Generation elapsed: 0.2477 seconds
+[Stage 2 (gen)] 2026-04-21 17:06:32,118 - INFO - Global clustering coefficient: 0.09830969689168513
+[Stage 2 (gen)] 2026-04-21 17:06:32,118 - INFO - Step: 0.0005070961212975678  Best T: 0.0625  Best ccoeff: 0.0988167930129827  Best diff: 0.44938439747566167
+[Stage 2 (gen)] 2026-04-21 17:06:32,118 - INFO - [iter 5] T=0.015625
+[Stage 2 (gen)] 2026-04-21 17:06:32,340 - INFO - Generation elapsed: 0.2216 seconds
+[Stage 2 (gen)] 2026-04-21 17:06:32,345 - INFO - Global clustering coefficient: 0.09804844048476406
+[Stage 2 (gen)] 2026-04-21 17:06:32,346 - INFO - Step: 0.00026125640692106766  Best T: 0.0625  Best ccoeff: 0.0988167930129827  Best diff: 0.44938439747566167
+[Stage 2 (gen)] 2026-04-21 17:06:32,346 - INFO - [iter 6] T=0.0078125
+[Stage 2 (gen)] 2026-04-21 17:06:32,572 - INFO - Generation elapsed: 0.2267 seconds
+[Stage 2 (gen)] 2026-04-21 17:06:32,578 - INFO - Global clustering coefficient: 0.09797572720239264
+[Stage 2 (gen)] 2026-04-21 17:06:32,578 - INFO - Step: 7.271328237141994e-05  Best T: 0.0625  Best ccoeff: 0.0988167930129827  Best diff: 0.44938439747566167
+[Stage 2 (gen)] 2026-04-21 17:06:32,582 - INFO - Dropping 124 singleton cluster(s) from com.csv
+[Stage 2 (gen)] 2026-04-21 17:06:32,589 - INFO - nPSO generation complete.
 

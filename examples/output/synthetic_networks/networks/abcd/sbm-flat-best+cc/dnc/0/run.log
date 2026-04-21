@@ -1,24 +1,24 @@
-=== Invocation 2026-04-21T17:41:05Z | seed=1 | keep_state=1 | pid=2234660 | host=cc-login2.campuscluster.illinois.edu ===
+=== Invocation 2026-04-21T22:06:10Z | seed=1 | keep_state=1 | pid=620535 | host=nah-popos ===
 === [Stage 1 (profile)] examples/output/synthetic_networks/networks/abcd/sbm-flat-best+cc/dnc/0/.state/setup/time_and_err.log ===
-[Stage 1 (profile)] === 2026-04-21T17:41:05Z | pid=2234660 | host=cc-login2.campuscluster.illinois.edu | EXECUTED ===
-[Stage 1 (profile)] 	Command being timed: "python /u/vltanh/ecsbmv2/network-generation/src/abcd/profile.py --edgelist examples/input/empirical_networks/networks/dnc/dnc.csv --clustering examples/input/reference_clusterings/clusterings/sbm-flat-best+cc/dnc/com.csv --output-folder examples/output/synthetic_networks/networks/abcd/sbm-flat-best+cc/dnc/0/.state/setup --params-file examples/output/synthetic_networks/networks/abcd/sbm-flat-best+cc/dnc/0/.state/setup/params.txt"
-[Stage 1 (profile)] 	User time (seconds): 0.40
-[Stage 1 (profile)] 	System time (seconds): 0.45
-[Stage 1 (profile)] 	Percent of CPU this job got: 2%
-[Stage 1 (profile)] 	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:34.03
+[Stage 1 (profile)] === 2026-04-21T22:06:10Z | pid=620535 | host=nah-popos | EXECUTED ===
+[Stage 1 (profile)] 	Command being timed: "python /home/vltanh/Documents/network-generation/src/abcd/profile.py --edgelist examples/input/empirical_networks/networks/dnc/dnc.csv --clustering examples/input/reference_clusterings/clusterings/sbm-flat-best+cc/dnc/com.csv --output-folder examples/output/synthetic_networks/networks/abcd/sbm-flat-best+cc/dnc/0/.state/setup --params-file examples/output/synthetic_networks/networks/abcd/sbm-flat-best+cc/dnc/0/.state/setup/params.txt"
+[Stage 1 (profile)] 	User time (seconds): 0.18
+[Stage 1 (profile)] 	System time (seconds): 0.02
+[Stage 1 (profile)] 	Percent of CPU this job got: 99%
+[Stage 1 (profile)] 	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:00.21
 [Stage 1 (profile)] 	Average shared text size (kbytes): 0
 [Stage 1 (profile)] 	Average unshared data size (kbytes): 0
 [Stage 1 (profile)] 	Average stack size (kbytes): 0
 [Stage 1 (profile)] 	Average total size (kbytes): 0
-[Stage 1 (profile)] 	Maximum resident set size (kbytes): 65792
+[Stage 1 (profile)] 	Maximum resident set size (kbytes): 86796
 [Stage 1 (profile)] 	Average resident set size (kbytes): 0
-[Stage 1 (profile)] 	Major (requiring I/O) page faults: 1134
-[Stage 1 (profile)] 	Minor (reclaiming a frame) page faults: 16985
-[Stage 1 (profile)] 	Voluntary context switches: 5377
-[Stage 1 (profile)] 	Involuntary context switches: 548
+[Stage 1 (profile)] 	Major (requiring I/O) page faults: 0
+[Stage 1 (profile)] 	Minor (reclaiming a frame) page faults: 13821
+[Stage 1 (profile)] 	Voluntary context switches: 22
+[Stage 1 (profile)] 	Involuntary context switches: 53
 [Stage 1 (profile)] 	Swaps: 0
-[Stage 1 (profile)] 	File system inputs: 152752
-[Stage 1 (profile)] 	File system outputs: 56
+[Stage 1 (profile)] 	File system inputs: 0
+[Stage 1 (profile)] 	File system outputs: 32
 [Stage 1 (profile)] 	Socket messages sent: 0
 [Stage 1 (profile)] 	Socket messages received: 0
 [Stage 1 (profile)] 	Signals delivered: 0
@@ -27,31 +27,31 @@
 [Stage 1 (profile)] === exit=0 ===
 
 === [Stage 1 (profile)] examples/output/synthetic_networks/networks/abcd/sbm-flat-best+cc/dnc/0/.state/setup/run.log ===
-[Stage 1 (profile)] 2026-04-21 12:41:39,626 - INFO - Input reading elapsed: 0.5861 seconds
-[Stage 1 (profile)] 2026-04-21 12:41:39,626 - INFO - Outlier transform elapsed: 0.0002 seconds
-[Stage 1 (profile)] 2026-04-21 12:41:39,628 - INFO - Mappings computation elapsed: 0.0006 seconds
-[Stage 1 (profile)] 2026-04-21 12:41:39,660 - INFO - Outputs export elapsed: 0.0314 seconds
+[Stage 1 (profile)] 2026-04-21 17:06:10,357 - INFO - Input reading elapsed: 0.0101 seconds
+[Stage 1 (profile)] 2026-04-21 17:06:10,357 - INFO - Outlier transform elapsed: 0.0001 seconds
+[Stage 1 (profile)] 2026-04-21 17:06:10,358 - INFO - Mappings computation elapsed: 0.0005 seconds
+[Stage 1 (profile)] 2026-04-21 17:06:10,361 - INFO - Outputs export elapsed: 0.0030 seconds
 
 === [Stage 2 (gen)] examples/output/synthetic_networks/networks/abcd/sbm-flat-best+cc/dnc/0/.state/gen/time_and_err.log ===
-[Stage 2 (gen)] === 2026-04-21T17:41:39Z | pid=2234660 | host=cc-login2.campuscluster.illinois.edu | EXECUTED ===
-[Stage 2 (gen)] 	Command being timed: "python /u/vltanh/ecsbmv2/network-generation/src/abcd/gen.py --degree examples/output/synthetic_networks/networks/abcd/sbm-flat-best+cc/dnc/0/.state/setup/degree.csv --cluster-sizes examples/output/synthetic_networks/networks/abcd/sbm-flat-best+cc/dnc/0/.state/setup/cluster_sizes.csv --mixing-parameter examples/output/synthetic_networks/networks/abcd/sbm-flat-best+cc/dnc/0/.state/setup/mixing_parameter.txt --abcd-dir /u/vltanh/ecsbmv2/network-generation/externals/abcd --output-folder examples/output/synthetic_networks/networks/abcd/sbm-flat-best+cc/dnc/0/.state/gen --seed 1"
-[Stage 2 (gen)] 	User time (seconds): 4.43
-[Stage 2 (gen)] 	System time (seconds): 0.40
-[Stage 2 (gen)] 	Percent of CPU this job got: 85%
-[Stage 2 (gen)] 	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:05.62
+[Stage 2 (gen)] === 2026-04-21T22:06:10Z | pid=620535 | host=nah-popos | EXECUTED ===
+[Stage 2 (gen)] 	Command being timed: "python /home/vltanh/Documents/network-generation/src/abcd/gen.py --degree examples/output/synthetic_networks/networks/abcd/sbm-flat-best+cc/dnc/0/.state/setup/degree.csv --cluster-sizes examples/output/synthetic_networks/networks/abcd/sbm-flat-best+cc/dnc/0/.state/setup/cluster_sizes.csv --mixing-parameter examples/output/synthetic_networks/networks/abcd/sbm-flat-best+cc/dnc/0/.state/setup/mixing_parameter.txt --abcd-dir /home/vltanh/Documents/network-generation/externals/abcd --output-folder examples/output/synthetic_networks/networks/abcd/sbm-flat-best+cc/dnc/0/.state/gen --seed 1"
+[Stage 2 (gen)] 	User time (seconds): 3.51
+[Stage 2 (gen)] 	System time (seconds): 0.17
+[Stage 2 (gen)] 	Percent of CPU this job got: 99%
+[Stage 2 (gen)] 	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:03.69
 [Stage 2 (gen)] 	Average shared text size (kbytes): 0
 [Stage 2 (gen)] 	Average unshared data size (kbytes): 0
 [Stage 2 (gen)] 	Average stack size (kbytes): 0
 [Stage 2 (gen)] 	Average total size (kbytes): 0
-[Stage 2 (gen)] 	Maximum resident set size (kbytes): 376736
+[Stage 2 (gen)] 	Maximum resident set size (kbytes): 499888
 [Stage 2 (gen)] 	Average resident set size (kbytes): 0
-[Stage 2 (gen)] 	Major (requiring I/O) page faults: 15
-[Stage 2 (gen)] 	Minor (reclaiming a frame) page faults: 83162
-[Stage 2 (gen)] 	Voluntary context switches: 2792
-[Stage 2 (gen)] 	Involuntary context switches: 22
+[Stage 2 (gen)] 	Major (requiring I/O) page faults: 0
+[Stage 2 (gen)] 	Minor (reclaiming a frame) page faults: 100977
+[Stage 2 (gen)] 	Voluntary context switches: 36
+[Stage 2 (gen)] 	Involuntary context switches: 160
 [Stage 2 (gen)] 	Swaps: 0
-[Stage 2 (gen)] 	File system inputs: 1432
-[Stage 2 (gen)] 	File system outputs: 376
+[Stage 2 (gen)] 	File system inputs: 0
+[Stage 2 (gen)] 	File system outputs: 320
 [Stage 2 (gen)] 	Socket messages sent: 0
 [Stage 2 (gen)] 	Socket messages received: 0
 [Stage 2 (gen)] 	Signals delivered: 0
@@ -60,12 +60,12 @@
 [Stage 2 (gen)] === exit=0 ===
 
 === [Stage 2 (gen)] examples/output/synthetic_networks/networks/abcd/sbm-flat-best+cc/dnc/0/.state/gen/run.log ===
-[Stage 2 (gen)] 2026-04-21 12:41:40,617 - INFO - Starting ABCD Generation...
-[Stage 2 (gen)] 2026-04-21 12:41:40,617 - INFO - Seed: 1
-[Stage 2 (gen)] 2026-04-21 12:41:40,664 - INFO - xi=0.7181896634384888 total_clusters=442
-[Stage 2 (gen)] 2026-04-21 12:41:40,664 - INFO - Input loading elapsed: 0.0471 seconds
-[Stage 2 (gen)] 2026-04-21 12:41:45,322 - INFO - Generation elapsed: 4.6504 seconds
-[Stage 2 (gen)] 2026-04-21 12:41:45,352 - INFO - Dropping 355 singleton cluster(s) from com.csv
-[Stage 2 (gen)] 2026-04-21 12:41:45,438 - INFO - Export elapsed: 0.1154 seconds
-[Stage 2 (gen)] 2026-04-21 12:41:45,438 - INFO - ABCD generation complete.
+[Stage 2 (gen)] 2026-04-21 17:06:10,575 - INFO - Starting ABCD Generation...
+[Stage 2 (gen)] 2026-04-21 17:06:10,575 - INFO - Seed: 1
+[Stage 2 (gen)] 2026-04-21 17:06:10,577 - INFO - xi=0.7181896634384888 total_clusters=442
+[Stage 2 (gen)] 2026-04-21 17:06:10,577 - INFO - Input loading elapsed: 0.0016 seconds
+[Stage 2 (gen)] 2026-04-21 17:06:14,060 - INFO - Generation elapsed: 3.4816 seconds
+[Stage 2 (gen)] 2026-04-21 17:06:14,065 - INFO - Dropping 355 singleton cluster(s) from com.csv
+[Stage 2 (gen)] 2026-04-21 17:06:14,068 - INFO - Export elapsed: 0.0084 seconds
+[Stage 2 (gen)] 2026-04-21 17:06:14,068 - INFO - ABCD generation complete.
 

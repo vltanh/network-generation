@@ -1,7 +1,8 @@
-2026-04-21 12:43:43,273 - INFO - Starting LFR Generation...
-2026-04-21 12:43:43,273 - INFO - Seed: 1
-2026-04-21 12:43:43,370 - INFO - N=906 k=23.02207505518764 maxk=368 minc=3 maxc=52 mu=0.6863056477467128 t1=1.4511398602847603 t2=2.0072259135452315
-2026-04-21 12:43:43,370 - INFO - Input loading + parameter computation elapsed: 0.0958 seconds
-2026-04-21 12:43:45,844 - INFO - Generation elapsed: 2.4740 seconds
-2026-04-21 12:43:45,870 - INFO - Export elapsed: 0.0259 seconds
-2026-04-21 12:43:45,870 - INFO - LFR generation complete.
+2026-04-21 17:06:24,990 - INFO - Starting LFR Generation...
+2026-04-21 17:06:24,990 - INFO - Seed: 1
+2026-04-21 17:06:25,072 - INFO - N=906 k=23.02207505518764 maxk=368 minc=3 maxc=52 mu=0.6863056477467128 t1=1.4511398602847603 t2=2.0072259135452315
+2026-04-21 17:06:25,072 - INFO - Input loading + parameter computation elapsed: 0.0821 seconds
+2026-04-21 17:06:26,143 - INFO - Generation elapsed: 1.0709 seconds
+2026-04-21 17:06:26,151 - INFO - simplify_edges: dropped 10370 self-loops / parallel edges from edge.csv
+2026-04-21 17:06:26,155 - INFO - Export elapsed: 0.0116 seconds
+2026-04-21 17:06:26,155 - INFO - LFR generation complete.

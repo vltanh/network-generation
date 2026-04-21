@@ -1,4 +1,4 @@
-2026-04-21 12:42:57,410 - INFO - Input reading elapsed: 0.0146 seconds
-2026-04-21 12:42:57,410 - INFO - Outlier transform elapsed: 0.0003 seconds
-2026-04-21 12:42:57,411 - INFO - Mappings computation elapsed: 0.0006 seconds
-2026-04-21 12:42:57,423 - INFO - Outputs export elapsed: 0.0117 seconds
+2026-04-21 17:06:14,352 - INFO - Input reading elapsed: 0.0088 seconds
+2026-04-21 17:06:14,352 - INFO - Outlier transform elapsed: 0.0003 seconds
+2026-04-21 17:06:14,353 - INFO - Mappings computation elapsed: 0.0006 seconds
+2026-04-21 17:06:14,356 - INFO - Outputs export elapsed: 0.0026 seconds
