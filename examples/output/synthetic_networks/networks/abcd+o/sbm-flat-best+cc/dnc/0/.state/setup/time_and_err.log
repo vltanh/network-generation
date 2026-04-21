@@ -1,22 +1,22 @@
-=== 2026-04-20T23:38:20Z | pid=1926080 | host=cc-login2.campuscluster.illinois.edu | EXECUTED ===
-	Command being timed: "python /u/vltanh/ecsbmv2/network-generation/src/abcd+o/profile.py --edgelist examples/input/empirical_networks/networks/dnc/dnc.csv --clustering examples/input/reference_clusterings/clusterings/sbm-flat-best+cc/dnc/com.csv --output-folder examples/output/synthetic_networks/networks/abcd+o/sbm-flat-best+cc/dnc/0/.state/setup"
-	User time (seconds): 0.27
-	System time (seconds): 0.20
-	Percent of CPU this job got: 58%
-	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:00.82
+=== 2026-04-21T05:01:27Z | pid=2671337 | host=cc-login2.campuscluster.illinois.edu | EXECUTED ===
+	Command being timed: "python /u/vltanh/ecsbmv2/network-generation/src/abcd+o/profile.py --edgelist examples/input/empirical_networks/networks/dnc/dnc.csv --clustering examples/input/reference_clusterings/clusterings/sbm-flat-best+cc/dnc/com.csv --output-folder examples/output/synthetic_networks/networks/abcd+o/sbm-flat-best+cc/dnc/0/.state/setup --params-file examples/output/synthetic_networks/networks/abcd+o/sbm-flat-best+cc/dnc/0/.state/setup/params.txt"
+	User time (seconds): 0.29
+	System time (seconds): 0.21
+	Percent of CPU this job got: 57%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:00.86
 	Average shared text size (kbytes): 0
 	Average unshared data size (kbytes): 0
 	Average stack size (kbytes): 0
 	Average total size (kbytes): 0
-	Maximum resident set size (kbytes): 71424
+	Maximum resident set size (kbytes): 69376
 	Average resident set size (kbytes): 0
 	Major (requiring I/O) page faults: 0
-	Minor (reclaiming a frame) page faults: 18099
-	Voluntary context switches: 1473
-	Involuntary context switches: 2
+	Minor (reclaiming a frame) page faults: 18128
+	Voluntary context switches: 1476
+	Involuntary context switches: 98
 	Swaps: 0
-	File system inputs: 0
-	File system outputs: 56
+	File system inputs: 24
+	File system outputs: 64
 	Socket messages sent: 0
 	Socket messages received: 0
 	Signals delivered: 0

@@ -1,0 +1,7 @@
+algorithm=true_greedy
+drop_outlier_outlier_edges=false
+edge_correction=rewire
+gen_outlier_mode=combined
+n_threads=1
+outlier_mode=excluded
+seed=1

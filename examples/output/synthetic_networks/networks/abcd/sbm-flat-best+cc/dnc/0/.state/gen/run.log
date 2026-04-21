@@ -1,8 +1,8 @@
-2026-04-20 18:37:37,019 - INFO - Starting ABCD Generation...
-2026-04-20 18:37:37,019 - INFO - Seed: 1
-2026-04-20 18:37:37,038 - INFO - xi=0.7181896634384888 total_clusters=442
-2026-04-20 18:37:37,038 - INFO - Input loading elapsed: 0.0180 seconds
-2026-04-20 18:37:44,271 - INFO - Generation elapsed: 7.2253 seconds
-2026-04-20 18:37:44,318 - INFO - Dropping 355 singleton cluster(s) from com.csv
-2026-04-20 18:37:44,465 - INFO - Export elapsed: 0.1943 seconds
-2026-04-20 18:37:44,465 - INFO - ABCD generation complete.
+2026-04-21 00:00:40,933 - INFO - Starting ABCD Generation...
+2026-04-21 00:00:40,934 - INFO - Seed: 1
+2026-04-21 00:00:40,960 - INFO - xi=0.7181896634384888 total_clusters=442
+2026-04-21 00:00:40,960 - INFO - Input loading elapsed: 0.0261 seconds
+2026-04-21 00:00:45,689 - INFO - Generation elapsed: 4.7210 seconds
+2026-04-21 00:00:45,737 - INFO - Dropping 355 singleton cluster(s) from com.csv
+2026-04-21 00:00:45,889 - INFO - Export elapsed: 0.1994 seconds
+2026-04-21 00:00:45,889 - INFO - ABCD generation complete.

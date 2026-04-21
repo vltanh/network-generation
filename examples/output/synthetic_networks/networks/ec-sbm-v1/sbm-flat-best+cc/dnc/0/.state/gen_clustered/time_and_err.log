@@ -1,19 +1,19 @@
-=== 2026-04-20T23:38:34Z | pid=1926418 | host=cc-login2.campuscluster.illinois.edu | EXECUTED ===
+=== 2026-04-21T05:01:41Z | pid=2673076 | host=cc-login2.campuscluster.illinois.edu | EXECUTED ===
 	Command being timed: "python /u/vltanh/ecsbmv2/network-generation/src/ec-sbm/v1/gen_clustered.py --node-id examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/profile/node_id.csv --cluster-id examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/profile/cluster_id.csv --assignment examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/profile/assignment.csv --degree examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/profile/degree.csv --mincut examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/profile/mincut.csv --edge-counts examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/profile/edge_counts.csv --output-folder examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/gen_clustered --seed 1"
-	User time (seconds): 1.16
-	System time (seconds): 0.54
-	Percent of CPU this job got: 60%
-	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:02.80
+	User time (seconds): 1.17
+	System time (seconds): 0.59
+	Percent of CPU this job got: 58%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:03.01
 	Average shared text size (kbytes): 0
 	Average unshared data size (kbytes): 0
 	Average stack size (kbytes): 0
 	Average total size (kbytes): 0
-	Maximum resident set size (kbytes): 208896
+	Maximum resident set size (kbytes): 205312
 	Average resident set size (kbytes): 0
 	Major (requiring I/O) page faults: 31
-	Minor (reclaiming a frame) page faults: 54845
-	Voluntary context switches: 3973
-	Involuntary context switches: 14
+	Minor (reclaiming a frame) page faults: 54840
+	Voluntary context switches: 3978
+	Involuntary context switches: 228
 	Swaps: 0
 	File system inputs: 800
 	File system outputs: 848

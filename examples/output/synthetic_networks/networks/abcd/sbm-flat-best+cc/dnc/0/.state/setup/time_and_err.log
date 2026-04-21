@@ -1,22 +1,22 @@
-=== 2026-04-20T23:37:21Z | pid=1924890 | host=cc-login2.campuscluster.illinois.edu | EXECUTED ===
-	Command being timed: "python /u/vltanh/ecsbmv2/network-generation/src/abcd/profile.py --edgelist examples/input/empirical_networks/networks/dnc/dnc.csv --clustering examples/input/reference_clusterings/clusterings/sbm-flat-best+cc/dnc/com.csv --output-folder examples/output/synthetic_networks/networks/abcd/sbm-flat-best+cc/dnc/0/.state/setup"
-	User time (seconds): 0.35
-	System time (seconds): 0.39
-	Percent of CPU this job got: 5%
-	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:14.87
+=== 2026-04-21T05:00:28Z | pid=2665623 | host=cc-login2.campuscluster.illinois.edu | EXECUTED ===
+	Command being timed: "python /u/vltanh/ecsbmv2/network-generation/src/abcd/profile.py --edgelist examples/input/empirical_networks/networks/dnc/dnc.csv --clustering examples/input/reference_clusterings/clusterings/sbm-flat-best+cc/dnc/com.csv --output-folder examples/output/synthetic_networks/networks/abcd/sbm-flat-best+cc/dnc/0/.state/setup --params-file examples/output/synthetic_networks/networks/abcd/sbm-flat-best+cc/dnc/0/.state/setup/params.txt"
+	User time (seconds): 0.36
+	System time (seconds): 0.37
+	Percent of CPU this job got: 6%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:11.71
 	Average shared text size (kbytes): 0
 	Average unshared data size (kbytes): 0
 	Average stack size (kbytes): 0
 	Average total size (kbytes): 0
-	Maximum resident set size (kbytes): 69376
+	Maximum resident set size (kbytes): 69888
 	Average resident set size (kbytes): 0
 	Major (requiring I/O) page faults: 1164
-	Minor (reclaiming a frame) page faults: 16921
-	Voluntary context switches: 5426
-	Involuntary context switches: 177
+	Minor (reclaiming a frame) page faults: 16963
+	Voluntary context switches: 5430
+	Involuntary context switches: 647
 	Swaps: 0
-	File system inputs: 184840
-	File system outputs: 48
+	File system inputs: 184968
+	File system outputs: 56
 	Socket messages sent: 0
 	Socket messages received: 0
 	Signals delivered: 0

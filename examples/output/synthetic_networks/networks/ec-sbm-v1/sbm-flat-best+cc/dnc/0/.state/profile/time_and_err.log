@@ -1,22 +1,22 @@
-=== 2026-04-20T23:38:33Z | pid=1926418 | host=cc-login2.campuscluster.illinois.edu | EXECUTED ===
-	Command being timed: "python /u/vltanh/ecsbmv2/network-generation/src/ec-sbm/common/profile.py --edgelist examples/input/empirical_networks/networks/dnc/dnc.csv --clustering examples/input/reference_clusterings/clusterings/sbm-flat-best+cc/dnc/com.csv --output-folder examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/profile"
-	User time (seconds): 0.28
-	System time (seconds): 0.20
-	Percent of CPU this job got: 59%
-	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:00.83
+=== 2026-04-21T05:01:40Z | pid=2673076 | host=cc-login2.campuscluster.illinois.edu | EXECUTED ===
+	Command being timed: "python /u/vltanh/ecsbmv2/network-generation/src/ec-sbm/common/profile.py --edgelist examples/input/empirical_networks/networks/dnc/dnc.csv --clustering examples/input/reference_clusterings/clusterings/sbm-flat-best+cc/dnc/com.csv --output-folder examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/profile --params-file examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/profile/params.txt"
+	User time (seconds): 0.31
+	System time (seconds): 0.19
+	Percent of CPU this job got: 57%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:00.87
 	Average shared text size (kbytes): 0
 	Average unshared data size (kbytes): 0
 	Average stack size (kbytes): 0
 	Average total size (kbytes): 0
-	Maximum resident set size (kbytes): 72192
+	Maximum resident set size (kbytes): 71168
 	Average resident set size (kbytes): 0
 	Major (requiring I/O) page faults: 0
-	Minor (reclaiming a frame) page faults: 18320
-	Voluntary context switches: 1488
-	Involuntary context switches: 6
+	Minor (reclaiming a frame) page faults: 18299
+	Voluntary context switches: 1490
+	Involuntary context switches: 99
 	Swaps: 0
-	File system inputs: 0
-	File system outputs: 88
+	File system inputs: 8
+	File system outputs: 72
 	Socket messages sent: 0
 	Socket messages received: 0
 	Signals delivered: 0

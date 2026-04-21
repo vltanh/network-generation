@@ -16,9 +16,10 @@ TIMEOUT="3d"
 N_THREADS=1
 KEEP_STATE=0
 SEED=1
-# EC-SBM v2 profile-stage outlier policy: fold outliers into one combined
-# block so stage-2 gen_clustered sees a single outlier-class at profile time.
-OUTLIER_MODE="combined"
+# EC-SBM v2 profile-stage outlier policy: drop outliers so the profile's
+# edge_counts / node2com / mincut describe a strictly clustered subgraph
+# (pre-refactor behavior). gen_outlier stage handles outlier synthesis.
+OUTLIER_MODE="excluded"
 DROP_OO_BOOL="false"
 # EC-SBM v2 gen-outlier-stage outlier policy: independent of OUTLIER_MODE.
 # The residual-SBM folds all outliers into one combined block by default.

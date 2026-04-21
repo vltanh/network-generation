@@ -1,5 +1,6 @@
 60e57ada6fc438cb448fb65c542cfd827a4509e4a5c9a13faa9d83c366d6bf76  examples/input/empirical_networks/networks/dnc/dnc.csv
 e240ae23f3ea32f05e1a9135bbc3d310752dacfbbcaf80900cbf09e7dfd59984  examples/input/reference_clusterings/clusterings/sbm-flat-best+cc/dnc/com.csv
+00ffef10843619942851bf738c26405b0af45eabb3c58bba1a708bde64ac5d89  examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/params.txt
 f0b255d97b906bef67c309addd684e50b722e8c01e0e2239a5386a92af6fcd95  examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/edge.csv
 e240ae23f3ea32f05e1a9135bbc3d310752dacfbbcaf80900cbf09e7dfd59984  examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/com.csv
 4b9d2c545a76523a9c93862835f30b380c3e2728aaf2b549da42cd3f9a701491  examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/sources.json

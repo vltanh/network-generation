@@ -1,21 +1,21 @@
-=== 2026-04-21T00:01:28Z | pid=1958045 | host=cc-login2.campuscluster.illinois.edu | EXECUTED ===
+=== 2026-04-21T05:11:40Z | pid=2780808 | host=cc-login2.campuscluster.illinois.edu | EXECUTED ===
 	Command being timed: "python /u/vltanh/ecsbmv2/network-generation/src/npso/gen.py --input-edgelist examples/input/empirical_networks/networks/dnc/dnc.csv --degree examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/.state/setup/degree.csv --cluster-sizes examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/.state/setup/cluster_sizes.csv --npso-dir /u/vltanh/ecsbmv2/network-generation/externals/npso --n-threads 1 --output-folder examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/.state/gen --seed 1"
-	User time (seconds): 1.84
-	System time (seconds): 1.19
+	User time (seconds): 1.90
+	System time (seconds): 1.37
 	Percent of CPU this job got: 3%
-	Elapsed (wall clock) time (h:mm:ss or m:ss): 1:40.35
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 1:32.25
 	Average shared text size (kbytes): 0
 	Average unshared data size (kbytes): 0
 	Average stack size (kbytes): 0
 	Average total size (kbytes): 0
-	Maximum resident set size (kbytes): 280564
+	Maximum resident set size (kbytes): 275712
 	Average resident set size (kbytes): 0
-	Major (requiring I/O) page faults: 1108
-	Minor (reclaiming a frame) page faults: 84488
-	Voluntary context switches: 17194
-	Involuntary context switches: 500
+	Major (requiring I/O) page faults: 695
+	Minor (reclaiming a frame) page faults: 84959
+	Voluntary context switches: 16014
+	Involuntary context switches: 2457
 	Swaps: 0
-	File system inputs: 158544
+	File system inputs: 138552
 	File system outputs: 440
 	Socket messages sent: 0
 	Socket messages received: 0

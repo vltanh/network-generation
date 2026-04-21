@@ -1,0 +1,4 @@
+drop_outlier_outlier_edges=false
+n_threads=1
+outlier_mode=singleton
+seed=1
