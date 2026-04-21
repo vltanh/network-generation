@@ -13,6 +13,10 @@ N_THREADS=1
 KEEP_STATE=0
 OUTLIER_MODE="combined"
 DROP_OO_BOOL="false"
+# sbm's stage-2 edge.csv is keyed by input node IDs, so the post-gen
+# match_degree stage can use the input edgelist as ref directly.
+MATCH_DEGREE_ENABLE=1
+MATCH_DEGREE_ALGORITHM="hybrid"
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -26,6 +30,9 @@ while [[ "$#" -gt 0 ]]; do
         --outlier-mode) OUTLIER_MODE="$2"; shift ;;
         --drop-outlier-outlier-edges) DROP_OO_BOOL="true" ;;
         --keep-outlier-outlier-edges) DROP_OO_BOOL="false" ;;
+        --match-degree) MATCH_DEGREE_ENABLE=1 ;;
+        --no-match-degree) MATCH_DEGREE_ENABLE=0 ;;
+        --algorithm) MATCH_DEGREE_ALGORITHM="$2"; shift ;;
         *) echo "Unknown parameter passed: $1"; exit 1 ;;
     esac
     shift
@@ -54,6 +61,9 @@ GEN_CLI_ARGS=(
     --n-threads        "${N_THREADS}"
 )
 
+GEN_MATCH_DEGREE_ENABLE="${MATCH_DEGREE_ENABLE}"
+GEN_MATCH_DEGREE_ALGORITHM="${MATCH_DEGREE_ALGORITHM}"
+
 # Per-stage params.txt fingerprints (see _common/state.sh:write_params_file).
 # shellcheck disable=SC2034
 GEN_TOPLEVEL_PARAMS=(
@@ -61,6 +71,8 @@ GEN_TOPLEVEL_PARAMS=(
     "n_threads=${N_THREADS}"
     "outlier_mode=${OUTLIER_MODE}"
     "drop_outlier_outlier_edges=${DROP_OO_BOOL}"
+    "match_degree_enable=${MATCH_DEGREE_ENABLE}"
+    "match_degree_algorithm=${MATCH_DEGREE_ALGORITHM}"
 )
 # shellcheck disable=SC2034
 GEN_PROFILE_PARAMS=(
