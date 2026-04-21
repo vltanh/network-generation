@@ -9,6 +9,7 @@ import graph_tool.all as gt
 from scipy.sparse import dok_matrix
 
 from pipeline_common import standard_setup, timed, write_edge_tuples_csv
+from profile_common import read_outlier_mode
 from utils import normalize_edge, run_rewire_attempts
 
 
@@ -301,8 +302,12 @@ def parse_args():
     parser.add_argument(
         "--outlier-mode",
         type=str,
-        choices=["singleton", "combined"],
-        default="combined",
+        required=True,
+        help=(
+            "Path to outlier_mode.txt written by the profile stage. "
+            "The residual-SBM uses the mode there to place outlier edges "
+            "consistently with how the profile folded them."
+        ),
     )
     parser.add_argument(
         "--edge-correction",
@@ -323,11 +328,17 @@ def parse_args():
 
 def main():
     args = parse_args()
+    outlier_mode, _drop_oo = read_outlier_mode(args.outlier_mode)
+    if outlier_mode == "excluded":
+        raise SystemExit(
+            "ec-sbm v2 gen_outlier does not support --outlier-mode excluded; "
+            "if outliers are excluded, there are no outlier edges to generate."
+        )
     run_outlier_generation(
         args.orig_edgelist,
         args.orig_clustering,
         args.exist_edgelist,
-        args.outlier_mode,
+        outlier_mode,
         args.edge_correction,
         args.output_folder,
         args.seed,

@@ -180,8 +180,10 @@ FLAG_MATRIX = [
     ("npso", "--npso-dir", None, True),
     ("sbm", "--abcd-dir", None, False),
     ("ec-sbm-v2", "--abcd-dir", None, False),
-    # ec-sbm-v2 algorithm trio
-    ("ec-sbm-v2", "--outlier-mode", "combined", True),
+    # ec-sbm-v2 algorithm trio.  --outlier-mode is no longer in GEN_EXTRA_ARGS
+    # post-refactor: the profile stage's default (combined) applies, and
+    # generators/ec-sbm-v2.sh stays silent on outlier policy.
+    ("ec-sbm-v2", "--outlier-mode", None, False),
     ("ec-sbm-v2", "--edge-correction", "rewire", True),
     ("ec-sbm-v2", "--algorithm", "true_greedy", True),
     ("ec-sbm-v1", "--outlier-mode", None, False),

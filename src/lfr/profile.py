@@ -1,14 +1,14 @@
 """LFR profile: builds the inputs lfr/gen.py consumes.
 
-Output contract: degree.csv, cluster_sizes.csv, mixing_parameter.txt.
+Output contract: degree.csv, cluster_sizes.csv, mixing_parameter.txt,
+outlier_mode.txt.
 
-LFR treats true outliers implicitly as singletons (same cluster_sizes
-shape as ABCD).  Mixing parameter is the mean of per-node µ_i (not the
-global ratio).  numpy is pulled in by compute_mixing_parameter's lfr
-branch only — lazy-imported, so this module stays numpy-free at load time.
+LFR's default outlier policy is `(singleton, drop_oo=false)` — same
+cluster_sizes shape as ABCD. Mixing parameter is the mean of per-node µ_i
+(not the global ratio). numpy is pulled in lazily by
+compute_mixing_parameter's mean branch.
 
-Deps: stdlib + pandas at load time; numpy during setup_inputs (for the
-mixing parameter).  powerlaw is a dep of lfr/gen.py, not this module.
+Deps: stdlib + pandas at load time; numpy during setup_inputs.
 """
 from __future__ import annotations
 
@@ -16,39 +16,49 @@ import argparse
 
 from pipeline_common import standard_setup, timed
 from profile_common import (
+    OUTLIER_MODES,
+    apply_outlier_mode,
     compute_comm_size,
     compute_mixing_parameter,
     compute_node_degree,
-    export_cluster_sizes_with_singleton_outliers,
+    export_comm_size,
     export_degree,
     export_mixing_param,
+    export_outlier_mode,
+    identify_outliers,
     read_clustering,
     read_edgelist,
 )
 
 
-def setup_inputs(edgelist_path, clustering_path, output_dir):
+def setup_inputs(edgelist_path, clustering_path, output_dir,
+                 outlier_mode="singleton", drop_outlier_outlier_edges=False):
     output_dir = standard_setup(output_dir)
 
     with timed("Input reading"):
         nodes, node2com, cluster_counts = read_clustering(clustering_path)
         nodes, neighbors = read_edgelist(edgelist_path, nodes)
 
+    with timed("Outlier transform"):
+        outliers = identify_outliers(nodes, node2com, cluster_counts)
+        apply_outlier_mode(
+            nodes, node2com, cluster_counts, neighbors, outliers,
+            mode=outlier_mode,
+            drop_outlier_outlier_edges=drop_outlier_outlier_edges,
+        )
+
     with timed("Mappings computation"):
         node_deg_sorted, _ = compute_node_degree(nodes, neighbors)
         comm_size_sorted, _ = compute_comm_size(cluster_counts)
 
-    n_outliers = sum(1 for u in nodes if u not in node2com)
-
     with timed("Outputs export"):
         export_degree(output_dir, node_deg_sorted)
-        export_cluster_sizes_with_singleton_outliers(
-            output_dir, comm_size_sorted, n_outliers,
-        )
+        export_comm_size(output_dir, comm_size_sorted)
         mixing_param = compute_mixing_parameter(
-            nodes, neighbors, node2com, "lfr",
+            nodes, neighbors, node2com, reduction="mean",
         )
         export_mixing_param(output_dir, mixing_param)
+        export_outlier_mode(output_dir, outlier_mode, drop_outlier_outlier_edges)
 
 
 def parse_args():
@@ -56,12 +66,25 @@ def parse_args():
     parser.add_argument("--edgelist", type=str, required=True)
     parser.add_argument("--clustering", type=str, required=True)
     parser.add_argument("--output-folder", type=str, required=True)
+    parser.add_argument(
+        "--outlier-mode", choices=OUTLIER_MODES, default="singleton",
+    )
+    oo = parser.add_mutually_exclusive_group()
+    oo.add_argument("--drop-outlier-outlier-edges",
+                    dest="drop_oo", action="store_true")
+    oo.add_argument("--keep-outlier-outlier-edges",
+                    dest="drop_oo", action="store_false")
+    parser.set_defaults(drop_oo=False)
     return parser.parse_args()
 
 
 def main():
     args = parse_args()
-    setup_inputs(args.edgelist, args.clustering, args.output_folder)
+    setup_inputs(
+        args.edgelist, args.clustering, args.output_folder,
+        outlier_mode=args.outlier_mode,
+        drop_outlier_outlier_edges=args.drop_oo,
+    )
 
 
 if __name__ == "__main__":

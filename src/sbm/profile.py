@@ -1,11 +1,13 @@
 """SBM profile: builds the inputs sbm/gen.py consumes.
 
 Output contract (all written under --output-folder):
-    node_id.csv, cluster_id.csv, assignment.csv, degree.csv, edge_counts.csv
+    node_id.csv, cluster_id.csv, assignment.csv, degree.csv,
+    edge_counts.csv, outlier_mode.txt
 
-SBM folds true outliers into one mega-cluster so every edge (including
-outlier-outlier and clustered-outlier) is routed through the same block
-structure as the rest of the network.
+SBM's default outlier policy is `(combined, drop_oo=false)` — every true
+outlier folds into one mega-cluster (`__outliers__`) so every edge
+(including outlier-outlier and clustered-outlier) is routed through the
+same block structure as the rest of the network.
 
 Deps: stdlib + pandas (via profile_common + pipeline_common).
 """
@@ -15,6 +17,8 @@ import argparse
 
 from pipeline_common import standard_setup, timed
 from profile_common import (
+    OUTLIER_MODES,
+    apply_outlier_mode,
     compute_comm_size,
     compute_edge_count,
     compute_node_degree,
@@ -23,31 +27,28 @@ from profile_common import (
     export_degree,
     export_edge_count,
     export_node_id,
+    export_outlier_mode,
+    identify_outliers,
     read_clustering,
     read_edgelist,
 )
 
-OUTLIER_CLUSTER_ID = "__outliers__"
 
-
-def _fold_outliers_into_mega_cluster(nodes, node2com, cluster_counts):
-    """SBM routes outlier edges through the same block structure as the rest
-    of the network by folding true outliers into one mega-cluster."""
-    outliers = [u for u in nodes if u not in node2com]
-    if outliers:
-        for u in outliers:
-            node2com[u] = OUTLIER_CLUSTER_ID
-        cluster_counts[OUTLIER_CLUSTER_ID] = len(outliers)
-
-
-def setup_inputs(edgelist_path, clustering_path, output_dir):
+def setup_inputs(edgelist_path, clustering_path, output_dir,
+                 outlier_mode="combined", drop_outlier_outlier_edges=False):
     output_dir = standard_setup(output_dir)
 
     with timed("Input reading"):
         nodes, node2com, cluster_counts = read_clustering(clustering_path)
         nodes, neighbors = read_edgelist(edgelist_path, nodes)
 
-    _fold_outliers_into_mega_cluster(nodes, node2com, cluster_counts)
+    with timed("Outlier transform"):
+        outliers = identify_outliers(nodes, node2com, cluster_counts)
+        apply_outlier_mode(
+            nodes, node2com, cluster_counts, neighbors, outliers,
+            mode=outlier_mode,
+            drop_outlier_outlier_edges=drop_outlier_outlier_edges,
+        )
 
     with timed("Mappings computation"):
         node_deg_sorted, _node_id2iid = compute_node_degree(nodes, neighbors)
@@ -62,6 +63,7 @@ def setup_inputs(edgelist_path, clustering_path, output_dir):
             nodes, neighbors, node2com, cluster_id2iid,
         )
         export_edge_count(output_dir, edge_counts)
+        export_outlier_mode(output_dir, outlier_mode, drop_outlier_outlier_edges)
 
 
 def parse_args():
@@ -69,12 +71,25 @@ def parse_args():
     parser.add_argument("--edgelist", type=str, required=True)
     parser.add_argument("--clustering", type=str, required=True)
     parser.add_argument("--output-folder", type=str, required=True)
+    parser.add_argument(
+        "--outlier-mode", choices=OUTLIER_MODES, default="combined",
+    )
+    oo = parser.add_mutually_exclusive_group()
+    oo.add_argument("--drop-outlier-outlier-edges",
+                    dest="drop_oo", action="store_true")
+    oo.add_argument("--keep-outlier-outlier-edges",
+                    dest="drop_oo", action="store_false")
+    parser.set_defaults(drop_oo=False)
     return parser.parse_args()
 
 
 def main():
     args = parse_args()
-    setup_inputs(args.edgelist, args.clustering, args.output_folder)
+    setup_inputs(
+        args.edgelist, args.clustering, args.output_folder,
+        outlier_mode=args.outlier_mode,
+        drop_outlier_outlier_edges=args.drop_oo,
+    )
 
 
 if __name__ == "__main__":

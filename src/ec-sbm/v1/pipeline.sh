@@ -16,8 +16,12 @@ TIMEOUT="3d"
 N_THREADS=1
 KEEP_STATE=0
 SEED=1
+# EC-SBM v1 supports only outlier_mode=excluded: the pipeline generates the
+# outlier subnetwork separately in stage 3 and then combines it at stage 4,
+# so the profile stage must drop outliers (and size-1 input clusters, which
+# identify_outliers folds in automatically) rather than merging them.
+OUTLIER_MODE="excluded"
 
-# Parse named arguments
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         --input-edgelist) INPUT_EDGELIST="$2"; shift ;;
@@ -27,6 +31,12 @@ while [[ "$#" -gt 0 ]]; do
         --n-threads) N_THREADS="$2"; shift ;;
         --keep-state) KEEP_STATE=1 ;;
         --seed) SEED="$2"; shift ;;
+        --outlier-mode)
+            if [ "$2" != "excluded" ]; then
+                echo "Error: ec-sbm v1 only supports --outlier-mode excluded (got '$2')." >&2
+                exit 1
+            fi
+            shift ;;
         *) echo "Unknown parameter passed: $1"; exit 1 ;;
     esac
     shift
@@ -105,14 +115,15 @@ mkdir -p "${STG_PROFILE_DIR}" "${STG_GEN_CLUSTERED_DIR}" \
 echo "=== Starting Stage 1: Profile ==="
 
 IN_PROFILE="${INPUT_EDGELIST} ${INPUT_CLUSTERING}"
-OUT_PROFILE="${STG_PROFILE_DIR}/node_id.csv ${STG_PROFILE_DIR}/cluster_id.csv ${STG_PROFILE_DIR}/assignment.csv ${STG_PROFILE_DIR}/degree.csv ${STG_PROFILE_DIR}/mincut.csv ${STG_PROFILE_DIR}/edge_counts.csv ${STG_PROFILE_DIR}/com.csv"
+OUT_PROFILE="${STG_PROFILE_DIR}/node_id.csv ${STG_PROFILE_DIR}/cluster_id.csv ${STG_PROFILE_DIR}/assignment.csv ${STG_PROFILE_DIR}/degree.csv ${STG_PROFILE_DIR}/mincut.csv ${STG_PROFILE_DIR}/edge_counts.csv ${STG_PROFILE_DIR}/com.csv ${STG_PROFILE_DIR}/outlier_mode.txt"
 
 if ! is_step_done "${STG_PROFILE_DIR}/done" "${OUT_PROFILE}"; then
     run_stage "${STG_PROFILE_DIR}/time_and_err.log" \
         python "${COMMON_DIR}/profile.py" \
         --edgelist "${INPUT_EDGELIST}" \
         --clustering "${INPUT_CLUSTERING}" \
-        --output-folder "${STG_PROFILE_DIR}"
+        --output-folder "${STG_PROFILE_DIR}" \
+        --outlier-mode "${OUTLIER_MODE}"
     mark_done "${STG_PROFILE_DIR}/done" "Stage 1 (profile)" "${IN_PROFILE}" "${OUT_PROFILE}"
 else
     note_stage_skipped "${STG_PROFILE_DIR}/time_and_err.log"

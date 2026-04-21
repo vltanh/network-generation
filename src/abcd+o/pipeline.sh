@@ -12,6 +12,10 @@ SEED=1
 N_THREADS=1
 KEEP_STATE=0
 ABCD_DIR=""
+# ABCD+o default outlier policy: singleton + drop OO edges (the Julia outlier
+# sampler does not produce outlier-outlier edges; see src/abcd+o/gen.py).
+OUTLIER_MODE="singleton"
+DROP_OO="--drop-outlier-outlier-edges"
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -23,6 +27,9 @@ while [[ "$#" -gt 0 ]]; do
         --seed) SEED="$2"; shift ;;
         --n-threads) N_THREADS="$2"; shift ;;
         --keep-state) KEEP_STATE=1 ;;
+        --outlier-mode) OUTLIER_MODE="$2"; shift ;;
+        --drop-outlier-outlier-edges) DROP_OO="--drop-outlier-outlier-edges" ;;
+        --keep-outlier-outlier-edges) DROP_OO="--keep-outlier-outlier-edges" ;;
         *) echo "Unknown parameter passed: $1"; exit 1 ;;
     esac
     shift
@@ -42,13 +49,16 @@ SETUP="${OUTPUT_DIR}/.state/setup"
 
 GEN_NAME="abcd+o"
 GEN_SCRIPT_DIR="${SCRIPT_DIR}"
-GEN_PROFILE_OUTPUTS=(degree.csv cluster_sizes.csv mixing_parameter.txt n_outliers.txt)
+GEN_PROFILE_OUTPUTS=(degree.csv cluster_sizes.csv mixing_parameter.txt n_outliers.txt outlier_mode.txt)
+# shellcheck disable=SC2034
+GEN_PROFILE_CLI_ARGS=(--outlier-mode "${OUTLIER_MODE}" "${DROP_OO}")
 # shellcheck disable=SC2034
 GEN_CLI_ARGS=(
     --degree            "${SETUP}/degree.csv"
     --cluster-sizes     "${SETUP}/cluster_sizes.csv"
     --mixing-parameter  "${SETUP}/mixing_parameter.txt"
     --n-outliers        "${SETUP}/n_outliers.txt"
+    --outlier-mode      "${SETUP}/outlier_mode.txt"
     --abcd-dir          "${ABCD_DIR}"
 )
 
