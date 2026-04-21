@@ -87,15 +87,6 @@ After installing a generator's submodule, `run_generator.sh` picks it up automat
 
 ## Tests
 
-The test suite lives under `tests/` and is split by subsystem:
-
-- `tests/common` — state machine, per-stage params, profile/pipeline helpers (fast, no external tooling)
-- `tests/profile_py` — per-generator `profile.py` output contract (fast)
-- `tests/dispatcher` — `run_generator.sh` flag dispatch (fast, wrapper-only)
-- `tests/wrappers` — `--keep-state` wrapper contract (invokes pipelines)
-- `tests/simple_gens` — end-to-end runs for `sbm`, `abcd`, `abcd+o`, `lfr`, `npso`; skips gens whose externals aren't installed
-- `tests/ec_sbm` — end-to-end runs for `ec-sbm-v1` / `ec-sbm-v2`
-
 Activate the conda env that has the generator deps on `PATH` before running pipeline-level tests:
 
 ```bash
