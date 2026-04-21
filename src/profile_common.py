@@ -1,28 +1,11 @@
 """Generator-agnostic profiling primitives.
 
-Each generator has its own `profile.py` under `src/<gen>/` (and
-`src/ec-sbm/common/profile.py` for the v1+v2 shared ecsbm profile).
-Those modules compose the building blocks below to produce their
-generator-specific output set.
+Outlier handling is a two-step pipeline: `identify_outliers` then
+`apply_outlier_mode`. Downstream primitives see `(nodes, node2com,
+cluster_counts, neighbors)` with outlier semantics already baked in.
 
-Outlier handling is a two-step preprocessing pipeline applied to the
-output of `read_clustering` + `read_edgelist`:
-
-  A. `identify_outliers` — unified definition: an outlier is any node
-     that is unclustered OR assigned to a size-1 cluster. Mutates
-     `node2com`/`cluster_counts` in place to demote size-1 clusters
-     into the outlier pool.
-  B. `apply_outlier_mode` — orthogonal transform over two dimensions:
-       - mode ∈ {excluded, singleton, combined} (cluster shape)
-       - drop_outlier_outlier_edges (OO-edge handling)
-
-After these two steps, the remaining profile primitives see a clean
-`(nodes, node2com, cluster_counts, neighbors)` whose outlier semantics
-are already baked in; mu, edge counts, mincut etc. are generator-only.
-
-Deps: stdlib + pandas only.  numpy is pulled in lazily inside the
-lfr mixing-parameter branch (the only numpy call site in profiling);
-pymincut lives with the ec-sbm profile module, not here.
+Deps: stdlib + pandas. numpy is lazy-imported inside the lfr mixing
+branch; pymincut lives in the ec-sbm profile module.
 """
 from __future__ import annotations
 
@@ -41,14 +24,7 @@ COMBINED_OUTLIER_CLUSTER_ID = "__outliers__"
 # ---------------------------------------------------------------------------
 
 def read_clustering(clustering_path):
-    """
-    Read a clustering CSV and return node membership structures.
-
-    Returns:
-        nodes: Set of node IDs that appear in the clustering.
-        node2com: Dict mapping node_id (str) to cluster_id (str).
-        cluster_counts: Dict mapping cluster_id to its member count.
-    """
+    """Read clustering CSV → (nodes, node2com, cluster_counts)."""
     df = pd.read_csv(clustering_path, usecols=[0, 1], dtype=str).dropna()
 
     node2com = dict(zip(df.iloc[:, 0], df.iloc[:, 1]))
@@ -59,21 +35,16 @@ def read_clustering(clustering_path):
 
 
 def read_edgelist(edgelist_path, nodes):
-    """
-    Read an edgelist CSV into a bidirectional adjacency structure.
+    """Read edgelist CSV into a bidirectional adjacency.
 
-    Self-loops are ignored.  `nodes` is extended in-place with any network
-    nodes that were absent from the clustering (true outliers).
-
-    Returns:
-        nodes: Updated set containing all nodes in clustering ∪ edgelist.
-        neighbors: defaultdict(set) of undirected adjacency lists.
+    Self-loops ignored. `nodes` is extended with nodes absent from the
+    clustering (true outliers).
     """
     neighbors = defaultdict(set)
     df = pd.read_csv(edgelist_path, usecols=[0, 1], dtype=str).dropna()
 
     for u, v in zip(df.iloc[:, 0], df.iloc[:, 1]):
-        if u != v:  # Ignore self-loops
+        if u != v:
             neighbors[u].add(v)
             neighbors[v].add(u)
             nodes.add(u)
@@ -87,18 +58,10 @@ def read_edgelist(edgelist_path, nodes):
 # ---------------------------------------------------------------------------
 
 def identify_outliers(nodes, node2com, cluster_counts):
-    """Unified outlier identification — Step A of the profile pipeline.
+    """Outlier = unclustered OR in a size-1 cluster.
 
-    An outlier is any node that is unclustered OR assigned to a size-1
-    cluster in the input. `node2com` and `cluster_counts` are mutated in
-    place: every size-1 cluster is removed from `cluster_counts`, and its
-    member node is removed from `node2com`. After this call, downstream
-    code sees a single pool of unclustered nodes (unclustered-in-input ∪
-    formerly-size-1-clustered), which is the input `apply_outlier_mode`
-    expects.
-
-    Returns:
-        outliers: set of outlier node IDs.
+    Mutates node2com/cluster_counts in place: size-1 clusters are removed;
+    their members migrate into the outlier pool. Returns the outlier set.
     """
     outliers = {u for u in nodes if u not in node2com}
     singleton_clusters = [c for c, sz in cluster_counts.items() if sz == 1]
@@ -113,27 +76,14 @@ def identify_outliers(nodes, node2com, cluster_counts):
 
 def apply_outlier_mode(nodes, node2com, cluster_counts, neighbors, outliers,
                        mode, drop_outlier_outlier_edges=False):
-    """Transform profile inputs per the chosen outlier mode — Step B.
-
-    `outliers` is the set returned by `identify_outliers` (all nodes that
-    are neither in a surviving multi-member cluster). This function
-    mutates `nodes`, `node2com`, `cluster_counts`, and `neighbors` in
-    place.
-
-    If `drop_outlier_outlier_edges` is True, every outlier-outlier edge
-    is pruned from `neighbors` first. This is a no-op under `excluded`
-    mode (where OO edges are dropped anyway along with the outliers).
+    """Transform profile inputs per outlier mode. Mutates in place.
 
     Modes:
-      - excluded:  drop outliers from `nodes`; drop every edge incident
-                   to an outlier from `neighbors`. Profile sees a strictly
-                   clustered subgraph.
-      - singleton: give each outlier its own fresh cluster id of the form
-                   `__outlier_<nodeid>__`, size 1. Every edge incident to
-                   an outlier is inter-cluster.
-      - combined:  fold all outliers into one shared cluster id
-                   (`__outliers__`) of size |outliers|. Outlier-outlier
-                   edges become intra-cluster.
+      - excluded:  drop outliers and every incident edge.
+      - singleton: each outlier gets a fresh `__outlier_<id>__` cluster.
+      - combined:  fold outliers into one `__outliers__` cluster.
+
+    `drop_outlier_outlier_edges` prunes OO edges first (no-op under excluded).
     """
     if mode not in OUTLIER_MODES:
         raise ValueError(
@@ -169,11 +119,7 @@ def apply_outlier_mode(nodes, node2com, cluster_counts, neighbors, outliers,
 # ---------------------------------------------------------------------------
 
 def compute_node_degree(nodes, neighbors):
-    """Return nodes sorted by degree descending and a node_id → iid mapping.
-
-    Tie-break on node id ascending so the output is stable across processes
-    (iteration over a Python set depends on PYTHONHASHSEED).
-    """
+    """Nodes sorted by degree desc (tie-break on id asc), and node_id → iid."""
     node_degree_sorted = sorted(
         ((u, len(neighbors[u])) for u in nodes), key=lambda x: (-x[1], x[0])
     )
@@ -182,10 +128,7 @@ def compute_node_degree(nodes, neighbors):
 
 
 def compute_comm_size(cluster_counts):
-    """Return clusters sorted by size descending and a cluster_id → iid mapping.
-
-    Tie-break on cluster id ascending for cross-process stability.
-    """
+    """Clusters sorted by size desc (tie-break on id asc), and cluster_id → iid."""
     comm_size_sorted = sorted(
         cluster_counts.items(), key=lambda x: (-x[1], x[0])
     )
@@ -194,28 +137,23 @@ def compute_comm_size(cluster_counts):
 
 
 # ---------------------------------------------------------------------------
-# Exporters — pass-through dumps of the precomputed structures
+# Exporters
 # ---------------------------------------------------------------------------
 
 def export_node_id(out_dir, node_degree_sorted):
-    """Write node IDs in degree-descending order to node_id.csv (no header)."""
     pd.DataFrame([u for u, _ in node_degree_sorted]).to_csv(
         f"{out_dir}/node_id.csv", index=False, header=False
     )
 
 
 def export_cluster_id(out_dir, comm_size_sorted):
-    """Write cluster IDs in size-descending order to cluster_id.csv (no header)."""
     pd.DataFrame([c for c, _ in comm_size_sorted]).to_csv(
         f"{out_dir}/cluster_id.csv", index=False, header=False
     )
 
 
 def export_assignment(out_dir, node_degree_sorted, node2com, cluster_id2iid):
-    """
-    Write per-node cluster iid to assignment.csv (no header).
-    Unclustered nodes (true outliers) are assigned -1.
-    """
+    """Per-node cluster iid; unclustered nodes → -1."""
     assignments = [
         cluster_id2iid[node2com.get(u)] if u in node2com else -1
         for u, _ in node_degree_sorted
@@ -226,39 +164,29 @@ def export_assignment(out_dir, node_degree_sorted, node2com, cluster_id2iid):
 
 
 def export_degree(out_dir, node_degree_sorted):
-    """Write per-node degree values (aligned with node_id.csv order) to degree.csv."""
     pd.DataFrame([deg for _, deg in node_degree_sorted]).to_csv(
         f"{out_dir}/degree.csv", index=False, header=False
     )
 
 
 def export_comm_size(out_dir, comm_size_sorted):
-    """Write cluster sizes (aligned with cluster_id.csv order) to cluster_sizes.csv."""
     pd.DataFrame([size for _, size in comm_size_sorted]).to_csv(
         f"{out_dir}/cluster_sizes.csv", index=False, header=False
     )
 
 
 def export_mixing_param(out_dir, mixing_param):
-    """Write the scalar mixing parameter to mixing_parameter.txt."""
     with open(f"{out_dir}/mixing_parameter.txt", "w") as f:
         f.write(str(mixing_param))
 
 
 def export_n_outliers(out_dir, n_outliers):
-    """Write the scalar outlier count to n_outliers.txt."""
     with open(f"{out_dir}/n_outliers.txt", "w") as f:
         f.write(str(n_outliers))
 
 
 def export_com_csv(out_dir, node2com):
-    """Write node_id,cluster_id pairs to com.csv in input-clustering row order.
-
-    `node2com` is built from `dict(zip(...))` over the input CSV and (for ecsbm)
-    pruned in place by the pre-profile hook, so iteration order traces back to
-    the input file's row order. Matches the pass-through convention used by
-    sbm/abcd/abcd+o/lfr/npso, which preserve their source's row order.
-    """
+    """Write node_id,cluster_id in input-clustering row order."""
     pd.DataFrame(node2com.items(), columns=["node_id", "cluster_id"]).to_csv(
         f"{out_dir}/com.csv", index=False
     )
@@ -269,11 +197,8 @@ def export_com_csv(out_dir, node2com):
 # ---------------------------------------------------------------------------
 
 def compute_edge_count(nodes, neighbors, node2com, cluster_id2iid):
-    """
-    Count directed inter-cluster edge occurrences for every cluster pair (c_i, c_j).
-
-    Both directions are counted independently (probs[i,j] and probs[j,i]),
-    matching the dok_matrix convention used by gen_clustered.py.
+    """Directed inter-cluster edge counts per (c_i, c_j). Both directions
+    counted independently (matches the dok_matrix convention in gen_clustered).
     Edges incident to unclustered nodes are ignored.
     """
     edge_counts = defaultdict(int)
@@ -292,11 +217,7 @@ def compute_edge_count(nodes, neighbors, node2com, cluster_id2iid):
 
 
 def export_edge_count(out_dir, edge_counts):
-    """Write (row, col, weight) triples to edge_counts.csv (no header).
-
-    Rows are sorted by (row iid, col iid) so the output is stable regardless
-    of dict insertion order (which reflects the upstream node-iteration order).
-    """
+    """(row, col, weight) triples, sorted by (row, col) for stability."""
     data = [[r, c, w] for (r, c), w in sorted(edge_counts.items())]
     pd.DataFrame(data).to_csv(f"{out_dir}/edge_counts.csv", index=False, header=False)
 
@@ -306,20 +227,11 @@ def export_edge_count(out_dir, edge_counts):
 # ---------------------------------------------------------------------------
 
 def compute_mixing_parameter(nodes, neighbors, node2com, reduction):
-    """Compute the empirical mixing parameter over (nodes, neighbors, node2com).
+    """Empirical mixing parameter.
 
-    The outlier semantics (mode + drop_oo) are already baked into the inputs
-    by `apply_outlier_mode`; this function is a clean pass that differs only
-    in how it reduces per-node counts to a scalar:
-
-      reduction="mean"   — mean of per-node µ_i = out_i / (in_i + out_i),
-                           skipping 0-degree nodes. Matches LFR's convention.
-      reduction="global" — global ξ = Σ_out / Σ_total. Matches ABCD/ABCD+o.
-
-    Nodes not present in `node2com` (can happen under `excluded` mode where
-    outliers have been dropped) are skipped implicitly — `neighbors` no
-    longer references them. Under `singleton`/`combined`, every node is in
-    `node2com` so every edge is counted.
+      reduction="mean"   — mean per-node µ_i = out_i / (in_i + out_i),
+                           skipping 0-degree. LFR convention.
+      reduction="global" — global ξ = Σ_out / Σ_total. ABCD/ABCD+o convention.
     """
     if reduction not in ("mean", "global"):
         raise ValueError(

@@ -86,29 +86,23 @@ def match_missing_degrees_random_greedy(out_degs, exist_neighbor):
     degree_edges = set()
     stuck_nodes = set()
 
-    # Loop until no nodes are left to pair
     while available_nodes:
-        # 1. Pick 'u' randomly, weighted by its remaining missing degree
         weights = [available_degrees[n] for n in available_nodes]
         u = random.choices(available_nodes, weights=weights, k=1)[0]
 
-        # 2. Dynamically filter for legally valid targets
         invalid_targets = exist_neighbor.get(u, set())
         valid_targets = [
             n for n in available_nodes if n != u and n not in invalid_targets
         ]
 
-        # 3. If gridlocked, mark as stuck and remove from pool
         if not valid_targets:
             available_nodes.remove(u)
             stuck_nodes.add(u)
             continue
 
-        # 4. Pick 'v' randomly from valid targets, weighted by its remaining missing degree
         v_weights = [available_degrees[n] for n in valid_targets]
         v = random.choices(valid_targets, weights=v_weights, k=1)[0]
 
-        # 5. Add the edge and update the topology
         degree_edges.add((min(u, v), max(u, v)))
         exist_neighbor[u].add(v)
         exist_neighbor[v].add(u)
@@ -116,7 +110,6 @@ def match_missing_degrees_random_greedy(out_degs, exist_neighbor):
         available_degrees[u] -= 1
         available_degrees[v] -= 1
 
-        # 6. Remove nodes from the active pool if their degrees are fulfilled
         if available_degrees[u] == 0:
             available_nodes.remove(u)
         if available_degrees[v] == 0:
@@ -181,7 +174,6 @@ def match_missing_degrees_greedy(out_degs, exist_neighbor):
 def match_missing_degrees_true_greedy(out_degs, exist_neighbor):
     logging.info("Starting True Dynamic Greedy matching algorithm...")
 
-    # Track the real-time degree of each node
     current_degrees = {n: d for n, d in out_degs.items() if d > 0}
 
     initial_missing_stubs = sum(current_degrees.values())
@@ -189,7 +181,6 @@ def match_missing_degrees_true_greedy(out_degs, exist_neighbor):
         f"Initial missing stubs: {initial_missing_stubs} (Target edges: {initial_missing_stubs // 2})"
     )
 
-    # Initial heap population
     heap = [(-deg, n) for n, deg in current_degrees.items()]
     heapq.heapify(heap)
 
@@ -200,35 +191,29 @@ def match_missing_degrees_true_greedy(out_degs, exist_neighbor):
         neg_deg, u = heapq.heappop(heap)
         deg_u = -neg_deg
 
-        # Lazy Deletion: Ignore stale heap entries
+        # Lazy deletion: skip stale heap entries.
         if u not in current_degrees or deg_u != current_degrees[u]:
             continue
 
-        # Dynamically filter for legally valid targets
         invalid_targets = exist_neighbor.get(u, set())
         valid_targets = [
             n for n in current_degrees if n != u and n not in invalid_targets
         ]
 
         if not valid_targets:
-            # Node is structurally gridlocked
             stuck_nodes.add(u)
             del current_degrees[u]
             continue
 
-        # TRUE GREEDY: Pick the valid target 'v' that has the HIGHEST remaining degree
         v = max(valid_targets, key=lambda x: current_degrees[x])
 
-        # Make the edge
         degree_edges.add((min(u, v), max(u, v)))
         exist_neighbor[u].add(v)
         exist_neighbor[v].add(u)
 
-        # Update real-time degrees
         current_degrees[u] -= 1
         current_degrees[v] -= 1
 
-        # Push updated states back onto the heap (if they still need edges)
         if current_degrees[u] > 0:
             heapq.heappush(heap, (-current_degrees[u], u))
         else:
@@ -249,27 +234,11 @@ def match_missing_degrees_true_greedy(out_degs, exist_neighbor):
 
 
 def match_missing_degrees_rewire(out_degs, exist_neighbor, max_retries=10):
-    """
-    Configuration-model degree matcher: build stubs, pair randomly, rewire conflicts.
+    """Configuration-model pairing + 2-opt rewire for conflicts.
 
-    Constructs a stub list where each node appears `out_degs[node]` times,
-    shuffles it uniformly, and pairs consecutive stubs into candidate edges.
-    Candidates that are self-loops, duplicates, or already-existing neighbor
-    pairs are queued for rewiring.  Each rewiring attempt picks a random valid
-    edge and tries a 2-opt swap; if the valid pool is exhausted the inner pass
-    ends early.
-
-    Args:
-        out_degs (dict): Maps node iid to the number of edges still required.
-        exist_neighbor (dict): Maps node iid to the set of already-connected
-            neighbors (used to prevent multi-edges with pre-existing topology).
-        max_retries (int): Number of rewiring passes before giving up.
-
-    Returns:
-        Tuple (valid_edges: set of (min, max) tuples,
-               invalid_edges: list of unresolved (min, max) tuples).
-        Callers that need a fallback (e.g. match_missing_degrees_hybrid) use
-        the returned invalid_edges to continue with a deterministic algorithm.
+    Returns (valid_edges, invalid_edges). Self-loops, duplicates, and
+    pre-existing neighbors are queued for rewiring; hybrid caller falls
+    back to true-greedy on whatever remains invalid.
     """
     logging.info("Starting Rewire (Configuration Model) matching algorithm...")
 
@@ -307,22 +276,14 @@ def match_missing_degrees_rewire(out_degs, exist_neighbor, max_retries=10):
     valid_pool = list(valid_edges)
 
     def is_valid(e):
-        """Return True if e is a non-self-loop, not already placed, and not a pre-existing neighbor pair."""
         u, v = e
         return u != v and e not in valid_edges and v not in exist_neighbor.get(u, set())
 
     def process_one_edge(e1, invalid_edges):
-        """
-        Attempt one 2-opt swap of invalid edge e1 against a random valid edge.
-
-        Tries both endpoint pairings (50/50) and commits the swap if both
-        new edges pass is_valid.  Re-appends e1 if the swap fails.
-        Returns True to break the inner pass when valid_pool is exhausted,
-        False to continue.
-        """
+        """2-opt swap e1 against a random valid edge. Returns True to break outer pass."""
         if not valid_pool:
             invalid_edges.append(e1)
-            return True  # break inner pass
+            return True
 
         idx = random.randrange(len(valid_pool))
         e2 = valid_pool[idx]
@@ -346,7 +307,7 @@ def match_missing_degrees_rewire(out_degs, exist_neighbor, max_retries=10):
         else:
             invalid_edges.append(e1)
 
-        return False  # continue inner pass
+        return False
 
     run_rewire_attempts(invalid_edges, process_one_edge, max_retries)
     if invalid_edges:
@@ -359,7 +320,6 @@ def match_missing_degrees_rewire(out_degs, exist_neighbor, max_retries=10):
 def match_missing_degrees_hybrid(out_degs, exist_neighbor):
     logging.info("Starting Hybrid (Rewire -> True Greedy) matching algorithm...")
 
-    # 1. Extract maximally unbiased connections via Configuration Model
     valid_edges, invalid_edges = match_missing_degrees_rewire(
         out_degs, exist_neighbor, max_retries=10
     )
@@ -372,7 +332,6 @@ def match_missing_degrees_hybrid(out_degs, exist_neighbor):
         f"({len(invalid_edges) * 2} stubs) to True Greedy deterministic fallback."
     )
 
-    # 2. Reconstruct the residual unfulfilled degree distribution
     remaining_out_degs = {n: 0 for n in out_degs.keys()}
     for u, v in invalid_edges:
         remaining_out_degs[u] += 1
@@ -380,12 +339,10 @@ def match_missing_degrees_hybrid(out_degs, exist_neighbor):
 
     remaining_out_degs = {n: d for n, d in remaining_out_degs.items() if d > 0}
 
-    # 3. Inject successfully paired configurations to prevent multigraph collisions
     for u, v in valid_edges:
         exist_neighbor[u].add(v)
         exist_neighbor[v].add(u)
 
-    # 4. Enforce structural convergence on the remaining stubs
     greedy_edges = match_missing_degrees_true_greedy(remaining_out_degs, exist_neighbor)
 
     return valid_edges.union(greedy_edges)

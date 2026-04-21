@@ -53,8 +53,7 @@ def _ccoeff_from_edges(edges_df):
 
 
 def _matlab_subprocess_script(n_threads):
-    """Bash one-liner: load matlab via lmod if not in PATH, then run the
-    inner MATLAB command passed as $1."""
+    """Bash one-liner: lmod-load matlab if needed, then run inner MATLAB cmd as $1."""
     single_flag = "-singleCompThread " if n_threads == 1 else ""
     return (
         "if ! command -v matlab >/dev/null 2>&1; then "
@@ -66,15 +65,9 @@ def _matlab_subprocess_script(n_threads):
 
 
 class SubprocessRunner:
-    """Spawns a fresh `matlab` per iteration.
+    """Spawns a fresh `matlab` per iter. Fallback when matlab.engine is absent.
 
-    Backup path. Used when matlab.engine for Python is not installed, or as
-    a per-iter fallback when an engine call fails.
-
-    run_iter() writes {prefix}_edge.tsv / {prefix}_com.tsv via the MATLAB
-    script, then reads them back into DataFrames. The TSVs live in a
-    caller-supplied scratch dir so the main loop doesn't have to clean
-    them up individually.
+    Writes {prefix}_edge.tsv / {prefix}_com.tsv and reads them back.
     """
 
     def __init__(self, n_threads, npso_dir_abs, matlab_wrapper_dir):
@@ -99,15 +92,12 @@ class SubprocessRunner:
         edge_path = Path(f"{prefix}edge.tsv")
         com_path = Path(f"{prefix}com.tsv")
         if not edge_path.exists() or not com_path.exists():
-            # No TSVs means MATLAB caught an error via the try/catch above
-            # and printed e.message on stdout; preserve it for diagnostics.
             tail = (proc.stdout or "").strip().splitlines()[-5:]
             self.last_error = "\n".join(tail) or "unknown MATLAB failure (no TSVs produced)"
             logging.error(f"MATLAB iter failed (subprocess): {self.last_error}")
             return None
         edge_df = pd.read_csv(edge_path, sep="\t", header=None, names=["source", "target"])
         com_df = pd.read_csv(com_path, sep="\t", header=None, names=["node_id", "cluster_id"])
-        # Clean up the scratch TSVs — their data is now in memory.
         _safe_remove(edge_path)
         _safe_remove(com_path)
         return edge_df, com_df
@@ -117,13 +107,10 @@ class SubprocessRunner:
 
 
 class EngineRunner:
-    """One persistent MATLAB session shared by every bisection iter.
+    """Persistent MATLAB session; returns edges/comm matrices directly (no TSV).
 
-    run_iter() returns the edges/comm matrices directly from MATLAB — no
-    TSV write/read round-trip. On a per-iter MATLAB error logs and returns
-    None; the main loop treats that as a failed iter and can retry via
-    SubprocessRunner. On engine start/path-setup failure raises so
-    make_runner() can downgrade the whole run.
+    Per-iter MATLAB error returns None (main loop may retry via subprocess).
+    Engine-start failure raises so make_runner() can downgrade the whole run.
     """
 
     def __init__(self, n_threads, npso_dir_abs, matlab_wrapper_dir):
@@ -170,8 +157,7 @@ class EngineRunner:
 
 
 def make_runner(n_threads, npso_dir_abs, matlab_wrapper_dir):
-    """Prefer the persistent engine; silently fall back to subprocess if
-    matlab.engine isn't installed or the engine fails to start."""
+    """Engine if available, else subprocess fallback."""
     if not _engine_available():
         logging.info(
             "matlab.engine for Python not available "
@@ -215,9 +201,8 @@ def run_npso_generation(
         logging.info(f"N={N} m={m} gamma={gamma} c={c} target_ccoeff={target_global_ccoeff}")
 
     min_T, max_T = 0.0, 1.0
-    # Signed residuals f(T) = ccoeff(T) - target at the bracket endpoints,
-    # measured lazily from the last iter that landed there. Populated as
-    # we go; secant step only fires once both are known with opposite signs.
+    # Signed residuals f(T) = ccoeff(T) - target at bracket endpoints.
+    # Secant fires only once both are known with opposite signs.
     f_min_T, f_max_T = None, None
     best_T = None
     best_edge_df = None
@@ -229,7 +214,7 @@ def run_npso_generation(
     npso_dir_abs = Path(npso_dir).resolve()
     matlab_wrapper_dir = (Path(__file__).resolve().parent / "matlab")
 
-    # --- Resumability: replay prior iters from search_log.json -------------
+    # Resume: replay prior iters from search_log.json
     inputs_sha256 = _input_hash(N, m, gamma, c, target_global_ccoeff, seed)
     search_log_path = output_dir / SEARCH_LOG_NAME
     iter_records = _load_search_log(search_log_path, inputs_sha256)
@@ -254,8 +239,6 @@ def run_npso_generation(
             f_min_T = f_T
         prev_global_ccoeff = cc_r
         global_ccoeff = cc_r
-        # Mirror the in-loop early-exit predicates so resume doesn't
-        # redo work the prior run would have skipped.
         if best_diff is not None and best_diff < 0.005:
             converged_in_replay = True
             break
@@ -267,19 +250,14 @@ def run_npso_generation(
             f"Resuming from search_log.json: replayed {len(iter_records)} iter(s); "
             f"start_iter={start_iter} best_T={best_T} best_ccoeff={best_global_ccoeff}"
         )
-    # --------------------------------------------------------------------
 
     runner = make_runner(n_threads, npso_dir_abs, matlab_wrapper_dir)
     fallback = None
 
-    # Scratch dir for SubprocessRunner's {prefix}_{edge,com}.tsv files —
-    # EngineRunner returns in memory so nothing lands here in that path.
     with tempfile.TemporaryDirectory(prefix="npso_scratch_", dir=output_dir) as scratch_str:
         scratch_dir = Path(scratch_str)
         try:
-            # If we resumed with a best_T but no matrices in memory, re-run
-            # it once to restore them. Cheaper than persisting adj/comm to
-            # disk in phase B's in-memory model.
+            # Resume case: replay recovered best_T but not the matrices — re-run once.
             if best_T is not None and best_edge_df is None:
                 logging.info(f"Re-running best_T={best_T} to restore matrices post-resume.")
                 prefix = scratch_dir / f"resume_{best_T:.5f}_"
@@ -349,8 +327,7 @@ def run_npso_generation(
                         break
 
                     if global_ccoeff is not None:
-                        # ccoeff is decreasing in T. f(T) = ccoeff(T) - target.
-                        # f > 0 ⇒ need higher T (raise min_T); f < 0 ⇒ lower T (lower max_T).
+                        # ccoeff decreasing in T. f>0 ⇒ raise min_T; f<0 ⇒ lower max_T.
                         f_T = global_ccoeff - target_global_ccoeff
                         if f_T < 0:
                             max_T = T
@@ -364,7 +341,6 @@ def run_npso_generation(
                 fallback.close()
 
     if best_T is None or best_edge_df is None:
-        # Prefer the fallback's error when present — it's the later attempt.
         last = (
             getattr(fallback, "last_error", None) if fallback is not None else None
         ) or getattr(runner, "last_error", None)
@@ -373,7 +349,7 @@ def run_npso_generation(
             msg += f" Last MATLAB error:\n{last}"
         raise RuntimeError(msg)
 
-    # Drop outlier bucket (cluster_id == 1 matches synnet convention), then singletons.
+    # cluster_id == 1 is nPSO's outlier bucket.
     final_com = drop_singleton_clusters(best_com_df[best_com_df["cluster_id"] > 1])
 
     best_edge_df.to_csv(output_dir / "edge.csv", index=False)
@@ -390,8 +366,7 @@ def _safe_remove(p):
 
 
 def _input_hash(N, m, gamma, c, target_ccoeff, seed):
-    """Stable digest of the derived search inputs — if any of these change
-    between runs, the log must be discarded."""
+    """Digest of search inputs; mismatch invalidates the log."""
     payload = json.dumps(
         {"N": int(N), "m": int(m), "gamma": float(gamma),
          "c": int(c), "target": float(target_ccoeff), "seed": int(seed)},
@@ -401,11 +376,7 @@ def _input_hash(N, m, gamma, c, target_ccoeff, seed):
 
 
 def _load_search_log(log_path, expected_hash):
-    """Read the search log. Returns the list of per-iter records if the
-    file exists, parses cleanly, and matches `expected_hash`; else removes
-    it and returns []. Crash-safety comes from `_write_search_log`'s
-    atomic os.replace — so either we see a fully-valid prior file or we
-    see the pre-replace file, never a truncated one."""
+    """Return replayable iter records, or [] if missing/incompatible (deletes stale)."""
     if not log_path.exists():
         return []
     try:
@@ -424,9 +395,7 @@ def _load_search_log(log_path, expected_hash):
 
 
 def _write_search_log(log_path, inputs_sha256, iters):
-    """Atomically persist the full header+iters document. Writes to a
-    sibling tempfile under the same dir (so `os.replace` is a same-filesystem
-    rename) then swaps it in."""
+    """Atomic write via sibling tempfile + os.replace (same-fs rename)."""
     doc = {"inputs_sha256": inputs_sha256, "iters": iters}
     tmp = log_path.with_suffix(log_path.suffix + ".tmp")
     with tmp.open("w") as f:
@@ -435,24 +404,16 @@ def _write_search_log(log_path, inputs_sha256, iters):
 
 
 def _next_T(min_T, max_T, f_min_T, f_max_T):
-    """Pick the next T to evaluate.
-
-    Secant when both endpoints have signed residuals and they straddle
-    zero; otherwise midpoint. Clamp near-boundary secant picks back to
-    the midpoint so we don't collapse the bracket.
-    """
+    """Secant when both endpoint residuals are known with opposite signs; else midpoint."""
     mid = min_T + (max_T - min_T) / 2
     if f_min_T is None or f_max_T is None:
         return mid
     if f_min_T * f_max_T > 0:
-        # Same sign — bracket invalid (shouldn't happen given how we
-        # update bounds, but stay safe). Fall back to midpoint.
         return mid
     denom = f_max_T - f_min_T
     if denom == 0:
         return mid
     T_sec = min_T - f_min_T * (max_T - min_T) / denom
-    # Guard against degenerate secant steps that hug the edge.
     margin = 0.05 * (max_T - min_T)
     if T_sec <= min_T + margin or T_sec >= max_T - margin:
         return mid

@@ -12,10 +12,7 @@ from pipeline_common import standard_setup, timed, write_edge_tuples_csv
 from params_common import read_params, resolve_param
 from utils import normalize_edge, run_rewire_attempts
 
-# Gen-outlier's default outlier policy is independent of the profile stage:
-# the residual-SBM folds all outliers into one combined block by default.
-# Override per-invocation with --outlier-mode (CLI) or via --params-file
-# (pipeline-supplied fingerprint).
+# Gen-outlier's default is independent of the profile stage.
 DEFAULT_OUTLIER_MODE = "combined"
 
 
@@ -137,23 +134,10 @@ def prepare_residual_sbm_inputs(
 
 
 def rewire_invalid_edges(g, b, max_retries=10):
-    """
-    Fix self-loops and multi-edges in graph g via 2-opt block-preserving rewiring.
+    """2-opt block-preserving rewiring of self-loops/multi-edges.
 
-    Edges are grouped into pools by block pair bp = (min_block, max_block).
-    For each invalid edge, a random valid edge from the same block pair is
-    chosen and the two edges are 2-opt swapped while preserving block membership
-    for both endpoints.  Edges that cannot be resolved within max_retries passes
-    are dropped from the output.
-
-    Args:
-        g: graph_tool Graph whose edge set may contain self-loops or duplicates.
-        b: integer array where b[v] is the block index of vertex v.
-        max_retries (int): Number of rewiring passes before giving up.
-
-    Returns:
-        List of normalized (min, max) edge tuples, free of self-loops and
-        duplicates.
+    Groups edges by (min_block, max_block) pair; swaps within a pair so each
+    endpoint stays in its original block. Unresolved after max_retries are dropped.
     """
     edges = g.get_edges()
     valid_pool = defaultdict(list)
@@ -175,21 +159,14 @@ def rewire_invalid_edges(g, b, max_retries=10):
     logging.info(f"Initial bad edges before rewiring: {len(invalid_edges)}")
 
     def process_one_edge(raw_edge, invalid_edges):
-        """
-        Attempt one 2-opt block-preserving swap for raw_edge.
-
-        Picks a random valid edge from the same block pair and swaps endpoints
-        so that both new edges cross the same two blocks.  Re-appends raw_edge
-        if the block pair pool is empty or the swap would produce a duplicate.
-        Always returns False (continue the inner pass).
-        """
+        """2-opt block-preserving swap for raw_edge. Returns False (always continue)."""
         u, v = raw_edge
         bp = get_bp(u, v)
         pool = valid_pool[bp]
 
         if not pool:
             invalid_edges.append((u, v))
-            return False  # continue inner pass
+            return False
 
         idx = random.randrange(len(pool))
         x, y = pool[idx]
@@ -225,7 +202,7 @@ def rewire_invalid_edges(g, b, max_retries=10):
         else:
             invalid_edges.append((u, v))
 
-        return False  # always continue inner pass
+        return False
 
     run_rewire_attempts(invalid_edges, process_one_edge, max_retries)
     if invalid_edges:
@@ -310,36 +287,18 @@ def parse_args():
         type=str,
         choices=["combined", "singleton"],
         default=None,
-        help=(
-            "How the residual-SBM places outliers: 'combined' folds all "
-            "outliers into one block (default); 'singleton' makes each outlier "
-            "its own size-1 block.  Overrides any value in --params-file."
-        ),
+        help="'combined' folds outliers into one block; 'singleton' one block each.",
     )
-    parser.add_argument(
-        "--params-file",
-        type=str,
-        default=None,
-        help=(
-            "Optional path to a params.txt (key=value per line). "
-            "Used when the CLI flag is not given — pipeline invocations rely on "
-            "this so cache invalidation tracks the file's hash."
-        ),
-    )
+    parser.add_argument("--params-file", type=str, default=None)
     parser.add_argument(
         "--edge-correction",
         type=str,
         choices=["drop", "rewire"],
         default="rewire",
-        help="'drop' removes bad edges (faster but alters degree), 'rewire' swaps them (preserves degree).",
+        help="'drop' removes bad edges (alters degree); 'rewire' swaps them (preserves degree).",
     )
     parser.add_argument("--output-folder", type=str, required=True)
-    parser.add_argument(
-        "--seed",
-        type=int,
-        default=1,
-        help="RNG seed for numpy/random/graph-tool",
-    )
+    parser.add_argument("--seed", type=int, default=1)
     return parser.parse_args()
 
 
@@ -352,8 +311,7 @@ def main():
     )
     if outlier_mode == "excluded":
         raise SystemExit(
-            "ec-sbm v2 gen_outlier does not support outlier_mode=excluded; "
-            "if outliers are excluded, there are no outlier edges to generate."
+            "gen_outlier does not support outlier_mode=excluded (no outlier edges to generate)."
         )
     run_outlier_generation(
         args.orig_edgelist,

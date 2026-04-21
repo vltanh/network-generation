@@ -1,19 +1,7 @@
-"""SBM profile: builds the inputs sbm/gen.py consumes.
+"""SBM profile.
 
-Output contract (all written under --output-folder):
-    node_id.csv, cluster_id.csv, assignment.csv, degree.csv, edge_counts.csv.
-
-SBM's default outlier policy is `(combined, drop_oo=false)` — every true
-outlier folds into one mega-cluster (`__outliers__`) so every edge
-(including outlier-outlier and clustered-outlier) is routed through the
-same block structure as the rest of the network.
-
-CLI precedence: individual flags (``--outlier-mode``/...) win over
-``--params-file`` when both are given. The pipeline writes params.txt
-itself and passes only ``--params-file``; standalone users pass per-knob
-flags directly.
-
-Deps: stdlib + pandas (via profile_common + pipeline_common).
+Outputs: node_id.csv, cluster_id.csv, assignment.csv, degree.csv, edge_counts.csv.
+Default outlier policy: (combined, drop_oo=false) — outliers fold into one block.
 """
 from __future__ import annotations
 
@@ -79,10 +67,7 @@ def parse_args():
     parser.add_argument("--edgelist", type=str, required=True)
     parser.add_argument("--clustering", type=str, required=True)
     parser.add_argument("--output-folder", type=str, required=True)
-    parser.add_argument(
-        "--params-file", type=str, default=None,
-        help="params.txt to read stage knobs from; CLI flags override."
-    )
+    parser.add_argument("--params-file", type=str, default=None)
     parser.add_argument(
         "--outlier-mode", choices=OUTLIER_MODES, default=None,
     )
