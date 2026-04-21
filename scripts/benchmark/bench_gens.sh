@@ -22,8 +22,12 @@ OUT_BASE="/tmp/bench_gens_out"
 RESULTS_FILE="$REPO_ROOT/scripts/benchmark/results.csv"
 INPUT_EDGELIST="examples/input/empirical_networks/networks/dnc/dnc.csv"
 INPUT_CLUSTERING="examples/input/reference_clusterings/clusterings/sbm-flat-best+cc/dnc/com.csv"
-NW_ENV="/u/vltanh/miniconda3/envs/nw/bin"
-NW_NPSO_ENV="/u/vltanh/miniconda3/envs/nw-npso/bin"
+# Env bin dirs prepended to PATH inside the per-gen inner shell. Default to
+# the active conda env's bin so a plain `conda activate <env> && bench_gens.sh`
+# works out of the box. Override by exporting NW_ENV (all gens except npso) or
+# NW_NPSO_ENV (npso only) when you need separate envs.
+NW_ENV="${NW_ENV:-${CONDA_PREFIX:-}/bin}"
+NW_NPSO_ENV="${NW_NPSO_ENV:-${CONDA_PREFIX:-}/bin}"
 
 GENS="$GENS_DEFAULT"
 SEEDS="$SEEDS_DEFAULT"
@@ -51,7 +55,9 @@ run_gen_block() {
   local matlab_setup=""
   if [[ "$gen" == "npso" ]]; then
     env_path="$NW_NPSO_ENV"
-    matlab_setup="module load matlab/R2024a >/dev/null 2>&1 && unset LD_PRELOAD && unset LD_LIBRARY_PATH"
+    # Cluster environments commonly expose MATLAB via lmod. If `module` is
+    # present, try to load R2024a; otherwise assume `matlab` is already on PATH.
+    matlab_setup='command -v module >/dev/null 2>&1 && module load matlab/R2024a >/dev/null 2>&1; unset LD_PRELOAD; unset LD_LIBRARY_PATH'
   fi
 
   zsh -l <<ZSH
