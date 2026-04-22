@@ -1,8 +1,10 @@
-function [edges, comm] = run_npso(N, m, T, gamma, c, output_prefix, seed)
-    if nargin >= 7
+function [edges, comm] = run_npso(N, m, T, gamma, C, model, weights, output_prefix, seed)
+    if nargin >= 9
         rng(seed);
     end
-    [adj, ~, comm, ~] = nPSO_model(N, m, T, gamma, c, 0);
+
+    distr = build_distr(C, model, weights);
+    [adj, ~, comm, ~] = nPSO_model(N, m, T, gamma, distr, 0);
 
     comm = double(comm(:));
 
@@ -38,4 +40,32 @@ function [edges, comm] = run_npso(N, m, T, gamma, c, output_prefix, seed)
     % subprocess path's order.
     [u_list, v_list] = find(triu(adj, 1));
     edges = double([u_list, v_list]);
+end
+
+
+function distr = build_distr(C, model, weights)
+    % Maps the three paper variants to the `distr` arg accepted by
+    % upstream nPSO_model.
+    %   nPSO1: integer C triggers the paper's default GMM (equal ρ_k).
+    %   nPSO2: gmdistribution with caller-supplied weights.
+    %   nPSO3: Gaussian/Gamma mixture built by the upstream helper.
+    switch upper(model)
+        case 'NPSO1'
+            distr = C;
+        case 'NPSO2'
+            if isempty(weights) || numel(weights) ~= C
+                error(['nPSO2 requires %d mixing proportions, got %d. ', ...
+                       'Pass the weights vector via run_npso(...).'], ...
+                      C, numel(weights));
+            end
+            mu = (0:C-1) .* (2*pi/C);
+            sigma_sq = (2*pi/C/6)^2;
+            p = weights(:)';
+            p = p ./ sum(p);
+            distr = gmdistribution(mu', sigma_sq, p);
+        case 'NPSO3'
+            distr = create_mixture_gaussian_gamma_pdf(C);
+        otherwise
+            error('Unknown model: %s. Expected nPSO1, nPSO2, or nPSO3.', model);
+    end
 end
