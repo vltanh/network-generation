@@ -125,6 +125,14 @@ else
     echo "Skipping Stage 1: Valid state found."
 fi
 
+# Post-stage-1 hook. Wrappers that derive stage-2 CLI flags from profile
+# outputs (e.g. nPSO reads derived.json into scalar --N/--m/... flags) can
+# define a `gen_post_stage1 <setup_dir>` bash function to re-populate
+# GEN_CLI_ARGS now that stage 1 artifacts are on disk.
+if declare -f gen_post_stage1 >/dev/null 2>&1; then
+    gen_post_stage1 "${STG1_SETUP_DIR}"
+fi
+
 # ==========================================
 # STAGE 2: Gen (per-gen CLI via wrapper-supplied GEN_CLI_ARGS)
 # ==========================================

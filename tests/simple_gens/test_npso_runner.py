@@ -118,11 +118,16 @@ def test_next_T_edge_hugging_secant_falls_back(npso_gen):
 
 def test_input_hash_stable(npso_gen):
     """Same inputs in different call orders must hash identically."""
-    h1 = npso_gen._input_hash(906, 12, 2.0, 442, 0.548, 1)
-    h2 = npso_gen._input_hash(906, 12, 2.0, 442, 0.548, 1)
+    rho = [0.3, 0.5, 0.2]
+    h1 = npso_gen._input_hash(906, 12, 2.0, 442, 0.548, 1, "nPSO2", rho)
+    h2 = npso_gen._input_hash(906, 12, 2.0, 442, 0.548, 1, "nPSO2", rho)
     assert h1 == h2
     # Seed change must flip the hash.
-    assert h1 != npso_gen._input_hash(906, 12, 2.0, 442, 0.548, 2)
+    assert h1 != npso_gen._input_hash(906, 12, 2.0, 442, 0.548, 2, "nPSO2", rho)
+    # Model change must flip the hash.
+    assert h1 != npso_gen._input_hash(906, 12, 2.0, 442, 0.548, 1, "nPSO1", rho)
+    # Mixing-proportion change must flip the hash.
+    assert h1 != npso_gen._input_hash(906, 12, 2.0, 442, 0.548, 1, "nPSO2", [0.4, 0.4, 0.2])
 
 
 def test_search_log_roundtrip(npso_gen, tmp_path):

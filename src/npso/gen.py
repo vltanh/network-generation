@@ -9,34 +9,29 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import powerlaw
 import networkit as nk
 
 from pipeline_common import standard_setup, timed, drop_singleton_clusters, simplify_edges
 
+
+MODELS = ("nPSO1", "nPSO2", "nPSO3")
+DEFAULT_MODEL = "nPSO2"
 
 SEARCH_LOG_NAME = "search_log.json"
 
 
 try:
     import matlab.engine as _matlab_engine
+    import matlab as _matlab
     _ENGINE_IMPORT_ERROR = None
 except Exception as _exc:
     _matlab_engine = None
+    _matlab = None
     _ENGINE_IMPORT_ERROR = _exc
 
 
 def _engine_available():
     return _matlab_engine is not None
-
-
-def compute_global_ccoeff_from_edgelist(edgelist_path):
-    """Compute the exact global clustering coefficient of an undirected edgelist."""
-    elr = nk.graphio.EdgeListReader(",", 1, continuous=False, directed=False)
-    g = elr.read(str(edgelist_path))
-    g.removeMultiEdges()
-    g.removeSelfLoops()
-    return nk.globals.ClusteringCoefficient.exactGlobal(g)
 
 
 def _ccoeff_from_edges(edges_df):
@@ -64,6 +59,23 @@ def _matlab_subprocess_script(n_threads):
     )
 
 
+def _weights_matlab_literal(weights):
+    """Render a weights vector as a MATLAB row-vector literal for subprocess -r."""
+    if not weights:
+        return "[]"
+    return "[" + ",".join(f"{w:.17g}" for w in weights) + "]"
+
+
+def _validate_model_inputs(model, c, weights):
+    if model not in MODELS:
+        raise ValueError(f"unknown model: {model!r}; expected one of {MODELS}")
+    if model == "nPSO2":
+        if len(weights) != c:
+            raise ValueError(
+                f"nPSO2 requires {c} mixing proportions, derived.json carries {len(weights)}"
+            )
+
+
 class SubprocessRunner:
     """Spawns a fresh `matlab` per iter. Fallback when matlab.engine is absent.
 
@@ -76,12 +88,14 @@ class SubprocessRunner:
         self.matlab_wrapper_dir = str(matlab_wrapper_dir)
         self.last_error = None
 
-    def run_iter(self, N, m, T, gamma, c, prefix, seed):
+    def run_iter(self, N, m, T, gamma, c, model, weights, prefix, seed):
+        weights_literal = _weights_matlab_literal(weights)
         matlab_inner = (
             f"try, maxNumCompThreads({self.n_threads}), "
             f"addpath(genpath('{self.npso_dir_abs}')), "
             f"addpath('{self.matlab_wrapper_dir}'), "
-            f"run_npso({N}, {m}, {T}, {gamma}, {c}, '{prefix}', {seed}), "
+            f"run_npso({N}, {m}, {T}, {gamma}, {c}, '{model}', "
+            f"{weights_literal}, '{prefix}', {seed}), "
             f"catch e, fprintf(1, e.message), end, quit"
         )
         bash_script = _matlab_subprocess_script(self.n_threads)
@@ -126,10 +140,12 @@ class EngineRunner:
         self._eng.addpath(self.matlab_wrapper_dir, nargout=0)
         self._eng.maxNumCompThreads(self.n_threads, nargout=0)
 
-    def run_iter(self, N, m, T, gamma, c, prefix, seed):
+    def run_iter(self, N, m, T, gamma, c, model, weights, prefix, seed):
+        weights_matlab = _matlab.double(list(weights) if weights else [])
         try:
             edges_mat, comm_mat = self._eng.run_npso(
                 float(N), float(m), float(T), float(gamma), float(c),
+                str(model), weights_matlab,
                 str(prefix), float(seed), nargout=2,
             )
         except _matlab_engine.MatlabExecutionError as exc:
@@ -172,33 +188,35 @@ def make_runner(n_threads, npso_dir_abs, matlab_wrapper_dir):
 
 
 def run_npso_generation(
-    input_edgelist,
-    degree_path,
-    cluster_sizes_path,
+    N,
+    m,
+    gamma,
+    c,
+    target_global_ccoeff,
+    mixing_proportions,
     npso_dir,
     output_dir,
     seed,
     n_threads,
+    model=DEFAULT_MODEL,
 ):
     output_dir = standard_setup(output_dir)
 
     logging.info("Starting nPSO Generation...")
-    logging.info(f"Seed: {seed} n_threads: {n_threads}")
+    logging.info(f"Seed: {seed} n_threads: {n_threads} model: {model}")
 
-    with timed("Input loading + parameter computation"):
-        degrees = pd.read_csv(degree_path, header=None)[0].to_numpy()
-        cluster_sizes = pd.read_csv(cluster_sizes_path, header=None)[0].to_numpy()
-
-        N = len(degrees)
-        m = int(np.round(np.mean(degrees) / 2))
-        gamma = float(np.max([
-            powerlaw.Fit(degrees, discrete=True, verbose=False).power_law.alpha,
-            2.0,
-        ]))
-        c = int(len(cluster_sizes))
-
-        target_global_ccoeff = compute_global_ccoeff_from_edgelist(input_edgelist)
-        logging.info(f"N={N} m={m} gamma={gamma} c={c} target_ccoeff={target_global_ccoeff}")
+    N = int(N)
+    m = int(m)
+    gamma = float(gamma)
+    c = int(c)
+    target_global_ccoeff = float(target_global_ccoeff)
+    mixing_proportions = [float(x) for x in (mixing_proportions or [])]
+    _validate_model_inputs(model, c, mixing_proportions)
+    logging.info(
+        f"N={N} m={m} gamma={gamma} c={c} "
+        f"target_ccoeff={target_global_ccoeff} "
+        f"mixing_proportions={mixing_proportions}"
+    )
 
     min_T, max_T = 0.0, 1.0
     # Signed residuals f(T) = ccoeff(T) - target at bracket endpoints.
@@ -215,7 +233,9 @@ def run_npso_generation(
     matlab_wrapper_dir = (Path(__file__).resolve().parent / "matlab")
 
     # Resume: replay prior iters from search_log.json
-    inputs_sha256 = _input_hash(N, m, gamma, c, target_global_ccoeff, seed)
+    inputs_sha256 = _input_hash(
+        N, m, gamma, c, target_global_ccoeff, seed, model, mixing_proportions
+    )
     search_log_path = output_dir / SEARCH_LOG_NAME
     iter_records = _load_search_log(search_log_path, inputs_sha256)
     start_iter = 0
@@ -261,11 +281,15 @@ def run_npso_generation(
             if best_T is not None and best_edge_df is None:
                 logging.info(f"Re-running best_T={best_T} to restore matrices post-resume.")
                 prefix = scratch_dir / f"resume_{best_T:.5f}_"
-                restored = runner.run_iter(N, m, best_T, gamma, c, prefix, seed)
+                restored = runner.run_iter(
+                    N, m, best_T, gamma, c, model, mixing_proportions, prefix, seed,
+                )
                 if restored is None and not isinstance(runner, SubprocessRunner):
                     if fallback is None:
                         fallback = SubprocessRunner(n_threads, npso_dir_abs, matlab_wrapper_dir)
-                    restored = fallback.run_iter(N, m, best_T, gamma, c, prefix, seed)
+                    restored = fallback.run_iter(
+                        N, m, best_T, gamma, c, model, mixing_proportions, prefix, seed,
+                    )
                 if restored is not None:
                     best_edge_df, best_com_df = restored
                 else:
@@ -291,12 +315,16 @@ def run_npso_generation(
 
                     with timed("Generation"):
                         prefix = scratch_dir / f"{T:.5f}_"
-                        result = runner.run_iter(N, m, T, gamma, c, prefix, seed)
+                        result = runner.run_iter(
+                            N, m, T, gamma, c, model, mixing_proportions, prefix, seed,
+                        )
                         if result is None and not isinstance(runner, SubprocessRunner):
                             logging.warning("Engine iter failed; retrying via subprocess fallback for this iter.")
                             if fallback is None:
                                 fallback = SubprocessRunner(n_threads, npso_dir_abs, matlab_wrapper_dir)
-                            result = fallback.run_iter(N, m, T, gamma, c, prefix, seed)
+                            result = fallback.run_iter(
+                                N, m, T, gamma, c, model, mixing_proportions, prefix, seed,
+                            )
 
                     if result is None:
                         logging.error(f"Missing MATLAB outputs at T={T}")
@@ -366,11 +394,13 @@ def _safe_remove(p):
         pass
 
 
-def _input_hash(N, m, gamma, c, target_ccoeff, seed):
+def _input_hash(N, m, gamma, c, target_ccoeff, seed, model, mixing_proportions):
     """Digest of search inputs; mismatch invalidates the log."""
     payload = json.dumps(
         {"N": int(N), "m": int(m), "gamma": float(gamma),
-         "c": int(c), "target": float(target_ccoeff), "seed": int(seed)},
+         "c": int(c), "target": float(target_ccoeff), "seed": int(seed),
+         "model": str(model),
+         "mixing_proportions": [float(x) for x in (mixing_proportions or [])]},
         sort_keys=True,
     ).encode()
     return hashlib.sha256(payload).hexdigest()
@@ -421,30 +451,55 @@ def _next_T(min_T, max_T, f_min_T, f_max_T):
     return T_sec
 
 
+def _parse_mixing_proportions(text):
+    """CSV of floats → list. Empty string → []. Whitespace tolerated."""
+    if not text:
+        return []
+    return [float(x) for x in text.split(",") if x.strip()]
+
+
 def parse_args():
-    parser = argparse.ArgumentParser(description="nPSO Graph Generator")
-    parser.add_argument("--input-edgelist", type=str, required=True,
-                        help="Original empirical edgelist (used to measure target global clustering coefficient)")
-    parser.add_argument("--degree", type=str, required=True)
-    parser.add_argument("--cluster-sizes", type=str, required=True)
+    parser = argparse.ArgumentParser(
+        description="nPSO Graph Generator. All nPSO inputs are explicit flags "
+                    "so the script can run standalone without a profile step."
+    )
+    parser.add_argument("--N", type=int, required=True,
+                        help="Number of nodes")
+    parser.add_argument("--m", type=int, required=True,
+                        help="Half of the mean degree (approximately)")
+    parser.add_argument("--gamma", type=float, required=True,
+                        help="Power-law exponent of the degree distribution (>= 2)")
+    parser.add_argument("--c", type=int, required=True,
+                        help="Number of communities (GMM components)")
+    parser.add_argument("--target-ccoeff", type=float, required=True,
+                        help="Target global clustering coefficient")
+    parser.add_argument("--mixing-proportions", type=str, default="",
+                        help="Comma-separated rho_k values for nPSO2 "
+                             "(must have c entries). Ignored for nPSO1 / nPSO3.")
     parser.add_argument("--npso-dir", type=str, required=True,
                         help="Path to the nPSO_model checkout (containing nPSO_model.m)")
     parser.add_argument("--output-folder", type=str, required=True)
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--n-threads", type=int, default=1)
+    parser.add_argument("--model", choices=MODELS, default=DEFAULT_MODEL,
+                        help="nPSO angular-distribution variant")
     return parser.parse_args()
 
 
 def main():
     args = parse_args()
     run_npso_generation(
-        args.input_edgelist,
-        args.degree,
-        args.cluster_sizes,
+        args.N,
+        args.m,
+        args.gamma,
+        args.c,
+        args.target_ccoeff,
+        _parse_mixing_proportions(args.mixing_proportions),
         args.npso_dir,
         args.output_folder,
         args.seed,
         args.n_threads,
+        model=args.model,
     )
 
 

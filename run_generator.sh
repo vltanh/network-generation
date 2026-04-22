@@ -41,6 +41,7 @@ timeout_duration="3d"
 abcd_dir="${SCRIPT_DIR}/externals/abcd"
 lfr_binary="${SCRIPT_DIR}/externals/lfr/unweighted_undirected/benchmark"
 npso_dir="${SCRIPT_DIR}/externals/npso"
+npso_model=""
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -63,6 +64,7 @@ while [[ "$#" -gt 0 ]]; do
         --abcd-dir) abcd_dir="$2"; shift 2 ;;
         --lfr-binary) lfr_binary="$2"; shift 2 ;;
         --npso-dir) npso_dir="$2"; shift 2 ;;
+        --npso-model) npso_model="$2"; shift 2 ;;
         -*) log "Unknown parameter passed: $1"; exit 1 ;;
         *) log "Unexpected argument: $1"; exit 1 ;;
     esac
