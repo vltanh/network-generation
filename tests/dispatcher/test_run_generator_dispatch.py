@@ -88,11 +88,12 @@ def stub_repo(tmp_path: Path) -> Path:
     inp_edge.write_text("source,target\n0,1\n")
     inp_com.write_text("node_id,cluster_id\n0,0\n1,1\n")
 
-    # External dirs: dispatcher checks they exist for abcd/lfr/npso.
+    # External dirs: dispatcher checks they exist for abcd/lfr/npso/ec-sbm.
     (root / "ext" / "abcd").mkdir(parents=True)
     (root / "ext" / "lfr").mkdir(parents=True)
     (root / "ext" / "lfr" / "benchmark").write_text("#!/bin/bash\n")
     (root / "ext" / "npso").mkdir(parents=True)
+    (root / "ext" / "ec-sbm").mkdir(parents=True)
 
     return root
 
@@ -109,6 +110,7 @@ def invoke(stub_repo: Path, generator: str, extra: list[str] | None = None) -> s
         "--abcd-dir", str(stub_repo / "ext" / "abcd"),
         "--lfr-binary", str(stub_repo / "ext" / "lfr" / "benchmark"),
         "--npso-dir", str(stub_repo / "ext" / "npso"),
+        "--ec-sbm-dir", str(stub_repo / "ext" / "ec-sbm"),
         "--seed", "42",
         "--n-threads", "3",
     ]
@@ -180,8 +182,9 @@ FLAG_MATRIX = [
     ("abcd+o", "--package-dir", None, True),
     ("lfr", "--binary", None, True),
     ("npso", "--package-dir", None, True),
+    ("ec-sbm-v1", "--package-dir", None, True),
+    ("ec-sbm-v2", "--package-dir", None, True),
     ("sbm", "--package-dir", None, False),
-    ("ec-sbm-v2", "--package-dir", None, False),
     # ec-sbm-v2 algorithm trio.  --outlier-mode / --gen-outlier-mode are not in
     # GEN_EXTRA_ARGS: the pipeline's defaults ("combined" for both the profile
     # stage and the gen-outlier stage) apply, and generators/ec-sbm-v2.sh stays

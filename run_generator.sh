@@ -42,6 +42,7 @@ abcd_dir="${SCRIPT_DIR}/externals/abcd"
 lfr_binary="${SCRIPT_DIR}/externals/lfr/unweighted_undirected/benchmark"
 npso_dir="${SCRIPT_DIR}/externals/npso"
 npso_model=""
+ec_sbm_dir="${SCRIPT_DIR}/externals/ec-sbm"
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -65,6 +66,7 @@ while [[ "$#" -gt 0 ]]; do
         --lfr-binary) lfr_binary="$2"; shift 2 ;;
         --npso-dir) npso_dir="$2"; shift 2 ;;
         --npso-model) npso_model="$2"; shift 2 ;;
+        --ec-sbm-dir) ec_sbm_dir="$2"; shift 2 ;;
         -*) log "Unknown parameter passed: $1"; exit 1 ;;
         *) log "Unexpected argument: $1"; exit 1 ;;
     esac
