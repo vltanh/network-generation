@@ -2,8 +2,6 @@
 
 Each generator is independent. Install only the generators you plan to use — each section below is self-contained. If you want `--run-stats` or `--run-comp`, also follow [Optional: run-stats and run-comp](#optional-run-stats-and-run-comp).
 
-Dependency policy: prefer `conda` main channel or `pip` over `conda-forge`. `graph-tool` is the one unavoidable conda-forge dep (not packaged on PyPI, not on conda main).
-
 ## `sbm`
 
 Python deps: `numpy`, `pandas`, `scipy`, `graph-tool`.
@@ -87,18 +85,9 @@ No `LD_LIBRARY_PATH` is needed at run time (matlabengine configures its own load
 
 After installing a generator's submodule, `run_generator.sh` picks it up automatically via the defaults `--abcd-dir=externals/abcd`, `--lfr-binary=externals/lfr/unweighted_undirected/benchmark`, `--npso-dir=externals/npso`. Override those flags if you want to use a different path.
 
-## Tests
+## Optional: Tests
 
-Activate the conda env that has the generator deps on `PATH` before running pipeline-level tests:
-
-```bash
-conda activate <your-env>
-python -m pytest tests/common tests/profile_py tests/dispatcher    # unit tests only (~seconds)
-python -m pytest tests/wrappers tests/simple_gens tests/ec_sbm     # end-to-end (minutes; skips gens missing externals)
-python -m pytest -m slow tests/simple_gens tests/ec_sbm            # slow gens (full end-to-end, real samplers)
-```
-
-If `pytest`'s subprocess shell needs additional paths (e.g. your conda env or juliaup install isn't on the inherited `PATH`), set `NW_TEST_PATH_PREFIX` to a colon-separated prefix that will be prepended to `PATH` inside spawned `run_generator.sh` calls:
+Activate the conda env that has the generator deps on `PATH` before running pipeline-level tests. If `pytest`'s subprocess shell needs additional paths (e.g. your conda env or juliaup install isn't on the inherited `PATH`), set `NW_TEST_PATH_PREFIX` to a colon-separated prefix that will be prepended to `PATH` inside spawned `run_generator.sh` calls:
 
 ```bash
 NW_TEST_PATH_PREFIX="$CONDA_PREFIX/bin:$HOME/.juliaup/bin" python -m pytest tests/simple_gens
