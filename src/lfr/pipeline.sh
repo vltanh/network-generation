@@ -25,7 +25,7 @@ while [[ "$#" -gt 0 ]]; do
         --input-edgelist) INPUT_EDGELIST="$2"; shift ;;
         --input-clustering) INPUT_CLUSTERING="$2"; shift ;;
         --output-dir) OUTPUT_DIR="$2"; shift ;;
-        --lfr-binary) LFR_BINARY="$2"; shift ;;
+        --binary) LFR_BINARY="$2"; shift ;;
         --timeout) TIMEOUT="$2"; shift ;;
         --seed) SEED="$2"; shift ;;
         --keep-state) KEEP_STATE=1 ;;
@@ -43,7 +43,7 @@ while [[ "$#" -gt 0 ]]; do
 done
 
 if [ -z "${LFR_BINARY}" ]; then
-    echo "Error: --lfr-binary is required (path to LFR benchmark executable)."
+    echo "Error: --binary is required (path to LFR benchmark executable)."
     exit 1
 fi
 

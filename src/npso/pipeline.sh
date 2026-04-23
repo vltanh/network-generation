@@ -26,7 +26,7 @@ while [[ "$#" -gt 0 ]]; do
         --input-edgelist) INPUT_EDGELIST="$2"; shift ;;
         --input-clustering) INPUT_CLUSTERING="$2"; shift ;;
         --output-dir) OUTPUT_DIR="$2"; shift ;;
-        --npso-dir) NPSO_DIR="$2"; shift ;;
+        --package-dir) NPSO_DIR="$2"; shift ;;
         --timeout) TIMEOUT="$2"; shift ;;
         --seed) SEED="$2"; shift ;;
         --n-threads) N_THREADS="$2"; shift ;;
@@ -46,7 +46,7 @@ while [[ "$#" -gt 0 ]]; do
 done
 
 if [ -z "${NPSO_DIR}" ]; then
-    echo "Error: --npso-dir is required (path to nPSO_model checkout)."
+    echo "Error: --package-dir is required (path to nPSO_model checkout)."
     exit 1
 fi
 
