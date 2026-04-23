@@ -126,6 +126,23 @@ on an isolated cgroup (4 cores, 16 GiB cap), 10 seeds x 10 kept runs per seed:
 See the [index](../algorithms.md) for the full per-generator table. SBM is the
 fastest of the seven at this input size.
 
+## CLI flags
+
+Dispatcher (`run_generator.sh`): no generator-specific flag beyond the
+shared set documented in the repo [README.md](../../README.md).
+
+Pipeline (`./src/sbm/pipeline.sh`, direct invocation):
+
+- `--outlier-mode <excluded|singleton|combined>`: default `combined`.
+- `--drop-outlier-outlier-edges` / `--keep-outlier-outlier-edges`: default keep.
+- `--match-degree` / `--no-match-degree`: optional Stage-4 degree rewire. Default off.
+- `--match-degree-algorithm <greedy|true_greedy|random_greedy|rewire|hybrid>`: default `hybrid`; only takes effect when match-degree is on.
+- `--remap` / `--no-remap`: default off (SBM reuses reference node IDs).
+
+See [../advanced-usage.md](../advanced-usage.md) for the naming
+convention across dispatcher vs. pipeline layers and the cross-generator
+default matrix.
+
 ## Where to look next
 
 - [Source: `src/sbm/gen.py`](../../src/sbm/gen.py)

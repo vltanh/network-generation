@@ -69,6 +69,53 @@ measured exactly (not sampled) via networkit's
 `ClusteringCoefficient.exactGlobal`, after removing multi-edges and
 self-loops.
 
+## Standalone `gen.py` invocation
+
+`src/npso/gen.py` takes the four derived scalars plus the target as
+required CLI flags, so it can run without Stage 1 if the caller has fit
+the model parameters elsewhere (e.g. regenerating from a previously
+cached profile, or a from-scratch experiment where only the scalars are
+known).
+
+| Flag | Meaning |
+| --- | --- |
+| `--N <int>` | Node count. |
+| `--m <int>` | Half-degree target (`mean(degrees) / 2`, rounded). |
+| `--gamma <float>` | Power-law exponent of the degree distribution (floored at 2 by Stage 1). |
+| `--c <int>` | Number of communities / GMM components on the disk. |
+| `--target-ccoeff <float>` | Global clustering-coefficient target for the temperature search. |
+| `--mixing-proportions <csv>` | Comma-separated `rho_k` values for `nPSO2`; one per community. Empty for `nPSO1` / `nPSO3`. |
+| `--npso-dir <p>` | `nPSO_model` checkout. |
+| `--model <m>` | `nPSO1` \| `nPSO2` \| `nPSO3` (default `nPSO2`). |
+| `--seed <n>` | Seed (default `1`). |
+| `--n-threads <n>` | MATLAB `maxNumCompThreads` (default `1`). |
+| `--output-folder <p>` | Where to write `edge.csv` + `com.csv`. |
+
+When called via `src/npso/pipeline.sh`, these flags are filled from
+`derived.txt` emitted by Stage 1 (see the post-stage-1 hook in
+`pipeline.sh`).
+
+### Selecting the model variant
+
+`--model` accepts `nPSO1`, `nPSO2` (default), or `nPSO3`. The three share
+the same hyperbolic-disk substrate but differ in how the angular
+community mixture is built:
+
+- **nPSO1**: upstream paper's default GMM with equal `ρ_k` across
+  communities (passes the integer `C` to the MATLAB helper, which
+  triggers the equal-weight path).
+- **nPSO2**: `gmdistribution` with caller-supplied weights. Stage 1
+  estimates `ρ_k` per community and forwards it as
+  `--mixing-proportions`; the MATLAB helper builds a `gmdistribution`
+  with means `2πk/C`, equal variance, and those weights.
+- **nPSO3**: Gaussian/Gamma mixture built by the upstream
+  `create_mixture_gaussian_gamma_pdf(C)` helper; does not use
+  `--mixing-proportions`.
+
+At the top-level dispatcher, use `--npso-model <m>` on `run_generator.sh`
+(same values); at the per-generator pipeline layer (`src/npso/pipeline.sh`)
+or the standalone `gen.py`, use `--model <m>`.
+
 ## The temperature search
 
 Clustering coefficient as a function of T is monotonically decreasing in
@@ -238,6 +285,29 @@ distance computation.
 - **Maybe**: you can afford ~6 s of wall-clock and the MATLAB dependency.
 - **No**: you need exact degree sequence, exact block structure, or
   specific outlier semantics.
+
+## CLI flags
+
+Dispatcher (`run_generator.sh`):
+
+- `--npso-dir <p>`: path to `nPSO_model` checkout. Default `externals/npso`. Requires `matlab` on `PATH`.
+- `--npso-model <m>`: `nPSO1` \| `nPSO2` \| `nPSO3`. Default `nPSO2`. See "Selecting the model variant" above.
+
+Pipeline (`./src/npso/pipeline.sh`):
+
+- `--package-dir <p>`: same role as `--npso-dir`, short form at pipeline layer.
+- `--model <m>`: same values as `--npso-model`.
+- `--outlier-mode <excluded|singleton|combined>`: default `singleton`.
+- `--drop-outlier-outlier-edges` / `--keep-outlier-outlier-edges`: default keep.
+- `--match-degree` / `--no-match-degree`: default off.
+- `--match-degree-algorithm <greedy|true_greedy|random_greedy|rewire|hybrid>`: default `hybrid`.
+- `--remap` / `--no-remap`: default on (MATLAB sampler emits fresh 1..N IDs).
+
+Standalone `gen.py` invocation: see the section above for scalar CLI
+(`--N`, `--m`, `--gamma`, `--c`, `--target-ccoeff`,
+`--mixing-proportions`) that lets callers bypass Stage 1 entirely.
+
+See [../advanced-usage.md](../advanced-usage.md).
 
 ## Where to look next
 

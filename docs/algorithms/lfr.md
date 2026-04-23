@@ -177,6 +177,25 @@ Cold cost (not shown in the steady-state) is slightly higher because
   input's block structure and inter-block edge counts preserved.
 - **No**: [nPSO](./npso.md) if you need high clustering coefficient.
 
+## CLI flags
+
+Dispatcher (`run_generator.sh`):
+
+- `--lfr-binary <p>`: path to compiled LFR benchmark executable. Default `externals/lfr/unweighted_undirected/benchmark`.
+
+LFR is single-threaded; `--n-threads` is ignored.
+
+Pipeline (`./src/lfr/pipeline.sh`):
+
+- `--binary <p>`: same role, short form at pipeline layer.
+- `--outlier-mode <excluded|singleton|combined>`: default `singleton`.
+- `--drop-outlier-outlier-edges` / `--keep-outlier-outlier-edges`: default keep.
+- `--match-degree` / `--no-match-degree`: default off.
+- `--match-degree-algorithm <greedy|true_greedy|random_greedy|rewire|hybrid>`: default `hybrid`.
+- `--remap` / `--no-remap`: default on (C++ binary emits fresh 1..N IDs).
+
+See [../advanced-usage.md](../advanced-usage.md).
+
 ## Where to look next
 
 - [Source: `src/lfr/gen.py`](../../src/lfr/gen.py)

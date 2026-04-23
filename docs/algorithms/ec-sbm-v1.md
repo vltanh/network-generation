@@ -189,6 +189,17 @@ matcher algorithms, most of which log gridlock rather than dropping stubs
 silently. v1 stays in the repo for comparison. See
 [ec-sbm-v2](./ec-sbm-v2.md) for the details.
 
+## CLI flags
+
+Dispatcher (`run_generator.sh`): no generator-specific flag.
+
+Pipeline (`./src/ec-sbm/v1/pipeline.sh`):
+
+- `--outlier-mode`: only `excluded` is accepted; any other value errors. Outliers are synthesized by Stage 3.
+- Stage 4 match-degree always runs with algorithm fixed to `greedy` (not user-toggleable).
+
+See [../advanced-usage.md](../advanced-usage.md).
+
 ## Where to look next
 
 - [Source: `src/ec-sbm/v1/gen_clustered.py`](../../src/ec-sbm/v1/gen_clustered.py)
