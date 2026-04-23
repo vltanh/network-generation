@@ -1,8 +1,5 @@
-2026-04-23 17:38:05,388 - INFO - Generation of Outlier Subnetwork
-2026-04-23 17:38:05,388 - INFO - Network: examples/input/empirical_networks/networks/dnc/dnc.csv
-2026-04-23 17:38:05,388 - INFO - Clustering: examples/input/reference_clusterings/clusterings/sbm-flat-best+cc/dnc/com.csv
-2026-04-23 17:38:05,388 - INFO - Output folder: examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/gen_outlier/edges
-2026-04-23 17:38:05,411 - INFO - Setup elapsed: 0.0236 seconds
-2026-04-23 17:38:05,412 - INFO - Generation of outlier subgraph elapsed: 0.0008 seconds
-2026-04-23 17:38:05,414 - INFO - Post-process elapsed: 0.0021 seconds
-2026-04-23 17:38:05,414 - INFO - Complete.
+2026-04-23 18:29:27,376 - INFO - Starting EC-SBM outlier generation (scope=outlier-incident, outlier_mode=singleton, edge_correction=none)...
+2026-04-23 18:29:27,423 - INFO - Setup elapsed: 0.0475 seconds
+2026-04-23 18:29:27,425 - INFO - SBM synthesis elapsed: 0.0016 seconds
+2026-04-23 18:29:27,426 - INFO - Export elapsed: 0.0014 seconds
+2026-04-23 18:29:27,426 - INFO - Outlier generation complete.

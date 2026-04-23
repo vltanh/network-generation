@@ -1,1 +1,4 @@
+edge_correction=none
+outlier_mode=singleton
+scope=outlier-incident
 seed=2

@@ -1,19 +1,19 @@
-=== 2026-04-23T22:38:08Z | pid=182914 | host=nah-popos | EXECUTED ===
-	Command being timed: "python /home/vltanh/Documents/network-generation/externals/ec-sbm/ec-sbm/v2/gen_outlier.py --orig-edgelist examples/input/empirical_networks/networks/dnc/dnc.csv --orig-clustering examples/input/reference_clusterings/clusterings/sbm-flat-best+cc/dnc/com.csv --exist-edgelist examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/gen_clustered/edge.csv --params-file examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/gen_outlier/edges/params.txt --edge-correction rewire --output-folder examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/gen_outlier/edges --seed 2"
-	User time (seconds): 1.19
-	System time (seconds): 0.09
-	Percent of CPU this job got: 100%
-	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:01.28
+=== 2026-04-23T23:29:30Z | pid=235106 | host=nah-popos | EXECUTED ===
+	Command being timed: "python /home/vltanh/Documents/network-generation/externals/ec-sbm/ec-sbm/gen_outlier.py --orig-edgelist examples/input/empirical_networks/networks/dnc/dnc.csv --orig-clustering examples/input/reference_clusterings/clusterings/sbm-flat-best+cc/dnc/com.csv --exist-edgelist examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/gen_clustered/edge.csv --scope all --outlier-mode combined --edge-correction rewire --output-folder examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/gen_outlier/edges --seed 2"
+	User time (seconds): 1.09
+	System time (seconds): 0.07
+	Percent of CPU this job got: 99%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:01.17
 	Average shared text size (kbytes): 0
 	Average unshared data size (kbytes): 0
 	Average stack size (kbytes): 0
 	Average total size (kbytes): 0
-	Maximum resident set size (kbytes): 250048
+	Maximum resident set size (kbytes): 262376
 	Average resident set size (kbytes): 0
 	Major (requiring I/O) page faults: 0
-	Minor (reclaiming a frame) page faults: 37766
-	Voluntary context switches: 208
-	Involuntary context switches: 40
+	Minor (reclaiming a frame) page faults: 38432
+	Voluntary context switches: 217
+	Involuntary context switches: 70
 	Swaps: 0
 	File system inputs: 0
 	File system outputs: 136

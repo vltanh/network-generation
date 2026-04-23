@@ -1,3 +1,4 @@
 edge_correction=rewire
 outlier_mode=combined
+scope=all
 seed=2
