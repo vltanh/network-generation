@@ -142,6 +142,23 @@ Adding outliers does not meaningfully change runtime vs plain ABCD.
   clustering-coefficient target. nPSO also uses a cluster_id=1 outlier
   convention.
 
+## CLI flags
+
+Dispatcher (`run_generator.sh`):
+
+- `--abcd-dir <p>`: path to `ABCDGraphGenerator.jl` checkout. Default `externals/abcd`.
+
+Pipeline (`./src/abcd+o/pipeline.sh`):
+
+- `--package-dir <p>`: same role, short form at pipeline layer.
+- `--outlier-mode <excluded|singleton|combined>`: default `singleton`.
+- `--drop-outlier-outlier-edges` / `--keep-outlier-outlier-edges`: **default drop** (Julia sampler cannot produce OO edges).
+- `--match-degree` / `--no-match-degree`: default off.
+- `--match-degree-algorithm <greedy|true_greedy|random_greedy|rewire|hybrid>`: default `hybrid`.
+- `--remap` / `--no-remap`: default on.
+
+See [../advanced-usage.md](../advanced-usage.md).
+
 ## Where to look next
 
 - [Source: `src/abcd+o/gen.py`](../../src/abcd+o/gen.py)

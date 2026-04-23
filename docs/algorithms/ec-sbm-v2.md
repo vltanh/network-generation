@@ -196,6 +196,23 @@ Stage 2 wrote rows 1-42, stage 3a's residual SBM wrote 43-100, stage 4a's
 matcher added 101-120. Colour edges by provenance to see what each stage
 placed.
 
+## CLI flags
+
+Dispatcher (`run_generator.sh`): no generator-specific flag. The
+dispatcher hardcodes `--edge-correction rewire` and
+`--match-degree-algorithm hybrid`; override by direct pipeline invocation.
+
+Pipeline (`./src/ec-sbm/v2/pipeline.sh`):
+
+- `--outlier-mode`: default `excluded`.
+- `--drop-outlier-outlier-edges` / `--keep-outlier-outlier-edges`: default keep.
+- `--gen-outlier-mode <combined|singleton>`: Stage-3a outlier block, default `combined`.
+- `--edge-correction <drop|rewire>`: residual-SBM dedup. Direct invocation must supply it explicitly (no default).
+- `--match-degree-algorithm <greedy|true_greedy|random_greedy|rewire|hybrid>`: required for Stage 4 (no default at pipeline layer).
+- Stage 4 match-degree is always on.
+
+See [../advanced-usage.md](../advanced-usage.md).
+
 ## Where to look next
 
 - [Source: `src/ec-sbm/v2/gen_clustered.py`](../../src/ec-sbm/v2/gen_clustered.py)

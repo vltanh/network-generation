@@ -1,149 +1,169 @@
 # Synthetic Network Generator
 
-This script generates a synthetic network based on an empirical network and a reference clustering. It also supports computing the corresponding network and cluster statistics and comparing them against the original distributions.
+Generate a synthetic network that mirrors an empirical input (edge list +
+reference clustering), then optionally compute statistics and compare
+against the original.
 
-Seven generators are supported: `sbm`, `ec-sbm-v1`, `ec-sbm-v2`, `abcd`, `abcd+o`, `lfr`, `npso`. For a side-by-side comparison of what each one preserves (degrees, block structure, mixing parameter, clustering coefficient) and the runtime / reproducibility guarantees, see [docs/algorithms.md](docs/algorithms.md).
+Seven generators: `sbm`, `ec-sbm-v1`, `ec-sbm-v2`, `abcd`, `abcd+o`,
+`lfr`, `npso`. See [docs/algorithms.md](docs/algorithms.md) for what
+each preserves (degrees, block structure, mixing parameter, clustering
+coefficient) and the determinism / cost trade-offs.
 
-## 1. Custom Mode (Standard Usage)
+## Install
 
-Use this mode to provide explicit file paths for your own datasets.
+Per-generator; install only what you need. See [INSTALL.md](INSTALL.md).
 
-**Usage:**
+## Usage
 
-```bash
-./run_generator.sh --generator <gen> --run-id <id> --input-edgelist <path> --input-clustering <path> --output-dir <dir> [OPTIONS]
-```
+### Custom mode
 
-### Required Arguments
-
-| Argument | Description |
-| --- | --- |
-| `--generator <gen>` | Generator to use. One of: `ec-sbm-v2`, `ec-sbm-v1`, `sbm`, `abcd`, `abcd+o`, `lfr`, `npso`. |
-| `--run-id <id>` | Numerical run identifier. |
-| `--input-edgelist <p>` | Path to the empirical edge list CSV (header `source,target`). |
-| `--input-clustering <p>` | Path to the reference clustering CSV (header `node_id,cluster_id`). |
-| `--output-dir <dir>` | Root directory for all generated outputs. |
-
-### Optional Arguments & Flags
-
-| Argument | Description |
-| --- | --- |
-| `--network <id>` | Network identifier; used to sub-group outputs under `<generator>/<clustering-id>/<network>/`. |
-| `--clustering-id <id>` | Clustering identifier; used to sub-group outputs under `<generator>/<clustering-id>/`. |
-| `--input-network-stats <p>` | Path to empirical network stats directory (for `--run-comp`). |
-| `--input-cluster-stats <p>` | Path to reference cluster stats directory (for `--run-comp`). |
-| `--run-stats` | Enables computation of synthetic network and cluster statistics. |
-| `--run-comp` | Enables statistical comparison. **Requires** `--input-network-stats` and `--input-cluster-stats`. |
-| `--keep-state` | Preserve the per-stage `.state/` directory in the output instead of wiping it at setup. Useful for debugging a failed run or resuming partially. |
-| `--seed <n>` | Seed forwarded to every generator (default `1`). See note below. |
-| `--n-threads <n>` | Thread count for parallelizable backends (default `1`). See note below. |
-| `--timeout <dur>` | Wall-clock timeout for the generation step, passed through to each generator's `pipeline.sh` (default `3d`). Accepts any `timeout(1)`-compatible duration (e.g. `30m`, `2h`, `3d`). |
-| `--abcd-dir <p>` | Override for `abcd` / `abcd+o`. Defaults to `externals/abcd`. Path to an `ABCDGraphGenerator.jl` checkout (exposes `utils/graph_sampler.jl`). |
-| `--lfr-binary <p>` | Override for `lfr`. Defaults to `externals/lfr/unweighted_undirected/benchmark`. Path to the compiled LFR benchmark executable. |
-| `--npso-dir <p>` | Override for `npso`. Defaults to `externals/npso`. Path to the `nPSO_model` checkout; requires `matlab` on PATH. |
-| `--npso-model <m>` | Override for `npso`. Specifies the model version (nPSO1, nPSO2, or nPSO3). Defaults to `nPSO2`. |
-
-**Note on `--seed`:** **Do not pass `0`** to graph-tool-backed generators (`sbm`, `ec-sbm-v1`, `ec-sbm-v2`): `gt.seed_rng(0)` is interpreted as "use the system entropy source" and silently disables byte-reproducibility.
-
-**Note on `--n-threads`:** Applies to `sbm`/`ec-sbm-*` (via `OMP_NUM_THREADS` for graph-tool), `abcd`/`abcd+o` (via `JULIA_NUM_THREADS`), and `npso` (via MATLAB `maxNumCompThreads`). `lfr` is single-threaded and ignores this flag. Values greater than `1` are untested and may break determinism or produce unknown behavior; leave at `1` unless you have a reason to change it.
-
-### Directory Structure
-
-**Inputs (Manually Provided):**
-
-* Reference edgelist: `<input-edgelist>`
-* Reference clustering: `<input-clustering>`
-* Stats (required if `--run-comp`):
-    * `<input-network-stats>` (reference edgelist statistics)
-    * `<input-cluster-stats>` (reference clustering statistics)
-
-**Outputs (Dynamically Routed):**
-
-* Synthetic edgelist: `<output-dir>/networks/<generator>[/<clustering-id>][/<network>]/<run-id>/edge.csv`
-* Synthetic clustering: `<output-dir>/networks/<generator>[/<clustering-id>][/<network>]/<run-id>/com.csv`
-* Additional parameters: `<output-dir>/networks/<generator>[/<clustering-id>][/<network>]/<run-id>/params.txt`
-* State hash tracking: `<output-dir>/networks/<generator>[/<clustering-id>][/<network>]/<run-id>/done`
-* Log: `<output-dir>/networks/<generator>[/<clustering-id>][/<network>]/<run-id>/run.log`
-* (Optional) Provenance tracking: `<output-dir>/networks/<generator>[/<clustering-id>][/<network>]/<run-id>/source.json`
-* (Optional) Per-stage outputs: `<output-dir>/networks/<generator>[/<clustering-id>][/<network>]/<run-id>/.state/`
-* Stats: `<output-dir>/stats/<generator>[/<clustering-id>][/<network>]/<run-id>/`
-    * `cluster/`       (Cluster-dependent metrics)
-    * `network/`       (Network-only metrics)
-    * `comparison.csv` (Generated if `--run-comp` is enabled)
-
-## 2. Macro Mode
-
-Use this mode to automatically map inputs and outputs to the standard `data/` directory structure.
-
-**Usage:**
+Caller provides explicit paths.
 
 ```bash
-./run_generator.sh --macro --generator <gen> --run-id <id> --network <id> --clustering-id <id> [OPTIONS]
+./run_generator.sh \
+    --generator <gen> --run-id <id> \
+    --input-edgelist <path> --input-clustering <path> --output-dir <dir> \
+    [OPTIONS]
 ```
 
-### Required Arguments
+### Macro mode
+
+Auto-resolves paths from the standard `data/` tree.
+
+```bash
+./run_generator.sh --macro \
+    --generator <gen> --run-id <id> \
+    --network <id> --clustering-id <id> \
+    [OPTIONS]
+```
+
+## Arguments
+
+### Required
+
+| Argument | Custom | Macro | Description |
+| --- | :---: | :---: | --- |
+| `--generator <gen>` | ✓ | ✓ | One of `sbm`, `ec-sbm-v1`, `ec-sbm-v2`, `abcd`, `abcd+o`, `lfr`, `npso`. |
+| `--run-id <id>` | ✓ | ✓ | Numerical run identifier. |
+| `--macro` |   | ✓ | Enable macro mode. |
+| `--input-edgelist <p>` | ✓ |   | Empirical edge list CSV (header `source,target`). |
+| `--input-clustering <p>` | ✓ |   | Reference clustering CSV (header `node_id,cluster_id`). |
+| `--output-dir <dir>` | ✓ |   | Root output directory. |
+| `--network <id>` |   | ✓ | Network identifier for `data/` lookup. |
+| `--clustering-id <id>` |   | ✓ | Reference clustering identifier for `data/` lookup. |
+
+### Optional
+
+#### Output grouping
 
 | Argument | Description |
 | --- | --- |
-| `--macro` | Enable macro mode; auto-resolves all paths from `data/`. |
-| `--generator <gen>` | Generator to use. One of: `ec-sbm-v2`, `ec-sbm-v1`, `sbm`, `abcd`, `abcd+o`, `lfr`, `npso`. |
-| `--run-id <id>` | Numerical run identifier. |
-| `--network <id>` | Network identifier used to locate empirical data. |
-| `--clustering-id <id>` | Ground-truth clustering identifier used to locate reference data. |
+| `--network <id>` | Sub-group outputs under `<generator>/<clustering-id>/<network>/` (custom mode). |
+| `--clustering-id <id>` | Sub-group outputs under `<generator>/<clustering-id>/` (custom mode). |
 
-### Optional Arguments & Flags
+#### Statistics & comparison
 
-All optional arguments from [Custom Mode](#1-custom-mode-standard-usage) are supported, except for `--network` and `--clustering-id` which are now required.
+| Argument | Description |
+| --- | --- |
+| `--run-stats` | Compute synthetic network + cluster statistics. |
+| `--run-comp` | Compare synthetic vs. empirical. Reference stats are computed from `--input-edgelist` + `--input-clustering` on first use if not provided (see below). |
+| `--input-network-stats <p>` | Pre-computed empirical network stats directory. Optional: falls back to auto-compute if omitted. |
+| `--input-cluster-stats <p>` | Pre-computed reference cluster stats directory. Optional: falls back to auto-compute if omitted. |
 
-### Directory Structure
+#### Caching
 
-**Inputs (Auto-Resolved):**
+| Argument | Description |
+| --- | --- |
+| `--keep-state` | Preserve per-stage `.state/` directory (debug / resume). |
 
-* Reference edgelist: `data/empirical_networks/networks/<network>/<network>.csv`
-* Reference clustering: `data/reference_clusterings/clusterings/<clustering-id>/<network>/com.csv`
-* Stats (required if `--run-comp`):
-    * `data/empirical_networks/stats/<network>/` (reference edgelist statistics)
-    * `data/reference_clusterings/stats/<clustering-id>/<network>/` (reference clustering statistics)
+#### Runtime
 
-**Outputs (Auto-Routed):**
+| Argument | Default | Description |
+| --- | --- | --- |
+| `--seed <n>` | `1` | Seed forwarded to every generator. |
+| `--n-threads <n>` | `1` | Threads for parallel backends. |
+| `--timeout <dur>` | `3d` | Generation-step timeout. Any `timeout(1)` duration. |
 
-* Synthetic edgelist: `data/synthetic_networks/networks/<generator>/<clustering-id>/<network>/<run-id>/edge.csv`
-* Synthetic clustering: `data/synthetic_networks/networks/<generator>/<clustering-id>/<network>/<run-id>/com.csv`
-* Additional parameters: `data/synthetic_networks/networks/<generator>/<clustering-id>/<network>/<run-id>/params.txt`
-* State hash tracking: `data/synthetic_networks/networks/<generator>/<clustering-id>/<network>/<run-id>/done`
-* Log: `data/synthetic_networks/networks/<generator>/<clustering-id>/<network>/<run-id>/run.log`
-* (Optional) Provenance tracking: `data/synthetic_networks/networks/<generator>/<clustering-id>/<network>/<run-id>/source.json`
-* (Optional) Per-stage outputs: `data/synthetic_networks/networks/<generator>/<clustering-id>/<network>/<run-id>/.state/`
-* Stats: `data/synthetic_networks/stats/<generator>/<clustering-id>/<network>/<run-id>/`
-    * `cluster/`       (Cluster-dependent metrics)
-    * `network/`       (Network-only metrics)
-    * `comparison.csv` (Generated if `--run-comp` is enabled)
+Notes:
 
-## Pipeline Execution Steps
+- `--seed 0` silently disables byte-reproducibility in graph-tool-backed
+  generators (`sbm`, `ec-sbm-v1`, `ec-sbm-v2`).
+- `--n-threads > 1` is untested and may break determinism. Leave at `1`
+  unless you have a reason to change it. `lfr` is single-threaded and
+  ignores this flag.
 
-Regardless of the mode used, the script executes the following steps (Steps 2 and 3 are skipped unless their flags are provided):
+#### Generator-specific
 
-### Step 1: Generation Pipeline
+Each generator accepts its own set of additional flags (path overrides,
+model variants, outlier handling, etc.). Both dispatcher-level flags and
+the pipeline-layer knobs (reachable via `src/<gen>/pipeline.sh` direct
+invocation) are documented on the per-generator page:
 
-Generates the synthetic edge list based on the provided empirical bounds.
+- [`sbm`](docs/algorithms/sbm.md)
+- [`ec-sbm-v1`](docs/algorithms/ec-sbm-v1.md)
+- [`ec-sbm-v2`](docs/algorithms/ec-sbm-v2.md)
+- [`abcd`](docs/algorithms/abcd.md) / [`abcd+o`](docs/algorithms/abcd+o.md)
+- [`lfr`](docs/algorithms/lfr.md)
+- [`npso`](docs/algorithms/npso.md)
 
-* **Outputs:** `<output-dir>/edge.csv`
+See [docs/advanced-usage.md](docs/advanced-usage.md) for the naming
+convention across layers and the cross-generator default matrix.
 
-### Step 2: Statistics Computation (`--run-stats`)
+## Input / output path routing
 
-Calculates structural and community-dependent metrics for the generated network.
+Every run produces synthetic networks under a canonical sub-tree. Stats
+land in a parallel tree when `--run-stats` is passed.
 
-* **Outputs:** `<stats-dir>/cluster/`, `<stats-dir>/network/`
+### Custom mode
 
-### Step 3: Statistics Comparison (`--run-comp`)
+**Inputs** (caller-provided):
 
-Compares the synthetic statistics against the empirical baseline distributions.
+- `<input-edgelist>`: reference edge list
+- `<input-clustering>`: reference clustering
+- `<input-network-stats>` + `<input-cluster-stats>`: optional. Used only with `--run-comp`. If omitted, computed from the reference inputs and cached under `<output-dir>/stats/reference/...` (see Outputs).
 
-* **Outputs:** `<stats-dir>/comparison.csv`
+**Outputs**: under `<output-dir>/networks/<generator>[/<clustering-id>][/<network>]/<run-id>/`
+
+Bracketed segments `[/<clustering-id>]` and `[/<network>]` are inserted
+only when the corresponding optional flag is passed; otherwise they drop
+out of the path entirely.
+
+- `edge.csv`, `com.csv`: synthetic edge list + clustering
+- `params.txt`, `done`, `run.log`: state hash, invocation params, log
+- `source.json` (optional): provenance
+- `.state/` (optional, kept only with `--keep-state`): per-stage intermediates
+
+Stats under `<output-dir>/stats/<generator>[/<clustering-id>][/<network>]/<run-id>/` (same bracket semantics):
+
+- `cluster/`, `network/`: per-subsystem metrics
+- `comparison.csv`: present only when `--run-comp` was passed
+
+Auto-computed reference stats (only when `--run-comp` is passed without
+`--input-network-stats` / `--input-cluster-stats`) land at:
+
+- `<output-dir>/stats/reference/network[/<network>]/`
+- `<output-dir>/stats/reference/cluster[/<clustering-id>][/<network>]/`
+
+They are populated on first use from the reference inputs and reused on subsequent runs.
+
+### Macro mode
+
+**Inputs** (auto-resolved under `data/`):
+
+- `data/empirical_networks/networks/<network>/<network>.csv`
+- `data/reference_clusterings/clusterings/<clustering-id>/<network>/com.csv`
+- `data/empirical_networks/stats/<network>/` and
+  `data/reference_clusterings/stats/<clustering-id>/<network>/` (for `--run-comp`; computed and cached at these paths on first use if absent)
+
+**Outputs** (auto-routed under `data/`):
+
+- `data/synthetic_networks/networks/<generator>/<clustering-id>/<network>/<run-id>/`: same file set as custom mode
+- `data/synthetic_networks/stats/<generator>/<clustering-id>/<network>/<run-id>/`: same layout as custom mode
 
 ## Examples
 
-The invocation below reproduces the committed `examples/output/synthetic_networks/` tree for `ec-sbm-v2`, using the inputs committed under `examples/input/`. It runs the full pipeline (generation, synthetic stats, comparison) and preserves the per-stage `.state/` directories that are also committed.
+Full pipeline on the committed example (`ec-sbm-v2` on `dnc` +
+`sbm-flat-best+cc`), preserving per-stage `.state/`:
 
 ```bash
 ./run_generator.sh \
@@ -157,43 +177,37 @@ The invocation below reproduces the committed `examples/output/synthetic_network
     --run-stats --run-comp --keep-state
 ```
 
-The macro-mode equivalent reads from and writes to the standard `data/` tree rather than `examples/`:
+Macro-mode equivalent (reads / writes the `data/` tree):
 
 ```bash
-./run_generator.sh \
+./run_generator.sh --macro \
     --generator ec-sbm-v2 --run-id 0 --seed 1 \
-    --macro \
     --network dnc --clustering-id sbm-flat-best+cc \
     --run-stats --run-comp --keep-state
 ```
 
-## Installation
+## Further reading
 
-Generators are independent, so install only the ones you plan to use. See [INSTALL.md](INSTALL.md) for per-generator steps.
+- [docs/algorithms.md](docs/algorithms.md): what each generator
+  preserves; runtime and determinism guarantees.
+- [docs/advanced-usage.md](docs/advanced-usage.md): per-generator
+  pipeline flags, naming convention, default matrix.
 
 ## Tests
 
-The test suite lives under `tests/` and is split by subsystem:
-
-- `tests/common` — state machine, per-stage params, profile/pipeline helpers (fast, no external tooling)
-- `tests/profile_py` — per-generator `profile.py` output contract (fast)
-- `tests/dispatcher` — `run_generator.sh` flag dispatch (fast, wrapper-only)
-- `tests/wrappers` — `--keep-state` wrapper contract (invokes pipelines)
-- `tests/simple_gens` — end-to-end runs for `sbm`, `abcd`, `abcd+o`, `lfr`, `npso`; skips gens whose externals aren't installed
-- `tests/ec_sbm` — end-to-end runs for `ec-sbm-v1` / `ec-sbm-v2`
-
-See [INSTALL.md](INSTALL.md) for installation instructions for the tests. Activate the corresponding conda env before running tests that depend on a generator's externals.
+Test suite under `tests/`, split by subsystem (`common`, `profile_py`,
+`dispatcher`, `wrappers`, `simple_gens`, `ec_sbm`). Fast tests have no
+external tooling; end-to-end tests skip generators whose externals are
+not installed. See [INSTALL.md](INSTALL.md) for setup.
 
 ## Benchmarking
 
-End-to-end wall-clock and byte-reproducibility across all 7 generators
-are measured by [scripts/benchmark/bench_gens.sh](scripts/benchmark/bench_gens.sh).
-Default configuration: 2 warmup + 10 kept runs per seed, seeds 1-10,
-single-threaded, on the shipped `dnc + sbm-flat-best+cc` example. Raw
-times land in `scripts/benchmark/results.csv` and a mean/std summary is
-printed to stdout. See the Runtime section of
-[docs/algorithms.md](docs/algorithms.md) for the reference numbers and
-host spec.
+[`scripts/benchmark/bench_gens.sh`](scripts/benchmark/bench_gens.sh)
+measures end-to-end wall-clock and byte-reproducibility across the seven
+generators (default: 2 warmup + 10 kept runs per seed, seeds 1-10,
+single-threaded, on the shipped `dnc + sbm-flat-best+cc` example). See
+the Runtime section of [docs/algorithms.md](docs/algorithms.md) for
+reference numbers.
 
 ## Acknowledgements
 
@@ -204,4 +218,5 @@ host spec.
 - **`lfr`**: [LFR benchmark](https://www.santofortunato.net/resources).
 - **`npso`**: [nPSO_model](https://github.com/biomedical-cybernetics/nPSO_model).
 
-Portions of the code, documentation, and tests were written with the help of [Claude](https://www.anthropic.com/claude) via Claude Code.
+Portions of the code, documentation, and tests were written with the
+help of [Claude](https://www.anthropic.com/claude) via Claude Code.

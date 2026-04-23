@@ -120,24 +120,28 @@ else
         exit 1
     fi
     
-    if [ "${run_comp_flag}" -eq 1 ]; then
-        if [ -z "${custom_emp_network_stats}" ] || [ -z "${custom_ref_cluster_stats}" ]; then
-            log "Error: --run-comp requires --input-network-stats and --input-cluster-stats in custom mode."
-            exit 1
-        fi
-    fi
-    
     INP_EDGE="${custom_inp_edge}"
     INP_COM="${custom_inp_com}"
-    
+
     # Dynamically build the trailing subpath for custom mode
     opt_subpath="${clustering_id:+/${clustering_id}}${network_id:+/${network_id}}/${run_id}"
-    
+
     OUT_DIR="${custom_out_dir}/networks/${generator}${opt_subpath}"
     STATS_DIR="${custom_out_dir}/stats/${generator}${opt_subpath}"
-    
-    EMPIRICAL_NETWORK_STATS_DIR="${custom_emp_network_stats}"
-    REFERENCE_STATS_DIR="${custom_ref_cluster_stats}"
+
+    # Reference stats paths: use user-provided if given, else fall back to a
+    # canonical location under <output-dir>/stats/reference/ so --run-comp
+    # can auto-compute them from the inputs (see ensure_reference_stats).
+    if [ -n "${custom_emp_network_stats}" ]; then
+        EMPIRICAL_NETWORK_STATS_DIR="${custom_emp_network_stats}"
+    else
+        EMPIRICAL_NETWORK_STATS_DIR="${custom_out_dir}/stats/reference/network${network_id:+/${network_id}}"
+    fi
+    if [ -n "${custom_ref_cluster_stats}" ]; then
+        REFERENCE_STATS_DIR="${custom_ref_cluster_stats}"
+    else
+        REFERENCE_STATS_DIR="${custom_out_dir}/stats/reference/cluster${clustering_id:+/${clustering_id}}${network_id:+/${network_id}}"
+    fi
     
     # Build a clean log display string
     dataset_name="[Custom] ${network_id:+"${network_id} "}${clustering_id:+"(Clustering: ${clustering_id}) "}(Run: ${run_id})"
@@ -206,6 +210,46 @@ run_network_stats() {
         log "ERROR: Network stats computation failed."
     else
         log "Network stats evaluation complete."
+    fi
+}
+
+# Ensure reference stats exist (network-only and cluster-dependent) for
+# --run-comp. If the user did not pass --input-network-stats /
+# --input-cluster-stats, the dispatcher falls back to a canonical path under
+# the output tree and populates it from the reference edgelist and
+# clustering on first use. Subsequent runs see the populated folder and
+# skip recomputation.
+# Args: <ref_edge> <ref_com> <ref_network_stats_dir> <ref_cluster_stats_dir>
+ensure_reference_stats() {
+    if [ "${run_comp_flag}" -eq 0 ]; then return; fi
+    local ref_edge=$1; local ref_com=$2
+    local net_dir=$3; local cl_dir=$4
+
+    if [ ! -d "${net_dir}" ] || [ -z "$(ls -A "${net_dir}" 2>/dev/null)" ]; then
+        log "Reference network stats missing; computing to ${net_dir}..."
+        mkdir -p "${net_dir}"
+        { /usr/bin/time -v python "${SCRIPT_DIR}/network_evaluation/network_stats/compute_network_stats.py" \
+            --network "${ref_edge}" \
+            --outdir "${net_dir}"; } 2> "${net_dir}/error.log"
+        if [ ${?} -ne 0 ]; then
+            log "ERROR: Reference network stats computation failed."
+        else
+            log "Reference network stats ready."
+        fi
+    fi
+
+    if [ ! -d "${cl_dir}" ] || [ -z "$(ls -A "${cl_dir}" 2>/dev/null)" ]; then
+        log "Reference cluster stats missing; computing to ${cl_dir}..."
+        mkdir -p "${cl_dir}"
+        { /usr/bin/time -v python "${SCRIPT_DIR}/network_evaluation/network_stats/compute_cluster_stats.py" \
+            --network "${ref_edge}" \
+            --community "${ref_com}" \
+            --outdir "${cl_dir}"; } 2> "${cl_dir}/error.log"
+        if [ ${?} -ne 0 ]; then
+            log "ERROR: Reference cluster stats computation failed."
+        else
+            log "Reference cluster stats ready."
+        fi
     fi
 }
 
@@ -299,6 +343,9 @@ fi
 run_cluster_stats "${OUT_DIR}/edge.csv" "${OUT_DIR}/com.csv" "${SYNTH_CLUSTER_STATS_DIR}"
 
 run_network_stats "${OUT_DIR}/edge.csv" "${SYNTH_NETWORK_STATS_DIR}"
+
+ensure_reference_stats "${INP_EDGE}" "${INP_COM}" \
+                       "${EMPIRICAL_NETWORK_STATS_DIR}" "${REFERENCE_STATS_DIR}"
 
 run_comparison "${SYNTH_CLUSTER_STATS_DIR}" "${REFERENCE_STATS_DIR}" \
                "${SYNTH_NETWORK_STATS_DIR}" "${EMPIRICAL_NETWORK_STATS_DIR}" \

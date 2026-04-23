@@ -151,6 +151,23 @@ shell does not amortise startup the way it does with graph-tool.
 - **No**: [SBM](./sbm.md) or [EC-SBM v2](./ec-sbm-v2.md) if you need the
   block-pair edge-count matrix preserved.
 
+## CLI flags
+
+Dispatcher (`run_generator.sh`):
+
+- `--abcd-dir <p>`: path to `ABCDGraphGenerator.jl` checkout (must expose `utils/graph_sampler.jl`). Default `externals/abcd`.
+
+Pipeline (`./src/abcd/pipeline.sh`):
+
+- `--package-dir <p>`: same role, short form at pipeline layer.
+- `--outlier-mode <excluded|singleton|combined>`: default `singleton`.
+- `--drop-outlier-outlier-edges` / `--keep-outlier-outlier-edges`: default keep.
+- `--match-degree` / `--no-match-degree`: default off.
+- `--match-degree-algorithm <greedy|true_greedy|random_greedy|rewire|hybrid>`: default `hybrid`.
+- `--remap` / `--no-remap`: default on (ABCD emits fresh 1..N IDs; rank-pair to reference for match-degree targets).
+
+See [../advanced-usage.md](../advanced-usage.md).
+
 ## Where to look next
 
 - [Source: `src/abcd/gen.py`](../../src/abcd/gen.py)
