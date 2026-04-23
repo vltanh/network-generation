@@ -3,3 +3,4 @@ e240ae23f3ea32f05e1a9135bbc3d310752dacfbbcaf80900cbf09e7dfd59984  examples/input
 1705f9629e7ad7366564a3d2157644a28fc3730837cbd7aad2d5a9642b3028c2  examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/.state/setup/params.txt
 48fd52339fb3e27849ea04c6ddbb974d1a5f9eb555e59e437e80b552c88d424e  examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/.state/setup/degree.csv
 ce19257ae64910ba2de74ecb6c3306d5a9ebe156c31228014cbf5ba92950e2c7  examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/.state/setup/cluster_sizes.csv
+c48dc72b426cb0b905dd5fd3fe8c4101108df2e6aa4aacd2bfbf809907b10a4a  examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/.state/setup/derived.txt
