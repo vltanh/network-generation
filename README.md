@@ -41,6 +41,7 @@ Use this mode to provide explicit file paths for your own datasets.
 | `--abcd-dir <p>` | Override for `abcd` / `abcd+o`. Defaults to `externals/abcd`. Path to an `ABCDGraphGenerator.jl` checkout (exposes `utils/graph_sampler.jl`). |
 | `--lfr-binary <p>` | Override for `lfr`. Defaults to `externals/lfr/unweighted_undirected/benchmark`. Path to the compiled LFR benchmark executable. |
 | `--npso-dir <p>` | Override for `npso`. Defaults to `externals/npso`. Path to the `nPSO_model` checkout; requires `matlab` on PATH. |
+| `--npso-model <m>` | Override for `npso`. Specifies the model version (nPSO1, nPSO2, or nPSO3). Defaults to `nPSO2`. |
 
 **Note on `--seed`:** **Do not pass `0`** to graph-tool-backed generators (`sbm`, `ec-sbm-v1`, `ec-sbm-v2`): `gt.seed_rng(0)` is interpreted as "use the system entropy source" and silently disables byte-reproducibility.
 
@@ -59,6 +60,12 @@ Use this mode to provide explicit file paths for your own datasets.
 **Outputs (Dynamically Routed):**
 
 * Synthetic edgelist: `<output-dir>/networks/<generator>[/<clustering-id>][/<network>]/<run-id>/edge.csv`
+* Synthetic clustering: `<output-dir>/networks/<generator>[/<clustering-id>][/<network>]/<run-id>/com.csv`
+* Additional parameters: `<output-dir>/networks/<generator>[/<clustering-id>][/<network>]/<run-id>/params.txt`
+* State hash tracking: `<output-dir>/networks/<generator>[/<clustering-id>][/<network>]/<run-id>/done`
+* Log: `<output-dir>/networks/<generator>[/<clustering-id>][/<network>]/<run-id>/run.log`
+* (Optional) Provenance tracking: `<output-dir>/networks/<generator>[/<clustering-id>][/<network>]/<run-id>/source.json`
+* (Optional) Per-stage outputs: `<output-dir>/networks/<generator>[/<clustering-id>][/<network>]/<run-id>/.state/`
 * Stats: `<output-dir>/stats/<generator>[/<clustering-id>][/<network>]/<run-id>/`
     * `cluster/`       (Cluster-dependent metrics)
     * `network/`       (Network-only metrics)
@@ -86,10 +93,7 @@ Use this mode to automatically map inputs and outputs to the standard `data/` di
 
 ### Optional Arguments & Flags
 
-| Argument | Description |
-| --- | --- |
-| `--run-stats` | Enables computation of synthetic network and cluster statistics. |
-| `--run-comp` | Enables statistical comparison. |
+All optional arguments from [Custom Mode](#1-custom-mode-standard-usage) are supported, except for `--network` and `--clustering-id` which are now required.
 
 ### Directory Structure
 
@@ -104,6 +108,12 @@ Use this mode to automatically map inputs and outputs to the standard `data/` di
 **Outputs (Auto-Routed):**
 
 * Synthetic edgelist: `data/synthetic_networks/networks/<generator>/<clustering-id>/<network>/<run-id>/edge.csv`
+* Synthetic clustering: `data/synthetic_networks/networks/<generator>/<clustering-id>/<network>/<run-id>/com.csv`
+* Additional parameters: `data/synthetic_networks/networks/<generator>/<clustering-id>/<network>/<run-id>/params.txt`
+* State hash tracking: `data/synthetic_networks/networks/<generator>/<clustering-id>/<network>/<run-id>/done`
+* Log: `data/synthetic_networks/networks/<generator>/<clustering-id>/<network>/<run-id>/run.log`
+* (Optional) Provenance tracking: `data/synthetic_networks/networks/<generator>/<clustering-id>/<network>/<run-id>/source.json`
+* (Optional) Per-stage outputs: `data/synthetic_networks/networks/<generator>/<clustering-id>/<network>/<run-id>/.state/`
 * Stats: `data/synthetic_networks/stats/<generator>/<clustering-id>/<network>/<run-id>/`
     * `cluster/`       (Cluster-dependent metrics)
     * `network/`       (Network-only metrics)
@@ -172,7 +182,7 @@ The test suite lives under `tests/` and is split by subsystem:
 - `tests/simple_gens` — end-to-end runs for `sbm`, `abcd`, `abcd+o`, `lfr`, `npso`; skips gens whose externals aren't installed
 - `tests/ec_sbm` — end-to-end runs for `ec-sbm-v1` / `ec-sbm-v2`
 
-See [INSTALL.md](INSTALL.md) for generator-specific installation instructions. Activate the corresponding conda env before running tests that depend on a generator's externals.
+See [INSTALL.md](INSTALL.md) for installation instructions for the tests. Activate the corresponding conda env before running tests that depend on a generator's externals.
 
 ## Benchmarking
 
