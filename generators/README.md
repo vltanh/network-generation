@@ -37,7 +37,15 @@ are not interchangeable:
   forwarded by the dispatcher (`run_generator.sh`) to the per-generator
   `pipeline.sh` *after* the common `--input-edgelist / --input-clustering /
   --output-dir` flags. Use it for pipeline-level knobs like `--seed`,
-  `--n-threads`, `--abcd-dir`.
+  `--n-threads`, `--package-dir`.
+
+  Naming convention: at the dispatcher layer, generator-specific flags are
+  namespaced (`--abcd-dir`, `--lfr-binary`, `--npso-dir`, `--npso-model`); the
+  generator config in this directory translates them to short names at the
+  `pipeline.sh` layer (`--package-dir` for `abcd` / `abcd+o` / `npso`,
+  `--binary` for `lfr`, `--model` for `npso`). Shared flags that already
+  carry no ambiguity (`--seed`, `--n-threads`, `--timeout`, `--keep-state`)
+  keep the same name across layers.
 
 - **`GEN_CLI_ARGS`** lives in the per-generator wrapper
   `src/<name>/pipeline.sh`. It is forwarded by the shared dispatcher

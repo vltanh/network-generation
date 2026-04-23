@@ -173,13 +173,15 @@ FLAG_MATRIX = [
     ("ec-sbm-v1", "--n-threads", "3", True),
     ("ec-sbm-v2", "--n-threads", "3", True),
     ("lfr", "--n-threads", None, False),
-    # external-binary flags
-    ("abcd", "--abcd-dir", None, True),
-    ("abcd+o", "--abcd-dir", None, True),
-    ("lfr", "--lfr-binary", None, True),
-    ("npso", "--npso-dir", None, True),
-    ("sbm", "--abcd-dir", None, False),
-    ("ec-sbm-v2", "--abcd-dir", None, False),
+    # external-binary flags — dispatcher's --abcd-dir/--lfr-binary/--npso-dir
+    # are translated by generators/*.sh into short pipeline-level flags
+    # (--package-dir for abcd/abcd+o/npso, --binary for lfr).
+    ("abcd", "--package-dir", None, True),
+    ("abcd+o", "--package-dir", None, True),
+    ("lfr", "--binary", None, True),
+    ("npso", "--package-dir", None, True),
+    ("sbm", "--package-dir", None, False),
+    ("ec-sbm-v2", "--package-dir", None, False),
     # ec-sbm-v2 algorithm trio.  --outlier-mode / --gen-outlier-mode are not in
     # GEN_EXTRA_ARGS: the pipeline's defaults ("combined" for both the profile
     # stage and the gen-outlier stage) apply, and generators/ec-sbm-v2.sh stays
