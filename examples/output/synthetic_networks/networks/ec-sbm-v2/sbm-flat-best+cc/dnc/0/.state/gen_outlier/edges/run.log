@@ -1,18 +1,18 @@
-2026-04-21 17:06:22,910 - INFO - Starting Residual SBM Generation...
-2026-04-21 17:06:22,911 - INFO - Correction Mode: rewire | Outlier Mode: combined
-2026-04-21 17:06:23,058 - INFO - Setup elapsed: 0.1476 seconds
-2026-04-21 17:06:23,070 - INFO - Initial bad edges before rewiring: 2120
-2026-04-21 17:06:23,147 - INFO - After attempt 1: 809 bad edges remain.
-2026-04-21 17:06:23,162 - INFO - After attempt 2: 788 bad edges remain.
-2026-04-21 17:06:23,165 - INFO - After attempt 3: 786 bad edges remain.
-2026-04-21 17:06:23,177 - INFO - After attempt 4: 770 bad edges remain.
-2026-04-21 17:06:23,178 - INFO - After attempt 5: 770 bad edges remain.
-2026-04-21 17:06:23,179 - INFO - After attempt 6: 770 bad edges remain.
-2026-04-21 17:06:23,183 - INFO - After attempt 7: 768 bad edges remain.
-2026-04-21 17:06:23,184 - INFO - After attempt 8: 768 bad edges remain.
-2026-04-21 17:06:23,188 - INFO - After attempt 9: 765 bad edges remain.
-2026-04-21 17:06:23,189 - INFO - After attempt 10: 765 bad edges remain.
-2026-04-21 17:06:23,189 - WARNING - Finished 10 retries. 765 bad edges remain unresolved and will be dropped.
-2026-04-21 17:06:23,197 - INFO - Generation of residual subgraph elapsed: 0.1392 seconds
-2026-04-21 17:06:23,202 - INFO - Export elapsed: 0.0040 seconds
-2026-04-21 17:06:23,202 - INFO - Complete.
+2026-04-23 17:38:09,674 - INFO - Starting Residual SBM Generation...
+2026-04-23 17:38:09,674 - INFO - Correction Mode: rewire | Outlier Mode: combined
+2026-04-23 17:38:09,787 - INFO - Setup elapsed: 0.1125 seconds
+2026-04-23 17:38:09,798 - INFO - Initial bad edges before rewiring: 2120
+2026-04-23 17:38:09,872 - INFO - After attempt 1: 809 bad edges remain.
+2026-04-23 17:38:09,886 - INFO - After attempt 2: 788 bad edges remain.
+2026-04-23 17:38:09,888 - INFO - After attempt 3: 786 bad edges remain.
+2026-04-23 17:38:09,900 - INFO - After attempt 4: 770 bad edges remain.
+2026-04-23 17:38:09,901 - INFO - After attempt 5: 770 bad edges remain.
+2026-04-23 17:38:09,902 - INFO - After attempt 6: 770 bad edges remain.
+2026-04-23 17:38:09,906 - INFO - After attempt 7: 768 bad edges remain.
+2026-04-23 17:38:09,907 - INFO - After attempt 8: 768 bad edges remain.
+2026-04-23 17:38:09,910 - INFO - After attempt 9: 765 bad edges remain.
+2026-04-23 17:38:09,911 - INFO - After attempt 10: 765 bad edges remain.
+2026-04-23 17:38:09,911 - WARNING - Finished 10 retries. 765 bad edges remain unresolved and will be dropped.
+2026-04-23 17:38:09,920 - INFO - Generation of residual subgraph elapsed: 0.1325 seconds
+2026-04-23 17:38:09,923 - INFO - Export elapsed: 0.0038 seconds
+2026-04-23 17:38:09,923 - INFO - Complete.

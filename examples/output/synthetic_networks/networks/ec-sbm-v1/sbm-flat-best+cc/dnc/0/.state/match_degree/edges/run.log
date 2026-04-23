@@ -1,8 +1,8 @@
-2026-04-21 17:06:21,086 - INFO - --- Starting Degree Matching (GREEDY mode) ---
-2026-04-21 17:06:21,100 - INFO - Loaded reference topologies elapsed: 0.0144 seconds
-2026-04-21 17:06:21,108 - INFO - Subtracted existing edges elapsed: 0.0077 seconds
-2026-04-21 17:06:21,108 - INFO - Starting Original Greedy matching algorithm...
-2026-04-21 17:06:21,108 - INFO - Initial missing stubs: 4258
-2026-04-21 17:06:21,110 - INFO - Added 2120 edges
-2026-04-21 17:06:21,110 - INFO - Degree matching elapsed: 0.0020 seconds
-2026-04-21 17:06:21,112 - INFO - Exported edgelist elapsed: 0.0020 seconds
+2026-04-23 17:38:05,947 - INFO - --- Starting Degree Matching (GREEDY mode) ---
+2026-04-23 17:38:05,959 - INFO - Loaded reference topologies elapsed: 0.0123 seconds
+2026-04-23 17:38:05,966 - INFO - Subtracted existing edges elapsed: 0.0067 seconds
+2026-04-23 17:38:05,966 - INFO - Starting Original Greedy matching algorithm...
+2026-04-23 17:38:05,966 - INFO - Initial missing stubs: 4258
+2026-04-23 17:38:05,968 - INFO - Added 2120 edges
+2026-04-23 17:38:05,968 - INFO - Degree matching elapsed: 0.0018 seconds
+2026-04-23 17:38:05,970 - INFO - Exported edgelist elapsed: 0.0017 seconds

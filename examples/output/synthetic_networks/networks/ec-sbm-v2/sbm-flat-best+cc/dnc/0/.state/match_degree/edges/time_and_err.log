@@ -1,19 +1,19 @@
-=== 2026-04-21T22:06:23Z | pid=621532 | host=nah-popos | EXECUTED ===
+=== 2026-04-23T22:38:10Z | pid=182914 | host=nah-popos | EXECUTED ===
 	Command being timed: "python /home/vltanh/Documents/network-generation/src/match_degree.py --input-edgelist examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/gen_outlier/edge.csv --ref-edgelist examples/input/empirical_networks/networks/dnc/dnc.csv --match-degree-algorithm hybrid --output-folder examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/match_degree/edges --seed 3"
-	User time (seconds): 0.23
-	System time (seconds): 0.04
-	Percent of CPU this job got: 97%
-	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:00.28
+	User time (seconds): 0.21
+	System time (seconds): 0.02
+	Percent of CPU this job got: 100%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:00.23
 	Average shared text size (kbytes): 0
 	Average unshared data size (kbytes): 0
 	Average stack size (kbytes): 0
 	Average total size (kbytes): 0
-	Maximum resident set size (kbytes): 87164
+	Maximum resident set size (kbytes): 72024
 	Average resident set size (kbytes): 0
 	Major (requiring I/O) page faults: 0
-	Minor (reclaiming a frame) page faults: 14587
-	Voluntary context switches: 22
-	Involuntary context switches: 57
+	Minor (reclaiming a frame) page faults: 13900
+	Voluntary context switches: 1
+	Involuntary context switches: 8
 	Swaps: 0
 	File system inputs: 0
 	File system outputs: 24
