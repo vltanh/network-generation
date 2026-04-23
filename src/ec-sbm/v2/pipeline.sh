@@ -5,15 +5,14 @@ if [[ "${SCRIPT_DIR}" == *"/slurmd/job"* ]]; then
     SCRIPT_DIR="${SLURM_SUBMIT_DIR}"
 fi
 SRC_DIR="$( cd "${SCRIPT_DIR}/../.." && pwd )"
-COMMON_DIR="$( cd "${SCRIPT_DIR}/../common" && pwd )"
 SHARED_DIR="$( cd "${SRC_DIR}/_common" && pwd )"
-export PYTHONPATH="${COMMON_DIR}:${SRC_DIR}${PYTHONPATH:+:${PYTHONPATH}}"
 
 # Default values
 TIMEOUT="3d"
 N_THREADS=1
 KEEP_STATE=0
 SEED=1
+PACKAGE_DIR=""
 # Profile stage excludes outliers; gen_outlier stage synthesizes them.
 OUTLIER_MODE="excluded"
 DROP_OO_BOOL="false"
@@ -34,10 +33,23 @@ while [[ "$#" -gt 0 ]]; do
         --n-threads) N_THREADS="$2"; shift ;;
         --keep-state) KEEP_STATE=1 ;;
         --seed) SEED="$2"; shift ;;
+        --package-dir) PACKAGE_DIR="$2"; shift ;;
         *) echo "Unknown parameter passed: $1"; exit 1 ;;
     esac
     shift
 done
+
+if [ -z "${PACKAGE_DIR}" ]; then
+    echo "Error: --package-dir is required (path to externals/ec-sbm)." >&2
+    exit 1
+fi
+PACKAGE_DIR="$( cd "${PACKAGE_DIR}" && pwd )"
+PACKAGE_PY_DIR="${PACKAGE_DIR}/ec-sbm"
+
+# SRC_DIR first so this repo's canonical helpers shadow ec-sbm's vendored
+# copies; PACKAGE_PY_DIR/common next so gen_clustered_core resolves;
+# PACKAGE_PY_DIR last (its vendored helpers are shadowed but harmless).
+export PYTHONPATH="${SRC_DIR}:${PACKAGE_PY_DIR}/common:${PACKAGE_PY_DIR}${PYTHONPATH:+:${PYTHONPATH}}"
 
 export OMP_NUM_THREADS="${N_THREADS}"
 # Pin: gen_outlier + match_degree's true_greedy iterate sets/dicts whose
@@ -118,7 +130,7 @@ OUT_PROFILE="${STG_PROFILE_DIR}/node_id.csv ${STG_PROFILE_DIR}/cluster_id.csv ${
 
 if ! is_step_done "${STG_PROFILE_DIR}/done" "${OUT_PROFILE}"; then
     run_stage "${STG_PROFILE_DIR}/time_and_err.log" \
-        python "${COMMON_DIR}/profile.py" \
+        python "${PACKAGE_PY_DIR}/common/profile.py" \
         --edgelist "${INPUT_EDGELIST}" \
         --clustering "${INPUT_CLUSTERING}" \
         --output-folder "${STG_PROFILE_DIR}" \
@@ -144,7 +156,7 @@ OUT_GEN_CLUSTERED="${STG_GEN_CLUSTERED_DIR}/edge.csv"
 
 if ! is_step_done "${STG_GEN_CLUSTERED_DIR}/done" "${OUT_GEN_CLUSTERED}"; then
     run_stage "${STG_GEN_CLUSTERED_DIR}/time_and_err.log" \
-        python "${SCRIPT_DIR}/gen_clustered.py" \
+        python "${PACKAGE_PY_DIR}/v2/gen_clustered.py" \
         --node-id "${STG_PROFILE_DIR}/node_id.csv" \
         --cluster-id "${STG_PROFILE_DIR}/cluster_id.csv" \
         --assignment "${STG_PROFILE_DIR}/assignment.csv" \
@@ -176,7 +188,7 @@ OUT_GEN_OUTLIER="${STG_GEN_OUTLIER_EDGES_DIR}/edge_outlier.csv"
 
 if ! is_step_done "${STG_GEN_OUTLIER_EDGES_DIR}/done" "${OUT_GEN_OUTLIER}"; then
     run_stage "${STG_GEN_OUTLIER_EDGES_DIR}/time_and_err.log" \
-        python "${SCRIPT_DIR}/gen_outlier.py" \
+        python "${PACKAGE_PY_DIR}/v2/gen_outlier.py" \
         --orig-edgelist "${INPUT_EDGELIST}" \
         --orig-clustering "${INPUT_CLUSTERING}" \
         --exist-edgelist "${STG_GEN_CLUSTERED_DIR}/edge.csv" \

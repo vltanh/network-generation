@@ -1,7 +1,9 @@
 """Per-generator profile-module output contract tests.
 
-Each generator has its own profile module under ``src/<gen>/profile.py``
-(or ``src/ec-sbm/common/profile.py`` for ec-sbm).  Each module exposes
+Each generator has its own profile module. The in-repo generators live
+under ``src/<gen>/profile.py``; ec-sbm's profile lives in the
+``externals/ec-sbm`` submodule at
+``externals/ec-sbm/ec-sbm/common/profile.py``. Each module exposes
 ``setup_inputs(edgelist, clustering, output_dir)`` and writes a
 documented set of output files.  These tests pin that contract.
 """
@@ -25,14 +27,14 @@ CLUSTERING = (
 )
 
 
-# (generator_label, per_gen_profile_path_parts_under_src)
+# (generator_label, per_gen_profile_path_parts_relative_to_REPO_ROOT)
 _GENERATORS = {
-    "sbm":    ("sbm", "profile.py"),
-    "abcd":   ("abcd", "profile.py"),
-    "abcd+o": ("abcd+o", "profile.py"),
-    "lfr":    ("lfr", "profile.py"),
-    "npso":   ("npso", "profile.py"),
-    "ecsbm":  ("ec-sbm", "common", "profile.py"),
+    "sbm":    ("src", "sbm", "profile.py"),
+    "abcd":   ("src", "abcd", "profile.py"),
+    "abcd+o": ("src", "abcd+o", "profile.py"),
+    "lfr":    ("src", "lfr", "profile.py"),
+    "npso":   ("src", "npso", "profile.py"),
+    "ecsbm":  ("externals", "ec-sbm", "ec-sbm", "common", "profile.py"),
 }
 
 
@@ -66,7 +68,7 @@ def _load_per_gen(generator):
     ``from profile_common import ...`` in the shared ec-sbm profile)
     resolve, then clean it back off.
     """
-    path = REPO_ROOT / "src" / Path(*_GENERATORS[generator])
+    path = REPO_ROOT / Path(*_GENERATORS[generator])
     gen_dir = str(path.parent)
     sys.path.insert(0, gen_dir)
     try:
@@ -143,7 +145,7 @@ def test_generator_output_stable_across_pythonhashseed(tmp_path, generator):
     src_dir = str(REPO_ROOT / "src")
     existing = env.get("PYTHONPATH", "")
     env["PYTHONPATH"] = f"{src_dir}:{existing}" if existing else src_dir
-    profile_path = REPO_ROOT / "src" / Path(*_GENERATORS[generator])
+    profile_path = REPO_ROOT / Path(*_GENERATORS[generator])
     subprocess.run(
         [
             "python", str(profile_path),
