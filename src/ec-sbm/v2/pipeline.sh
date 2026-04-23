@@ -44,7 +44,7 @@ if [ -z "${PACKAGE_DIR}" ]; then
     exit 1
 fi
 PACKAGE_DIR="$( cd "${PACKAGE_DIR}" && pwd )"
-PACKAGE_PY_DIR="${PACKAGE_DIR}/ec-sbm"
+PACKAGE_PY_DIR="${PACKAGE_DIR}/src"
 
 # SRC_DIR first so this repo's canonical helpers shadow ec-sbm's vendored
 # copies; PACKAGE_PY_DIR last so the algorithm modules (and

@@ -3,7 +3,7 @@
 ``compute_edge_count``, ``compute_mixing_parameter``, ``identify_outliers``,
 and ``apply_outlier_mode`` live in ``src/profile_common.py`` (shared by
 every generator).  ``compute_mincut`` is specific to ec-sbm and lives in
-``externals/ec-sbm/ec-sbm/common/profile.py``.  All accept plain dict/set/list
+``externals/ec-sbm/src/profile.py``.  All accept plain dict/set/list
 inputs and return in-memory results, so they are unit-testable without going
 through the CLI.
 
@@ -32,13 +32,13 @@ from profile_common import (  # noqa: E402
 
 
 def _load_ecsbm_profile():
-    """Load externals/ec-sbm/ec-sbm/common/profile.py by absolute path.
+    """Load externals/ec-sbm/src/profile.py by absolute path.
 
     The directory name contains a hyphen so we can't `import ec-sbm.common`;
     we load by file path instead, and push the module dir onto sys.path so
     its local `from profile_common import ...` resolves.
     """
-    path = REPO_ROOT / "externals" / "ec-sbm" / "ec-sbm" / "profile.py"
+    path = REPO_ROOT / "externals" / "ec-sbm" / "src" / "profile.py"
     gen_dir = str(path.parent)
     sys.path.insert(0, gen_dir)
     try:
