@@ -34,7 +34,7 @@ _GENERATORS = {
     "abcd+o": ("src", "abcd+o", "profile.py"),
     "lfr":    ("src", "lfr", "profile.py"),
     "npso":   ("src", "npso", "profile.py"),
-    "ecsbm":  ("externals", "ec-sbm", "ec-sbm", "common", "profile.py"),
+    "ecsbm":  ("externals", "ec-sbm", "ec-sbm", "profile.py"),
 }
 
 

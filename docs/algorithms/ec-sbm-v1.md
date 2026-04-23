@@ -45,7 +45,7 @@ stage 3a.
 
 ## Stage 2: building the k-edge-connected core
 
-[`externals/ec-sbm/ec-sbm/common/gen_clustered_core.py`](../../externals/ec-sbm/ec-sbm/common/gen_clustered_core.py)'s
+[`externals/ec-sbm/ec-sbm/gen_clustered_core.py`](../../externals/ec-sbm/ec-sbm/gen_clustered_core.py)'s
 `generate_cluster` runs per cluster in two phases.
 
 **Phase 1: the K_{k+1} core.** Take the k+1 highest-degree nodes in the
@@ -99,7 +99,7 @@ same cells, dedup drops the collisions) is the main reason v2 exists.
 
 ## Stage 3a: outlier-only SBM
 
-[`externals/ec-sbm/ec-sbm/v1/gen_outlier.py`](../../externals/ec-sbm/ec-sbm/v1/gen_outlier.py)
+[`externals/ec-sbm/ec-sbm/gen_outlier.py`](../../externals/ec-sbm/ec-sbm/gen_outlier.py)
 re-reads the original edgelist + clustering, identifies outliers (nodes in
 the edgelist but not in the clustering), and treats each outlier as its own
 size-1 block. It then samples an SBM on just the outlier-incident edges.
@@ -205,10 +205,10 @@ See [../advanced-usage.md](../advanced-usage.md).
 
 ## Where to look next
 
-- [Source: `externals/ec-sbm/ec-sbm/v1/gen_clustered.py`](../../externals/ec-sbm/ec-sbm/v1/gen_clustered.py)
-- [Source: `externals/ec-sbm/ec-sbm/v1/gen_outlier.py`](../../externals/ec-sbm/ec-sbm/v1/gen_outlier.py)
+- [Source: `externals/ec-sbm/ec-sbm/gen_clustered.py`](../../externals/ec-sbm/ec-sbm/gen_clustered.py) (unified; v1 is the `--sbm-overlay` preset)
+- [Source: `externals/ec-sbm/ec-sbm/gen_outlier.py`](../../externals/ec-sbm/ec-sbm/gen_outlier.py) (unified; v1 is `--scope outlier-incident --outlier-mode singleton --edge-correction none`)
 - [Source: `src/match_degree.py`](../../src/match_degree.py)
-- [Source: `externals/ec-sbm/ec-sbm/common/profile.py`](../../externals/ec-sbm/ec-sbm/common/profile.py)
+- [Source: `externals/ec-sbm/ec-sbm/profile.py`](../../externals/ec-sbm/ec-sbm/profile.py)
 - [Interactive GUI: ec-sbm-v1 steps at default settings](https://vltanh.me/netgen/ec-sbm-v1.html)
 - [EC-SBM v2 post](./ec-sbm-v2.md)
 - [Plain SBM post](./sbm.md)

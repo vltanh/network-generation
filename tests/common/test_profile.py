@@ -38,7 +38,7 @@ def _load_ecsbm_profile():
     we load by file path instead, and push the module dir onto sys.path so
     its local `from profile_common import ...` resolves.
     """
-    path = REPO_ROOT / "externals" / "ec-sbm" / "ec-sbm" / "common" / "profile.py"
+    path = REPO_ROOT / "externals" / "ec-sbm" / "ec-sbm" / "profile.py"
     gen_dir = str(path.parent)
     sys.path.insert(0, gen_dir)
     try:
