@@ -46,9 +46,9 @@ PACKAGE_DIR="$( cd "${PACKAGE_DIR}" && pwd )"
 PACKAGE_PY_DIR="${PACKAGE_DIR}/ec-sbm"
 
 # SRC_DIR first so this repo's canonical helpers shadow ec-sbm's vendored
-# copies; PACKAGE_PY_DIR/common next so gen_clustered_core resolves;
-# PACKAGE_PY_DIR last (its vendored helpers are shadowed but harmless).
-export PYTHONPATH="${SRC_DIR}:${PACKAGE_PY_DIR}/common:${PACKAGE_PY_DIR}${PYTHONPATH:+:${PYTHONPATH}}"
+# copies; PACKAGE_PY_DIR last so the algorithm modules (and
+# gen_clustered_core) resolve.
+export PYTHONPATH="${SRC_DIR}:${PACKAGE_PY_DIR}${PYTHONPATH:+:${PYTHONPATH}}"
 
 export OMP_NUM_THREADS="${N_THREADS}"
 # Pin: set/dict iteration order affects byte output.
@@ -125,7 +125,7 @@ OUT_PROFILE="${STG_PROFILE_DIR}/node_id.csv ${STG_PROFILE_DIR}/cluster_id.csv ${
 
 if ! is_step_done "${STG_PROFILE_DIR}/done" "${OUT_PROFILE}"; then
     run_stage "${STG_PROFILE_DIR}/time_and_err.log" \
-        python "${PACKAGE_PY_DIR}/common/profile.py" \
+        python "${PACKAGE_PY_DIR}/profile.py" \
         --edgelist "${INPUT_EDGELIST}" \
         --clustering "${INPUT_CLUSTERING}" \
         --output-folder "${STG_PROFILE_DIR}" \
@@ -144,14 +144,15 @@ echo "=== Starting Stage 2: Generate Clustered ==="
 STG_GEN_CLUSTERED_PARAMS="${STG_GEN_CLUSTERED_DIR}/params.txt"
 write_params_file "${STG_GEN_CLUSTERED_PARAMS}" \
     "seed=${SEED}" \
-    "n_threads=${N_THREADS}"
+    "n_threads=${N_THREADS}" \
+    "sbm_overlay=true"
 
 IN_GEN_CLUSTERED="${OUT_PROFILE} ${STG_GEN_CLUSTERED_PARAMS}"
 OUT_GEN_CLUSTERED="${STG_GEN_CLUSTERED_DIR}/edge.csv"
 
 if ! is_step_done "${STG_GEN_CLUSTERED_DIR}/done" "${OUT_GEN_CLUSTERED}"; then
     run_stage "${STG_GEN_CLUSTERED_DIR}/time_and_err.log" \
-        python "${PACKAGE_PY_DIR}/v1/gen_clustered.py" \
+        python "${PACKAGE_PY_DIR}/gen_clustered.py" \
         --node-id "${STG_PROFILE_DIR}/node_id.csv" \
         --cluster-id "${STG_PROFILE_DIR}/cluster_id.csv" \
         --assignment "${STG_PROFILE_DIR}/assignment.csv" \
@@ -159,7 +160,8 @@ if ! is_step_done "${STG_GEN_CLUSTERED_DIR}/done" "${OUT_GEN_CLUSTERED}"; then
         --mincut "${STG_PROFILE_DIR}/mincut.csv" \
         --edge-counts "${STG_PROFILE_DIR}/edge_counts.csv" \
         --output-folder "${STG_GEN_CLUSTERED_DIR}" \
-        --seed "${SEED}"
+        --seed "${SEED}" \
+        --sbm-overlay
     mark_done "${STG_GEN_CLUSTERED_DIR}/done" "Stage 2 (gen_clustered)" "${IN_GEN_CLUSTERED}" "${OUT_GEN_CLUSTERED}"
 else
     note_stage_skipped "${STG_GEN_CLUSTERED_DIR}/time_and_err.log"
@@ -175,16 +177,22 @@ echo "=== Starting Stage 3: Outlier Generation & Combine ==="
 # 3a. Generate Outliers
 STG_GEN_OUTLIER_EDGES_PARAMS="${STG_GEN_OUTLIER_EDGES_DIR}/params.txt"
 write_params_file "${STG_GEN_OUTLIER_EDGES_PARAMS}" \
-    "seed=$((SEED + 1))"
+    "seed=$((SEED + 1))" \
+    "scope=outlier-incident" \
+    "outlier_mode=singleton" \
+    "edge_correction=none"
 
 IN_GEN_OUTLIER="${INPUT_EDGELIST} ${INPUT_CLUSTERING} ${STG_GEN_OUTLIER_EDGES_PARAMS}"
 OUT_GEN_OUTLIER="${STG_GEN_OUTLIER_EDGES_DIR}/edge_outlier.csv"
 
 if ! is_step_done "${STG_GEN_OUTLIER_EDGES_DIR}/done" "${OUT_GEN_OUTLIER}"; then
     run_stage "${STG_GEN_OUTLIER_EDGES_DIR}/time_and_err.log" \
-        python "${PACKAGE_PY_DIR}/v1/gen_outlier.py" \
-        --edgelist "${INPUT_EDGELIST}" \
-        --clustering "${INPUT_CLUSTERING}" \
+        python "${PACKAGE_PY_DIR}/gen_outlier.py" \
+        --orig-edgelist "${INPUT_EDGELIST}" \
+        --orig-clustering "${INPUT_CLUSTERING}" \
+        --scope "outlier-incident" \
+        --outlier-mode "singleton" \
+        --edge-correction "none" \
         --output-folder "${STG_GEN_OUTLIER_EDGES_DIR}" \
         --seed "$((SEED + 1))"
     mark_done "${STG_GEN_OUTLIER_EDGES_DIR}/done" "Stage 3a (gen_outlier)" "${IN_GEN_OUTLIER}" "${OUT_GEN_OUTLIER}"
