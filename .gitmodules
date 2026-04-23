@@ -10,3 +10,6 @@
 [submodule "externals/npso"]
 	path = externals/npso
 	url = https://github.com/biomedical-cybernetics/nPSO_model.git
+[submodule "externals/ec-sbm"]
+	path = externals/ec-sbm
+	url = git@github.com:illinois-or-research-analytics/ec-sbm

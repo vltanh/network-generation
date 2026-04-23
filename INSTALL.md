@@ -22,6 +22,15 @@ conda create -n ecsbm python=3.11 numpy pandas scipy setuptools wheel pybind11 -
 conda activate ecsbm
 conda install -c conda-forge graph-tool -y
 pip install 'cmake<4' && pip install --no-build-isolation git+https://github.com/vikramr2/python-mincut
+git submodule update --init --recursive externals/ec-sbm
+```
+
+If SSH access to `illinois-or-research-analytics/ec-sbm` is not set up, switch the submodule URL to HTTPS once:
+
+```bash
+git config -f .gitmodules submodule.externals/ec-sbm.url https://github.com/illinois-or-research-analytics/ec-sbm.git
+git submodule sync externals/ec-sbm
+git submodule update --init --recursive externals/ec-sbm
 ```
 
 ## `abcd` / `abcd+o`
@@ -83,7 +92,7 @@ No `LD_LIBRARY_PATH` is needed at run time (matlabengine configures its own load
 
 ## Optional: Submodule path overrides
 
-After installing a generator's submodule, `run_generator.sh` picks it up automatically via the defaults `--abcd-dir=externals/abcd`, `--lfr-binary=externals/lfr/unweighted_undirected/benchmark`, `--npso-dir=externals/npso`. Override those flags if you want to use a different path.
+After installing a generator's submodule, `run_generator.sh` picks it up automatically via the defaults `--abcd-dir=externals/abcd`, `--lfr-binary=externals/lfr/unweighted_undirected/benchmark`, `--npso-dir=externals/npso`, `--ec-sbm-dir=externals/ec-sbm`. Override those flags if you want to use a different path.
 
 ## Optional: Tests
 
