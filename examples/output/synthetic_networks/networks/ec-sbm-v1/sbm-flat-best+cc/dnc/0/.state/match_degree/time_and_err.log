@@ -1,19 +1,19 @@
-=== 2026-04-23T23:29:27Z | pid=234827 | host=nah-popos | EXECUTED ===
+=== 2026-04-23T23:51:36Z | pid=256548 | host=nah-popos | EXECUTED ===
 	Command being timed: "python /home/vltanh/Documents/network-generation/src/combine_edgelists.py --edgelist-1 examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/gen_outlier/edge.csv --json-1 examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/gen_outlier/sources.json --edgelist-2 examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/match_degree/edges/degree_matching_edge.csv --name-2 match_degree --output-folder examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/match_degree --output-filename edge.csv"
-	User time (seconds): 0.17
+	User time (seconds): 0.18
 	System time (seconds): 0.02
 	Percent of CPU this job got: 99%
-	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:00.20
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:00.21
 	Average shared text size (kbytes): 0
 	Average unshared data size (kbytes): 0
 	Average stack size (kbytes): 0
 	Average total size (kbytes): 0
-	Maximum resident set size (kbytes): 86592
+	Maximum resident set size (kbytes): 86172
 	Average resident set size (kbytes): 0
 	Major (requiring I/O) page faults: 0
-	Minor (reclaiming a frame) page faults: 13733
+	Minor (reclaiming a frame) page faults: 13736
 	Voluntary context switches: 22
-	Involuntary context switches: 48
+	Involuntary context switches: 54
 	Swaps: 0
 	File system inputs: 0
 	File system outputs: 176

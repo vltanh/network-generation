@@ -1,19 +1,19 @@
-=== 2026-04-23T23:29:26Z | pid=234827 | host=nah-popos | EXECUTED ===
-	Command being timed: "python /home/vltanh/Documents/network-generation/externals/ec-sbm/ec-sbm/gen_outlier.py --orig-edgelist examples/input/empirical_networks/networks/dnc/dnc.csv --orig-clustering examples/input/reference_clusterings/clusterings/sbm-flat-best+cc/dnc/com.csv --scope outlier-incident --outlier-mode singleton --edge-correction none --output-folder examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/gen_outlier/edges --seed 2"
-	User time (seconds): 0.88
-	System time (seconds): 0.07
+=== 2026-04-23T23:51:34Z | pid=256548 | host=nah-popos | EXECUTED ===
+	Command being timed: "python /home/vltanh/Documents/network-generation/externals/ec-sbm/src/gen_outlier.py --orig-edgelist examples/input/empirical_networks/networks/dnc/dnc.csv --orig-clustering examples/input/reference_clusterings/clusterings/sbm-flat-best+cc/dnc/com.csv --scope outlier-incident --outlier-mode singleton --edge-correction none --output-folder examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/gen_outlier/edges --seed 2"
+	User time (seconds): 0.92
+	System time (seconds): 0.08
 	Percent of CPU this job got: 99%
-	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:00.96
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:01.01
 	Average shared text size (kbytes): 0
 	Average unshared data size (kbytes): 0
 	Average stack size (kbytes): 0
 	Average total size (kbytes): 0
-	Maximum resident set size (kbytes): 259372
+	Maximum resident set size (kbytes): 259428
 	Average resident set size (kbytes): 0
 	Major (requiring I/O) page faults: 0
-	Minor (reclaiming a frame) page faults: 37609
-	Voluntary context switches: 222
-	Involuntary context switches: 84
+	Minor (reclaiming a frame) page faults: 37636
+	Voluntary context switches: 219
+	Involuntary context switches: 93
 	Swaps: 0
 	File system inputs: 0
 	File system outputs: 32
