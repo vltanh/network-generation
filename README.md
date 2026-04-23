@@ -196,9 +196,10 @@ Macro-mode equivalent (reads / writes the `data/` tree):
 ## Tests
 
 Test suite under `tests/`, split by subsystem (`common`, `profile_py`,
-`dispatcher`, `wrappers`, `simple_gens`, `ec_sbm`). Fast tests have no
-external tooling; end-to-end tests skip generators whose externals are
-not installed. See [INSTALL.md](INSTALL.md) for setup.
+`dispatcher`, `wrappers`, `generators`). Fast tests have no external
+tooling; end-to-end tests (`tests/generators/`, gated by `-m slow`)
+skip generators whose externals are not installed. See
+[INSTALL.md](INSTALL.md) for setup.
 
 ## Benchmarking
 

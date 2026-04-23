@@ -99,7 +99,7 @@ After installing a generator's submodule, `run_generator.sh` picks it up automat
 Activate the conda env that has the generator deps on `PATH` before running pipeline-level tests. If `pytest`'s subprocess shell needs additional paths (e.g. your conda env or juliaup install isn't on the inherited `PATH`), set `NW_TEST_PATH_PREFIX` to a colon-separated prefix that will be prepended to `PATH` inside spawned `run_generator.sh` calls:
 
 ```bash
-NW_TEST_PATH_PREFIX="$CONDA_PREFIX/bin:$HOME/.juliaup/bin" python -m pytest tests/simple_gens
+NW_TEST_PATH_PREFIX="$CONDA_PREFIX/bin:$HOME/.juliaup/bin" python -m pytest tests/generators -m slow
 ```
 
 ## Optional: run-stats and run-comp

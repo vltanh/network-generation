@@ -21,6 +21,7 @@ Generator-specific flags are **namespaced** at the dispatcher
 | `--lfr-binary <p>`          | `--binary <p>` (lfr)                   |
 | `--npso-dir <p>`            | `--package-dir <p>` (npso)             |
 | `--npso-model <m>`          | `--model <m>` (npso)                   |
+| `--ec-sbm-dir <p>`          | `--package-dir <p>` (ec-sbm-v1, ec-sbm-v2) |
 
 Shared flags that already carry no ambiguity (`--seed`, `--n-threads`,
 `--timeout`, `--keep-state`, `--outlier-mode`, etc.) keep the same name
