@@ -3,7 +3,7 @@
 Each generator has its own profile module. The in-repo generators live
 under ``src/<gen>/profile.py``; ec-sbm's profile lives in the
 ``externals/ec-sbm`` submodule at
-``externals/ec-sbm/ec-sbm/common/profile.py``. Each module exposes
+``externals/ec-sbm/src/profile.py``. Each module exposes
 ``setup_inputs(edgelist, clustering, output_dir)`` and writes a
 documented set of output files.  These tests pin that contract.
 """
@@ -34,7 +34,7 @@ _GENERATORS = {
     "abcd+o": ("src", "abcd+o", "profile.py"),
     "lfr":    ("src", "lfr", "profile.py"),
     "npso":   ("src", "npso", "profile.py"),
-    "ecsbm":  ("externals", "ec-sbm", "ec-sbm", "profile.py"),
+    "ecsbm":  ("externals", "ec-sbm", "src", "profile.py"),
 }
 
 

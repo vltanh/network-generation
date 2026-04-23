@@ -42,7 +42,7 @@ to `edge.csv` and stopping. No SBM overlay, no dedup.
 
 ## Residual SBM (stage 3a)
 
-This is where v2's accounting is cleaner. [`prepare_sbm_inputs`](../../externals/ec-sbm/ec-sbm/gen_outlier.py)
+This is where v2's accounting is cleaner. [`prepare_sbm_inputs`](../../externals/ec-sbm/src/gen_outlier.py)
 computes, per block k:
 
 ```
@@ -219,10 +219,10 @@ See [../advanced-usage.md](../advanced-usage.md).
 
 ## Where to look next
 
-- [Source: `externals/ec-sbm/ec-sbm/gen_clustered.py`](../../externals/ec-sbm/ec-sbm/gen_clustered.py) (unified; v2 is the `--no-sbm-overlay` preset)
-- [Source: `externals/ec-sbm/ec-sbm/gen_outlier.py`](../../externals/ec-sbm/ec-sbm/gen_outlier.py) (unified; v2 is `--scope all --outlier-mode combined --edge-correction rewire`)
+- [Source: `externals/ec-sbm/src/gen_clustered.py`](../../externals/ec-sbm/src/gen_clustered.py) (unified; v2 is the `--no-sbm-overlay` preset)
+- [Source: `externals/ec-sbm/src/gen_outlier.py`](../../externals/ec-sbm/src/gen_outlier.py) (unified; v2 is `--scope all --outlier-mode combined --edge-correction rewire`)
 - [Source: `src/match_degree.py`](../../src/match_degree.py)
-- [Source: `externals/ec-sbm/ec-sbm/profile.py`](../../externals/ec-sbm/ec-sbm/profile.py)
+- [Source: `externals/ec-sbm/src/profile.py`](../../externals/ec-sbm/src/profile.py)
 - [Interactive GUI: ec-sbm-v2 steps at default settings](https://vltanh.me/netgen/ec-sbm-v2.html)
 - [EC-SBM v1 post](./ec-sbm-v1.md)
 - [Plain SBM post](./sbm.md)
