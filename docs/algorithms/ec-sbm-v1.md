@@ -45,7 +45,7 @@ stage 3a.
 
 ## Stage 2: building the k-edge-connected core
 
-[`src/ec-sbm/common/gen_clustered_core.py`](../../src/ec-sbm/common/gen_clustered_core.py)'s
+[`externals/ec-sbm/ec-sbm/common/gen_clustered_core.py`](../../externals/ec-sbm/ec-sbm/common/gen_clustered_core.py)'s
 `generate_cluster` runs per cluster in two phases.
 
 **Phase 1: the K_{k+1} core.** Take the k+1 highest-degree nodes in the
@@ -99,7 +99,7 @@ same cells, dedup drops the collisions) is the main reason v2 exists.
 
 ## Stage 3a: outlier-only SBM
 
-[`src/ec-sbm/v1/gen_outlier.py`](../../src/ec-sbm/v1/gen_outlier.py)
+[`externals/ec-sbm/ec-sbm/v1/gen_outlier.py`](../../externals/ec-sbm/ec-sbm/v1/gen_outlier.py)
 re-reads the original edgelist + clustering, identifies outliers (nodes in
 the edgelist but not in the clustering), and treats each outlier as its own
 size-1 block. It then samples an SBM on just the outlier-incident edges.
@@ -191,10 +191,13 @@ silently. v1 stays in the repo for comparison. See
 
 ## CLI flags
 
-Dispatcher (`run_generator.sh`): no generator-specific flag.
+Dispatcher (`run_generator.sh`):
+
+- `--ec-sbm-dir <p>`: path to the ec-sbm submodule (default `externals/ec-sbm`). Forwarded to the pipeline wrapper as `--package-dir`.
 
 Pipeline (`./src/ec-sbm/v1/pipeline.sh`):
 
+- `--package-dir <p>`: required; path to the ec-sbm submodule that contains the algorithm Python modules.
 - `--outlier-mode`: only `excluded` is accepted; any other value errors. Outliers are synthesized by Stage 3.
 - Stage 4 match-degree always runs with algorithm fixed to `greedy` (not user-toggleable).
 
@@ -202,10 +205,10 @@ See [../advanced-usage.md](../advanced-usage.md).
 
 ## Where to look next
 
-- [Source: `src/ec-sbm/v1/gen_clustered.py`](../../src/ec-sbm/v1/gen_clustered.py)
-- [Source: `src/ec-sbm/v1/gen_outlier.py`](../../src/ec-sbm/v1/gen_outlier.py)
+- [Source: `externals/ec-sbm/ec-sbm/v1/gen_clustered.py`](../../externals/ec-sbm/ec-sbm/v1/gen_clustered.py)
+- [Source: `externals/ec-sbm/ec-sbm/v1/gen_outlier.py`](../../externals/ec-sbm/ec-sbm/v1/gen_outlier.py)
 - [Source: `src/match_degree.py`](../../src/match_degree.py)
-- [Source: `src/ec-sbm/common/profile.py`](../../src/ec-sbm/common/profile.py)
+- [Source: `externals/ec-sbm/ec-sbm/common/profile.py`](../../externals/ec-sbm/ec-sbm/common/profile.py)
 - [Interactive GUI: ec-sbm-v1 steps at default settings](https://vltanh.me/netgen/ec-sbm-v1.html)
 - [EC-SBM v2 post](./ec-sbm-v2.md)
 - [Plain SBM post](./sbm.md)

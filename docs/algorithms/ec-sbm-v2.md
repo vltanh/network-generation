@@ -42,7 +42,7 @@ to `edge.csv` and stopping. No SBM overlay, no dedup.
 
 ## Residual SBM (stage 3a)
 
-This is where v2's accounting is cleaner. [`prepare_residual_sbm_inputs`](../../src/ec-sbm/v2/gen_outlier.py)
+This is where v2's accounting is cleaner. [`prepare_residual_sbm_inputs`](../../externals/ec-sbm/ec-sbm/v2/gen_outlier.py)
 computes, per block k:
 
 ```
@@ -198,12 +198,16 @@ placed.
 
 ## CLI flags
 
-Dispatcher (`run_generator.sh`): no generator-specific flag. The
-dispatcher hardcodes `--edge-correction rewire` and
+Dispatcher (`run_generator.sh`):
+
+- `--ec-sbm-dir <p>`: path to the ec-sbm submodule (default `externals/ec-sbm`). Forwarded to the pipeline wrapper as `--package-dir`.
+
+The dispatcher also hardcodes `--edge-correction rewire` and
 `--match-degree-algorithm hybrid`; override by direct pipeline invocation.
 
 Pipeline (`./src/ec-sbm/v2/pipeline.sh`):
 
+- `--package-dir <p>`: required; path to the ec-sbm submodule that contains the algorithm Python modules.
 - `--outlier-mode`: default `excluded`.
 - `--drop-outlier-outlier-edges` / `--keep-outlier-outlier-edges`: default keep.
 - `--gen-outlier-mode <combined|singleton>`: Stage-3a outlier block, default `combined`.
@@ -215,10 +219,10 @@ See [../advanced-usage.md](../advanced-usage.md).
 
 ## Where to look next
 
-- [Source: `src/ec-sbm/v2/gen_clustered.py`](../../src/ec-sbm/v2/gen_clustered.py)
-- [Source: `src/ec-sbm/v2/gen_outlier.py`](../../src/ec-sbm/v2/gen_outlier.py)
+- [Source: `externals/ec-sbm/ec-sbm/v2/gen_clustered.py`](../../externals/ec-sbm/ec-sbm/v2/gen_clustered.py)
+- [Source: `externals/ec-sbm/ec-sbm/v2/gen_outlier.py`](../../externals/ec-sbm/ec-sbm/v2/gen_outlier.py)
 - [Source: `src/match_degree.py`](../../src/match_degree.py)
-- [Source: `src/ec-sbm/common/profile.py`](../../src/ec-sbm/common/profile.py)
+- [Source: `externals/ec-sbm/ec-sbm/common/profile.py`](../../externals/ec-sbm/ec-sbm/common/profile.py)
 - [Interactive GUI: ec-sbm-v2 steps at default settings](https://vltanh.me/netgen/ec-sbm-v2.html)
 - [EC-SBM v1 post](./ec-sbm-v1.md)
 - [Plain SBM post](./sbm.md)

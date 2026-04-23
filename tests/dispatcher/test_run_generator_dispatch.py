@@ -14,7 +14,7 @@ argv, and exercise the dispatcher to verify:
 
 These tests are fast (each invocation is a few hundred ms) and exercise
 only the dispatcher, not the generators. End-to-end coverage lives in
-tests/ec_sbm/ and tests/simple_gens/ behind `-m slow`.
+tests/generators/ behind `-m slow`.
 """
 from __future__ import annotations
 
