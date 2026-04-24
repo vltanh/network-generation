@@ -1,21 +1,21 @@
-=== Invocation 2026-04-24T00:24:58Z | seed=1 | keep_state=1 | pid=280143 | host=nah-popos ===
+=== Invocation 2026-04-24T00:57:22Z | seed=1 | keep_state=1 | pid=298769 | host=nah-popos ===
 === [Stage 1 (profile)] examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/profile/time_and_err.log ===
-[Stage 1 (profile)] === 2026-04-24T00:24:58Z | pid=280143 | host=nah-popos | EXECUTED ===
+[Stage 1 (profile)] === 2026-04-24T00:57:22Z | pid=298769 | host=nah-popos | EXECUTED ===
 [Stage 1 (profile)] 	Command being timed: "python /home/vltanh/Documents/network-generation/externals/ec-sbm/src/profile.py --edgelist examples/input/empirical_networks/networks/dnc/dnc.csv --clustering examples/input/reference_clusterings/clusterings/sbm-flat-best+cc/dnc/com.csv --output-folder examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/profile --params-file examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/profile/params.txt"
-[Stage 1 (profile)] 	User time (seconds): 0.16
+[Stage 1 (profile)] 	User time (seconds): 0.19
 [Stage 1 (profile)] 	System time (seconds): 0.03
-[Stage 1 (profile)] 	Percent of CPU this job got: 98%
-[Stage 1 (profile)] 	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:00.20
+[Stage 1 (profile)] 	Percent of CPU this job got: 99%
+[Stage 1 (profile)] 	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:00.23
 [Stage 1 (profile)] 	Average shared text size (kbytes): 0
 [Stage 1 (profile)] 	Average unshared data size (kbytes): 0
 [Stage 1 (profile)] 	Average stack size (kbytes): 0
 [Stage 1 (profile)] 	Average total size (kbytes): 0
-[Stage 1 (profile)] 	Maximum resident set size (kbytes): 88820
+[Stage 1 (profile)] 	Maximum resident set size (kbytes): 88424
 [Stage 1 (profile)] 	Average resident set size (kbytes): 0
 [Stage 1 (profile)] 	Major (requiring I/O) page faults: 0
-[Stage 1 (profile)] 	Minor (reclaiming a frame) page faults: 14262
+[Stage 1 (profile)] 	Minor (reclaiming a frame) page faults: 14266
 [Stage 1 (profile)] 	Voluntary context switches: 22
-[Stage 1 (profile)] 	Involuntary context switches: 51
+[Stage 1 (profile)] 	Involuntary context switches: 50
 [Stage 1 (profile)] 	Swaps: 0
 [Stage 1 (profile)] 	File system inputs: 0
 [Stage 1 (profile)] 	File system outputs: 72
@@ -27,28 +27,28 @@
 [Stage 1 (profile)] === exit=0 ===
 
 === [Stage 1 (profile)] examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/profile/run.log ===
-[Stage 1 (profile)] 2026-04-23 19:24:58,299 - INFO - Input reading elapsed: 0.0086 seconds
-[Stage 1 (profile)] 2026-04-23 19:24:58,300 - INFO - Outlier transform elapsed: 0.0011 seconds
-[Stage 1 (profile)] 2026-04-23 19:24:58,300 - INFO - Mappings computation elapsed: 0.0002 seconds
-[Stage 1 (profile)] 2026-04-23 19:24:58,310 - INFO - Outputs export elapsed: 0.0103 seconds
+[Stage 1 (profile)] 2026-04-23 19:57:22,894 - INFO - Input reading elapsed: 0.0110 seconds
+[Stage 1 (profile)] 2026-04-23 19:57:22,895 - INFO - Outlier transform elapsed: 0.0011 seconds
+[Stage 1 (profile)] 2026-04-23 19:57:22,895 - INFO - Mappings computation elapsed: 0.0002 seconds
+[Stage 1 (profile)] 2026-04-23 19:57:22,907 - INFO - Outputs export elapsed: 0.0112 seconds
 
 === [Stage 2 (gen_clustered)] examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/gen_clustered/time_and_err.log ===
-[Stage 2 (gen_clustered)] === 2026-04-24T00:24:58Z | pid=280143 | host=nah-popos | EXECUTED ===
+[Stage 2 (gen_clustered)] === 2026-04-24T00:57:22Z | pid=298769 | host=nah-popos | EXECUTED ===
 [Stage 2 (gen_clustered)] 	Command being timed: "python /home/vltanh/Documents/network-generation/externals/ec-sbm/src/gen_clustered.py --node-id examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/profile/node_id.csv --cluster-id examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/profile/cluster_id.csv --assignment examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/profile/assignment.csv --degree examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/profile/degree.csv --mincut examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/profile/mincut.csv --edge-counts examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/profile/edge_counts.csv --output-folder examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/gen_clustered --seed 1 --no-sbm-overlay"
-[Stage 2 (gen_clustered)] 	User time (seconds): 0.25
-[Stage 2 (gen_clustered)] 	System time (seconds): 0.03
+[Stage 2 (gen_clustered)] 	User time (seconds): 0.26
+[Stage 2 (gen_clustered)] 	System time (seconds): 0.04
 [Stage 2 (gen_clustered)] 	Percent of CPU this job got: 99%
-[Stage 2 (gen_clustered)] 	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:00.28
+[Stage 2 (gen_clustered)] 	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:00.30
 [Stage 2 (gen_clustered)] 	Average shared text size (kbytes): 0
 [Stage 2 (gen_clustered)] 	Average unshared data size (kbytes): 0
 [Stage 2 (gen_clustered)] 	Average stack size (kbytes): 0
 [Stage 2 (gen_clustered)] 	Average total size (kbytes): 0
-[Stage 2 (gen_clustered)] 	Maximum resident set size (kbytes): 93832
+[Stage 2 (gen_clustered)] 	Maximum resident set size (kbytes): 93228
 [Stage 2 (gen_clustered)] 	Average resident set size (kbytes): 0
 [Stage 2 (gen_clustered)] 	Major (requiring I/O) page faults: 0
 [Stage 2 (gen_clustered)] 	Minor (reclaiming a frame) page faults: 15812
 [Stage 2 (gen_clustered)] 	Voluntary context switches: 22
-[Stage 2 (gen_clustered)] 	Involuntary context switches: 47
+[Stage 2 (gen_clustered)] 	Involuntary context switches: 57
 [Stage 2 (gen_clustered)] 	Swaps: 0
 [Stage 2 (gen_clustered)] 	File system inputs: 0
 [Stage 2 (gen_clustered)] 	File system outputs: 56
@@ -60,119 +60,119 @@
 [Stage 2 (gen_clustered)] === exit=0 ===
 
 === [Stage 2 (gen_clustered)] examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/gen_clustered/run.log ===
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,505 - INFO - Starting EC-SBM clustered generation (sbm_overlay=False)...
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,560 - INFO - Input loading elapsed: 0.0548 seconds
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,560 - INFO - Generating cluster 19 (N=6 | k=5)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,560 - INFO - Generating cluster 28 (N=4 | k=3)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,560 - INFO - Generating cluster 16 (N=8 | k=7)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,561 - INFO - Generating cluster 8 (N=14 | k=13)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,563 - INFO - Generating cluster 7 (N=15 | k=14)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,566 - INFO - Generating cluster 23 (N=4 | k=3)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,566 - INFO - Generating cluster 10 (N=12 | k=4)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,567 - INFO - Generating cluster 20 (N=6 | k=3)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,567 - INFO - Generating cluster 14 (N=9 | k=6)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,568 - INFO - Generating cluster 1 (N=50 | k=49)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,594 - INFO - Generating cluster 5 (N=29 | k=3)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,596 - INFO - Generating cluster 11 (N=10 | k=6)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,597 - INFO - Generating cluster 9 (N=14 | k=2)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,598 - INFO - Generating cluster 25 (N=4 | k=3)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,598 - INFO - Generating cluster 12 (N=10 | k=3)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,599 - INFO - Generating cluster 18 (N=6 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,599 - INFO - Generating cluster 21 (N=5 | k=2)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,599 - INFO - Generating cluster 2 (N=36 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,600 - INFO - Generating cluster 4 (N=33 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,601 - INFO - Generating cluster 0 (N=52 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,602 - INFO - Generating cluster 13 (N=9 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,602 - INFO - Generating cluster 6 (N=19 | k=18)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,606 - INFO - Generating cluster 3 (N=33 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,607 - INFO - Generating cluster 30 (N=3 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,607 - INFO - Generating cluster 37 (N=3 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,607 - INFO - Generating cluster 45 (N=2 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,607 - INFO - Generating cluster 24 (N=4 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,607 - INFO - Generating cluster 44 (N=2 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,607 - INFO - Generating cluster 43 (N=2 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,607 - INFO - Generating cluster 34 (N=3 | k=2)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,607 - INFO - Generating cluster 58 (N=2 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,607 - INFO - Generating cluster 15 (N=8 | k=2)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,607 - INFO - Generating cluster 39 (N=3 | k=2)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,608 - INFO - Generating cluster 59 (N=2 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,608 - INFO - Generating cluster 36 (N=3 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,608 - INFO - Generating cluster 38 (N=3 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,608 - INFO - Generating cluster 27 (N=4 | k=3)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,608 - INFO - Generating cluster 17 (N=7 | k=2)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,608 - INFO - Generating cluster 22 (N=5 | k=4)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,608 - INFO - Generating cluster 60 (N=2 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,608 - INFO - Generating cluster 48 (N=2 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,609 - INFO - Generating cluster 79 (N=2 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,609 - INFO - Generating cluster 35 (N=3 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,609 - INFO - Generating cluster 52 (N=2 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,609 - INFO - Generating cluster 54 (N=2 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,609 - INFO - Generating cluster 71 (N=2 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,609 - INFO - Generating cluster 40 (N=3 | k=2)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,609 - INFO - Generating cluster 26 (N=4 | k=3)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,609 - INFO - Generating cluster 68 (N=2 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,609 - INFO - Generating cluster 33 (N=3 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,609 - INFO - Generating cluster 29 (N=4 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,609 - INFO - Generating cluster 41 (N=3 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,609 - INFO - Generating cluster 75 (N=2 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,609 - INFO - Generating cluster 62 (N=2 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,609 - INFO - Generating cluster 42 (N=3 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,609 - INFO - Generating cluster 65 (N=2 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,609 - INFO - Generating cluster 32 (N=3 | k=2)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,610 - INFO - Generating cluster 50 (N=2 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,610 - INFO - Generating cluster 72 (N=2 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,610 - INFO - Generating cluster 74 (N=2 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,610 - INFO - Generating cluster 47 (N=2 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,610 - INFO - Generating cluster 31 (N=3 | k=2)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,610 - INFO - Generating cluster 80 (N=2 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,610 - INFO - Generating cluster 46 (N=2 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,610 - INFO - Generating cluster 51 (N=2 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,610 - INFO - Generating cluster 86 (N=2 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,610 - INFO - Generating cluster 53 (N=2 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,610 - INFO - Generating cluster 49 (N=2 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,610 - INFO - Generating cluster 55 (N=2 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,610 - INFO - Generating cluster 56 (N=2 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,610 - INFO - Generating cluster 57 (N=2 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,610 - INFO - Generating cluster 67 (N=2 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,610 - INFO - Generating cluster 85 (N=2 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,610 - INFO - Generating cluster 84 (N=2 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,610 - INFO - Generating cluster 61 (N=2 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,610 - INFO - Generating cluster 63 (N=2 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,610 - INFO - Generating cluster 70 (N=2 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,610 - INFO - Generating cluster 64 (N=2 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,610 - INFO - Generating cluster 82 (N=2 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,610 - INFO - Generating cluster 78 (N=2 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,610 - INFO - Generating cluster 83 (N=2 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,611 - INFO - Generating cluster 66 (N=2 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,611 - INFO - Generating cluster 69 (N=2 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,611 - INFO - Generating cluster 76 (N=2 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,611 - INFO - Generating cluster 73 (N=2 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,611 - INFO - Generating cluster 77 (N=2 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,611 - INFO - Generating cluster 81 (N=2 | k=1)
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,611 - INFO - Generation of k-edge-connected cores elapsed: 0.0510 seconds
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,613 - INFO - Exporting 2202 constructive edges elapsed: 0.0019 seconds
-[Stage 2 (gen_clustered)] 2026-04-23 19:24:58,613 - INFO - Clustered generation complete.
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,119 - INFO - Starting EC-SBM clustered generation (sbm_overlay=False)...
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,176 - INFO - Input loading elapsed: 0.0570 seconds
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,176 - INFO - Generating cluster 19 (N=6 | k=5)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,177 - INFO - Generating cluster 28 (N=4 | k=3)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,177 - INFO - Generating cluster 16 (N=8 | k=7)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,178 - INFO - Generating cluster 8 (N=14 | k=13)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,180 - INFO - Generating cluster 7 (N=15 | k=14)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,182 - INFO - Generating cluster 23 (N=4 | k=3)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,182 - INFO - Generating cluster 10 (N=12 | k=4)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,183 - INFO - Generating cluster 20 (N=6 | k=3)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,183 - INFO - Generating cluster 14 (N=9 | k=6)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,184 - INFO - Generating cluster 1 (N=50 | k=49)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,212 - INFO - Generating cluster 5 (N=29 | k=3)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,214 - INFO - Generating cluster 11 (N=10 | k=6)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,215 - INFO - Generating cluster 9 (N=14 | k=2)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,215 - INFO - Generating cluster 25 (N=4 | k=3)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,216 - INFO - Generating cluster 12 (N=10 | k=3)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,216 - INFO - Generating cluster 18 (N=6 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,216 - INFO - Generating cluster 21 (N=5 | k=2)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,216 - INFO - Generating cluster 2 (N=36 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,217 - INFO - Generating cluster 4 (N=33 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,218 - INFO - Generating cluster 0 (N=52 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,220 - INFO - Generating cluster 13 (N=9 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,220 - INFO - Generating cluster 6 (N=19 | k=18)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,224 - INFO - Generating cluster 3 (N=33 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,225 - INFO - Generating cluster 30 (N=3 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,225 - INFO - Generating cluster 37 (N=3 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,225 - INFO - Generating cluster 45 (N=2 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,225 - INFO - Generating cluster 24 (N=4 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,225 - INFO - Generating cluster 44 (N=2 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,225 - INFO - Generating cluster 43 (N=2 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,225 - INFO - Generating cluster 34 (N=3 | k=2)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,225 - INFO - Generating cluster 58 (N=2 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,225 - INFO - Generating cluster 15 (N=8 | k=2)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,225 - INFO - Generating cluster 39 (N=3 | k=2)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,226 - INFO - Generating cluster 59 (N=2 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,226 - INFO - Generating cluster 36 (N=3 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,226 - INFO - Generating cluster 38 (N=3 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,226 - INFO - Generating cluster 27 (N=4 | k=3)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,226 - INFO - Generating cluster 17 (N=7 | k=2)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,226 - INFO - Generating cluster 22 (N=5 | k=4)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,226 - INFO - Generating cluster 60 (N=2 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,226 - INFO - Generating cluster 48 (N=2 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,227 - INFO - Generating cluster 79 (N=2 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,227 - INFO - Generating cluster 35 (N=3 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,227 - INFO - Generating cluster 52 (N=2 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,227 - INFO - Generating cluster 54 (N=2 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,227 - INFO - Generating cluster 71 (N=2 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,227 - INFO - Generating cluster 40 (N=3 | k=2)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,227 - INFO - Generating cluster 26 (N=4 | k=3)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,227 - INFO - Generating cluster 68 (N=2 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,227 - INFO - Generating cluster 33 (N=3 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,227 - INFO - Generating cluster 29 (N=4 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,227 - INFO - Generating cluster 41 (N=3 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,227 - INFO - Generating cluster 75 (N=2 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,227 - INFO - Generating cluster 62 (N=2 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,227 - INFO - Generating cluster 42 (N=3 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,227 - INFO - Generating cluster 65 (N=2 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,227 - INFO - Generating cluster 32 (N=3 | k=2)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,228 - INFO - Generating cluster 50 (N=2 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,228 - INFO - Generating cluster 72 (N=2 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,228 - INFO - Generating cluster 74 (N=2 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,228 - INFO - Generating cluster 47 (N=2 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,228 - INFO - Generating cluster 31 (N=3 | k=2)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,228 - INFO - Generating cluster 80 (N=2 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,228 - INFO - Generating cluster 46 (N=2 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,228 - INFO - Generating cluster 51 (N=2 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,228 - INFO - Generating cluster 86 (N=2 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,228 - INFO - Generating cluster 53 (N=2 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,228 - INFO - Generating cluster 49 (N=2 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,228 - INFO - Generating cluster 55 (N=2 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,228 - INFO - Generating cluster 56 (N=2 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,228 - INFO - Generating cluster 57 (N=2 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,228 - INFO - Generating cluster 67 (N=2 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,228 - INFO - Generating cluster 85 (N=2 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,228 - INFO - Generating cluster 84 (N=2 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,228 - INFO - Generating cluster 61 (N=2 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,228 - INFO - Generating cluster 63 (N=2 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,228 - INFO - Generating cluster 70 (N=2 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,228 - INFO - Generating cluster 64 (N=2 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,228 - INFO - Generating cluster 82 (N=2 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,229 - INFO - Generating cluster 78 (N=2 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,229 - INFO - Generating cluster 83 (N=2 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,229 - INFO - Generating cluster 66 (N=2 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,229 - INFO - Generating cluster 69 (N=2 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,229 - INFO - Generating cluster 76 (N=2 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,229 - INFO - Generating cluster 73 (N=2 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,229 - INFO - Generating cluster 77 (N=2 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,229 - INFO - Generating cluster 81 (N=2 | k=1)
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,229 - INFO - Generation of k-edge-connected cores elapsed: 0.0525 seconds
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,231 - INFO - Exporting 2202 constructive edges elapsed: 0.0019 seconds
+[Stage 2 (gen_clustered)] 2026-04-23 19:57:23,231 - INFO - Clustered generation complete.
 
 === [Stage 3a (gen_outlier)] examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/gen_outlier/edges/time_and_err.log ===
-[Stage 3a (gen_outlier)] === 2026-04-24T00:24:58Z | pid=280143 | host=nah-popos | EXECUTED ===
+[Stage 3a (gen_outlier)] === 2026-04-24T00:57:23Z | pid=298769 | host=nah-popos | EXECUTED ===
 [Stage 3a (gen_outlier)] 	Command being timed: "python /home/vltanh/Documents/network-generation/externals/ec-sbm/src/gen_outlier.py --orig-edgelist examples/input/empirical_networks/networks/dnc/dnc.csv --orig-clustering examples/input/reference_clusterings/clusterings/sbm-flat-best+cc/dnc/com.csv --exist-edgelist examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/gen_clustered/edge.csv --scope all --outlier-mode combined --edge-correction rewire --output-folder examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/gen_outlier/edges --seed 2"
-[Stage 3a (gen_outlier)] 	User time (seconds): 1.04
-[Stage 3a (gen_outlier)] 	System time (seconds): 0.09
+[Stage 3a (gen_outlier)] 	User time (seconds): 1.14
+[Stage 3a (gen_outlier)] 	System time (seconds): 0.07
 [Stage 3a (gen_outlier)] 	Percent of CPU this job got: 99%
-[Stage 3a (gen_outlier)] 	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:01.13
+[Stage 3a (gen_outlier)] 	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:01.22
 [Stage 3a (gen_outlier)] 	Average shared text size (kbytes): 0
 [Stage 3a (gen_outlier)] 	Average unshared data size (kbytes): 0
 [Stage 3a (gen_outlier)] 	Average stack size (kbytes): 0
 [Stage 3a (gen_outlier)] 	Average total size (kbytes): 0
-[Stage 3a (gen_outlier)] 	Maximum resident set size (kbytes): 262416
+[Stage 3a (gen_outlier)] 	Maximum resident set size (kbytes): 261556
 [Stage 3a (gen_outlier)] 	Average resident set size (kbytes): 0
 [Stage 3a (gen_outlier)] 	Major (requiring I/O) page faults: 0
-[Stage 3a (gen_outlier)] 	Minor (reclaiming a frame) page faults: 38431
-[Stage 3a (gen_outlier)] 	Voluntary context switches: 219
-[Stage 3a (gen_outlier)] 	Involuntary context switches: 73
+[Stage 3a (gen_outlier)] 	Minor (reclaiming a frame) page faults: 38410
+[Stage 3a (gen_outlier)] 	Voluntary context switches: 221
+[Stage 3a (gen_outlier)] 	Involuntary context switches: 88
 [Stage 3a (gen_outlier)] 	Swaps: 0
 [Stage 3a (gen_outlier)] 	File system inputs: 0
-[Stage 3a (gen_outlier)] 	File system outputs: 144
+[Stage 3a (gen_outlier)] 	File system outputs: 136
 [Stage 3a (gen_outlier)] 	Socket messages sent: 0
 [Stage 3a (gen_outlier)] 	Socket messages received: 0
 [Stage 3a (gen_outlier)] 	Signals delivered: 0
@@ -181,41 +181,41 @@
 [Stage 3a (gen_outlier)] === exit=0 ===
 
 === [Stage 3a (gen_outlier)] examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/gen_outlier/edges/run.log ===
-[Stage 3a (gen_outlier)] 2026-04-23 19:24:59,426 - INFO - Starting EC-SBM outlier generation (scope=all, outlier_mode=combined, edge_correction=rewire)...
-[Stage 3a (gen_outlier)] 2026-04-23 19:24:59,560 - INFO - Setup elapsed: 0.1339 seconds
-[Stage 3a (gen_outlier)] 2026-04-23 19:24:59,570 - INFO - Initial bad edges before rewiring: 2120
-[Stage 3a (gen_outlier)] 2026-04-23 19:24:59,639 - INFO - After attempt 1: 809 bad edges remain.
-[Stage 3a (gen_outlier)] 2026-04-23 19:24:59,653 - INFO - After attempt 2: 788 bad edges remain.
-[Stage 3a (gen_outlier)] 2026-04-23 19:24:59,655 - INFO - After attempt 3: 786 bad edges remain.
-[Stage 3a (gen_outlier)] 2026-04-23 19:24:59,666 - INFO - After attempt 4: 770 bad edges remain.
-[Stage 3a (gen_outlier)] 2026-04-23 19:24:59,668 - INFO - After attempt 5: 770 bad edges remain.
-[Stage 3a (gen_outlier)] 2026-04-23 19:24:59,669 - INFO - After attempt 6: 770 bad edges remain.
-[Stage 3a (gen_outlier)] 2026-04-23 19:24:59,672 - INFO - After attempt 7: 768 bad edges remain.
-[Stage 3a (gen_outlier)] 2026-04-23 19:24:59,673 - INFO - After attempt 8: 768 bad edges remain.
-[Stage 3a (gen_outlier)] 2026-04-23 19:24:59,676 - INFO - After attempt 9: 765 bad edges remain.
-[Stage 3a (gen_outlier)] 2026-04-23 19:24:59,677 - INFO - After attempt 10: 765 bad edges remain.
-[Stage 3a (gen_outlier)] 2026-04-23 19:24:59,677 - WARNING - Finished 10 retries. 765 bad edges remain unresolved and will be dropped.
-[Stage 3a (gen_outlier)] 2026-04-23 19:24:59,685 - INFO - SBM synthesis elapsed: 0.1254 seconds
-[Stage 3a (gen_outlier)] 2026-04-23 19:24:59,689 - INFO - Export elapsed: 0.0037 seconds
-[Stage 3a (gen_outlier)] 2026-04-23 19:24:59,689 - INFO - Outlier generation complete.
+[Stage 3a (gen_outlier)] 2026-04-23 19:57:24,097 - INFO - Starting EC-SBM outlier generation (scope=all, outlier_mode=combined, edge_correction=rewire)...
+[Stage 3a (gen_outlier)] 2026-04-23 19:57:24,239 - INFO - Setup elapsed: 0.1414 seconds
+[Stage 3a (gen_outlier)] 2026-04-23 19:57:24,249 - INFO - Initial bad edges before rewiring: 2120
+[Stage 3a (gen_outlier)] 2026-04-23 19:57:24,327 - INFO - After attempt 1: 809 bad edges remain.
+[Stage 3a (gen_outlier)] 2026-04-23 19:57:24,340 - INFO - After attempt 2: 788 bad edges remain.
+[Stage 3a (gen_outlier)] 2026-04-23 19:57:24,342 - INFO - After attempt 3: 786 bad edges remain.
+[Stage 3a (gen_outlier)] 2026-04-23 19:57:24,353 - INFO - After attempt 4: 770 bad edges remain.
+[Stage 3a (gen_outlier)] 2026-04-23 19:57:24,354 - INFO - After attempt 5: 770 bad edges remain.
+[Stage 3a (gen_outlier)] 2026-04-23 19:57:24,355 - INFO - After attempt 6: 770 bad edges remain.
+[Stage 3a (gen_outlier)] 2026-04-23 19:57:24,359 - INFO - After attempt 7: 768 bad edges remain.
+[Stage 3a (gen_outlier)] 2026-04-23 19:57:24,360 - INFO - After attempt 8: 768 bad edges remain.
+[Stage 3a (gen_outlier)] 2026-04-23 19:57:24,363 - INFO - After attempt 9: 765 bad edges remain.
+[Stage 3a (gen_outlier)] 2026-04-23 19:57:24,364 - INFO - After attempt 10: 765 bad edges remain.
+[Stage 3a (gen_outlier)] 2026-04-23 19:57:24,364 - WARNING - Finished 10 retries. 765 bad edges remain unresolved and will be dropped.
+[Stage 3a (gen_outlier)] 2026-04-23 19:57:24,372 - INFO - SBM synthesis elapsed: 0.1334 seconds
+[Stage 3a (gen_outlier)] 2026-04-23 19:57:24,376 - INFO - Export elapsed: 0.0037 seconds
+[Stage 3a (gen_outlier)] 2026-04-23 19:57:24,376 - INFO - Outlier generation complete.
 
 === [Stage 3b (gen_outlier/combine)] examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/gen_outlier/time_and_err.log ===
-[Stage 3b (gen_outlier/combine)] === 2026-04-24T00:24:59Z | pid=280143 | host=nah-popos | EXECUTED ===
+[Stage 3b (gen_outlier/combine)] === 2026-04-24T00:57:24Z | pid=298769 | host=nah-popos | EXECUTED ===
 [Stage 3b (gen_outlier/combine)] 	Command being timed: "python /home/vltanh/Documents/network-generation/src/combine_edgelists.py --edgelist-1 examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/gen_clustered/edge.csv --name-1 clustered --edgelist-2 examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/gen_outlier/edges/edge_outlier.csv --name-2 outlier --output-folder examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/gen_outlier --output-filename edge.csv"
-[Stage 3b (gen_outlier/combine)] 	User time (seconds): 0.15
-[Stage 3b (gen_outlier/combine)] 	System time (seconds): 0.03
-[Stage 3b (gen_outlier/combine)] 	Percent of CPU this job got: 98%
-[Stage 3b (gen_outlier/combine)] 	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:00.18
+[Stage 3b (gen_outlier/combine)] 	User time (seconds): 0.17
+[Stage 3b (gen_outlier/combine)] 	System time (seconds): 0.02
+[Stage 3b (gen_outlier/combine)] 	Percent of CPU this job got: 99%
+[Stage 3b (gen_outlier/combine)] 	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:00.20
 [Stage 3b (gen_outlier/combine)] 	Average shared text size (kbytes): 0
 [Stage 3b (gen_outlier/combine)] 	Average unshared data size (kbytes): 0
 [Stage 3b (gen_outlier/combine)] 	Average stack size (kbytes): 0
 [Stage 3b (gen_outlier/combine)] 	Average total size (kbytes): 0
-[Stage 3b (gen_outlier/combine)] 	Maximum resident set size (kbytes): 86576
+[Stage 3b (gen_outlier/combine)] 	Maximum resident set size (kbytes): 86500
 [Stage 3b (gen_outlier/combine)] 	Average resident set size (kbytes): 0
 [Stage 3b (gen_outlier/combine)] 	Major (requiring I/O) page faults: 0
-[Stage 3b (gen_outlier/combine)] 	Minor (reclaiming a frame) page faults: 13703
+[Stage 3b (gen_outlier/combine)] 	Minor (reclaiming a frame) page faults: 13663
 [Stage 3b (gen_outlier/combine)] 	Voluntary context switches: 22
-[Stage 3b (gen_outlier/combine)] 	Involuntary context switches: 47
+[Stage 3b (gen_outlier/combine)] 	Involuntary context switches: 48
 [Stage 3b (gen_outlier/combine)] 	Swaps: 0
 [Stage 3b (gen_outlier/combine)] 	File system inputs: 0
 [Stage 3b (gen_outlier/combine)] 	File system outputs: 168
@@ -227,31 +227,31 @@
 [Stage 3b (gen_outlier/combine)] === exit=0 ===
 
 === [Stage 3b (gen_outlier/combine)] examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/gen_outlier/run.log ===
-[Stage 3b (gen_outlier/combine)] 2026-04-23 19:24:59,955 - INFO - --- Starting Edgelist Combination & Provenance Tracking ---
-[Stage 3b (gen_outlier/combine)] 2026-04-23 19:24:59,958 - INFO - Loaded 9666 total edges prior to deduplication.
-[Stage 3b (gen_outlier/combine)] 2026-04-23 19:24:59,963 - INFO - Retained 9568 unique undirected edges.
-[Stage 3b (gen_outlier/combine)] 2026-04-23 19:24:59,967 - INFO - Exported combined edgelist to edge.csv
-[Stage 3b (gen_outlier/combine)] 2026-04-23 19:24:59,967 - INFO - Exported provenance map to sources.json
-[Stage 3b (gen_outlier/combine)] 2026-04-23 19:24:59,967 - INFO - Combination elapsed: 0.0119 seconds
-[Stage 3b (gen_outlier/combine)] 2026-04-23 19:24:59,967 - INFO - --- Combination Complete ---
+[Stage 3b (gen_outlier/combine)] 2026-04-23 19:57:24,677 - INFO - --- Starting Edgelist Combination & Provenance Tracking ---
+[Stage 3b (gen_outlier/combine)] 2026-04-23 19:57:24,680 - INFO - Loaded 9666 total edges prior to deduplication.
+[Stage 3b (gen_outlier/combine)] 2026-04-23 19:57:24,685 - INFO - Retained 9568 unique undirected edges.
+[Stage 3b (gen_outlier/combine)] 2026-04-23 19:57:24,689 - INFO - Exported combined edgelist to edge.csv
+[Stage 3b (gen_outlier/combine)] 2026-04-23 19:57:24,689 - INFO - Exported provenance map to sources.json
+[Stage 3b (gen_outlier/combine)] 2026-04-23 19:57:24,689 - INFO - Combination elapsed: 0.0125 seconds
+[Stage 3b (gen_outlier/combine)] 2026-04-23 19:57:24,689 - INFO - --- Combination Complete ---
 
 === [Stage 4a (match_degree)] examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/match_degree/edges/time_and_err.log ===
-[Stage 4a (match_degree)] === 2026-04-24T00:25:00Z | pid=280143 | host=nah-popos | EXECUTED ===
+[Stage 4a (match_degree)] === 2026-04-24T00:57:24Z | pid=298769 | host=nah-popos | EXECUTED ===
 [Stage 4a (match_degree)] 	Command being timed: "python /home/vltanh/Documents/network-generation/src/match_degree.py --input-edgelist examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/gen_outlier/edge.csv --ref-edgelist examples/input/empirical_networks/networks/dnc/dnc.csv --match-degree-algorithm hybrid --output-folder examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/match_degree/edges --seed 3"
 [Stage 4a (match_degree)] 	User time (seconds): 0.18
-[Stage 4a (match_degree)] 	System time (seconds): 0.03
+[Stage 4a (match_degree)] 	System time (seconds): 0.02
 [Stage 4a (match_degree)] 	Percent of CPU this job got: 99%
 [Stage 4a (match_degree)] 	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:00.21
 [Stage 4a (match_degree)] 	Average shared text size (kbytes): 0
 [Stage 4a (match_degree)] 	Average unshared data size (kbytes): 0
 [Stage 4a (match_degree)] 	Average stack size (kbytes): 0
 [Stage 4a (match_degree)] 	Average total size (kbytes): 0
-[Stage 4a (match_degree)] 	Maximum resident set size (kbytes): 86688
+[Stage 4a (match_degree)] 	Maximum resident set size (kbytes): 86928
 [Stage 4a (match_degree)] 	Average resident set size (kbytes): 0
 [Stage 4a (match_degree)] 	Major (requiring I/O) page faults: 0
-[Stage 4a (match_degree)] 	Minor (reclaiming a frame) page faults: 14584
+[Stage 4a (match_degree)] 	Minor (reclaiming a frame) page faults: 14579
 [Stage 4a (match_degree)] 	Voluntary context switches: 22
-[Stage 4a (match_degree)] 	Involuntary context switches: 50
+[Stage 4a (match_degree)] 	Involuntary context switches: 46
 [Stage 4a (match_degree)] 	Swaps: 0
 [Stage 4a (match_degree)] 	File system inputs: 0
 [Stage 4a (match_degree)] 	File system outputs: 24
@@ -263,49 +263,49 @@
 [Stage 4a (match_degree)] === exit=0 ===
 
 === [Stage 4a (match_degree)] examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/match_degree/edges/run.log ===
-[Stage 4a (match_degree)] 2026-04-23 19:25:00,166 - INFO - --- Starting Degree Matching (HYBRID mode) ---
-[Stage 4a (match_degree)] 2026-04-23 19:25:00,179 - INFO - Loaded reference topologies elapsed: 0.0126 seconds
-[Stage 4a (match_degree)] 2026-04-23 19:25:00,186 - INFO - Subtracted existing edges elapsed: 0.0076 seconds
-[Stage 4a (match_degree)] 2026-04-23 19:25:00,186 - INFO - Starting Hybrid (Rewire -> True Greedy) matching algorithm...
-[Stage 4a (match_degree)] 2026-04-23 19:25:00,186 - INFO - Starting Rewire (Configuration Model) matching algorithm...
-[Stage 4a (match_degree)] 2026-04-23 19:25:00,186 - INFO - Total missing stubs to pair: 1726 (Target edges: 863)
-[Stage 4a (match_degree)] 2026-04-23 19:25:00,187 - INFO - Initial pairing complete -> Valid edges: 367 | Bad edges to rewire: 496
-[Stage 4a (match_degree)] 2026-04-23 19:25:00,192 - INFO - After attempt 1: 141 bad edges remain.
-[Stage 4a (match_degree)] 2026-04-23 19:25:00,193 - INFO - After attempt 2: 130 bad edges remain.
-[Stage 4a (match_degree)] 2026-04-23 19:25:00,193 - INFO - After attempt 3: 129 bad edges remain.
-[Stage 4a (match_degree)] 2026-04-23 19:25:00,194 - INFO - After attempt 4: 126 bad edges remain.
-[Stage 4a (match_degree)] 2026-04-23 19:25:00,194 - INFO - After attempt 5: 124 bad edges remain.
-[Stage 4a (match_degree)] 2026-04-23 19:25:00,194 - INFO - After attempt 6: 124 bad edges remain.
-[Stage 4a (match_degree)] 2026-04-23 19:25:00,194 - INFO - After attempt 7: 124 bad edges remain.
-[Stage 4a (match_degree)] 2026-04-23 19:25:00,194 - INFO - After attempt 8: 124 bad edges remain.
-[Stage 4a (match_degree)] 2026-04-23 19:25:00,194 - INFO - After attempt 9: 119 bad edges remain.
-[Stage 4a (match_degree)] 2026-04-23 19:25:00,195 - INFO - After attempt 10: 115 bad edges remain.
-[Stage 4a (match_degree)] 2026-04-23 19:25:00,195 - WARNING - Finished 10 retries. 115 bad edges remain unresolved.
-[Stage 4a (match_degree)] 2026-04-23 19:25:00,195 - INFO - Hybrid transition: Passing 115 gridlocked edges (230 stubs) to True Greedy deterministic fallback.
-[Stage 4a (match_degree)] 2026-04-23 19:25:00,195 - INFO - Starting True Dynamic Greedy matching algorithm...
-[Stage 4a (match_degree)] 2026-04-23 19:25:00,195 - INFO - Initial missing stubs: 230 (Target edges: 115)
-[Stage 4a (match_degree)] 2026-04-23 19:25:00,195 - WARNING - Finished with 24 gridlocked nodes.
-[Stage 4a (match_degree)] 2026-04-23 19:25:00,195 - INFO - Added 778 edges
-[Stage 4a (match_degree)] 2026-04-23 19:25:00,195 - INFO - Degree matching elapsed: 0.0090 seconds
-[Stage 4a (match_degree)] 2026-04-23 19:25:00,197 - INFO - Exported edgelist elapsed: 0.0014 seconds
+[Stage 4a (match_degree)] 2026-04-23 19:57:24,894 - INFO - --- Starting Degree Matching (HYBRID mode) ---
+[Stage 4a (match_degree)] 2026-04-23 19:57:24,906 - INFO - Loaded reference topologies elapsed: 0.0125 seconds
+[Stage 4a (match_degree)] 2026-04-23 19:57:24,914 - INFO - Subtracted existing edges elapsed: 0.0074 seconds
+[Stage 4a (match_degree)] 2026-04-23 19:57:24,914 - INFO - Starting Hybrid (Rewire -> True Greedy) matching algorithm...
+[Stage 4a (match_degree)] 2026-04-23 19:57:24,914 - INFO - Starting Rewire (Configuration Model) matching algorithm...
+[Stage 4a (match_degree)] 2026-04-23 19:57:24,914 - INFO - Total missing stubs to pair: 1726 (Target edges: 863)
+[Stage 4a (match_degree)] 2026-04-23 19:57:24,915 - INFO - Initial pairing complete -> Valid edges: 367 | Bad edges to rewire: 496
+[Stage 4a (match_degree)] 2026-04-23 19:57:24,920 - INFO - After attempt 1: 141 bad edges remain.
+[Stage 4a (match_degree)] 2026-04-23 19:57:24,921 - INFO - After attempt 2: 130 bad edges remain.
+[Stage 4a (match_degree)] 2026-04-23 19:57:24,921 - INFO - After attempt 3: 129 bad edges remain.
+[Stage 4a (match_degree)] 2026-04-23 19:57:24,921 - INFO - After attempt 4: 126 bad edges remain.
+[Stage 4a (match_degree)] 2026-04-23 19:57:24,921 - INFO - After attempt 5: 124 bad edges remain.
+[Stage 4a (match_degree)] 2026-04-23 19:57:24,921 - INFO - After attempt 6: 124 bad edges remain.
+[Stage 4a (match_degree)] 2026-04-23 19:57:24,921 - INFO - After attempt 7: 124 bad edges remain.
+[Stage 4a (match_degree)] 2026-04-23 19:57:24,922 - INFO - After attempt 8: 124 bad edges remain.
+[Stage 4a (match_degree)] 2026-04-23 19:57:24,922 - INFO - After attempt 9: 119 bad edges remain.
+[Stage 4a (match_degree)] 2026-04-23 19:57:24,922 - INFO - After attempt 10: 115 bad edges remain.
+[Stage 4a (match_degree)] 2026-04-23 19:57:24,922 - WARNING - Finished 10 retries. 115 bad edges remain unresolved.
+[Stage 4a (match_degree)] 2026-04-23 19:57:24,922 - INFO - Hybrid transition: Passing 115 gridlocked edges (230 stubs) to True Greedy deterministic fallback.
+[Stage 4a (match_degree)] 2026-04-23 19:57:24,922 - INFO - Starting True Dynamic Greedy matching algorithm...
+[Stage 4a (match_degree)] 2026-04-23 19:57:24,922 - INFO - Initial missing stubs: 230 (Target edges: 115)
+[Stage 4a (match_degree)] 2026-04-23 19:57:24,923 - WARNING - Finished with 24 gridlocked nodes.
+[Stage 4a (match_degree)] 2026-04-23 19:57:24,923 - INFO - Added 778 edges
+[Stage 4a (match_degree)] 2026-04-23 19:57:24,923 - INFO - Degree matching elapsed: 0.0086 seconds
+[Stage 4a (match_degree)] 2026-04-23 19:57:24,924 - INFO - Exported edgelist elapsed: 0.0011 seconds
 
 === [Stage 4b (match_degree/combine)] examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/match_degree/time_and_err.log ===
-[Stage 4b (match_degree/combine)] === 2026-04-24T00:25:00Z | pid=280143 | host=nah-popos | EXECUTED ===
+[Stage 4b (match_degree/combine)] === 2026-04-24T00:57:24Z | pid=298769 | host=nah-popos | EXECUTED ===
 [Stage 4b (match_degree/combine)] 	Command being timed: "python /home/vltanh/Documents/network-generation/src/combine_edgelists.py --edgelist-1 examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/gen_outlier/edge.csv --json-1 examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/gen_outlier/sources.json --edgelist-2 examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/match_degree/edges/degree_matching_edge.csv --name-2 match_degree --output-folder examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/match_degree --output-filename edge.csv"
-[Stage 4b (match_degree/combine)] 	User time (seconds): 0.16
+[Stage 4b (match_degree/combine)] 	User time (seconds): 0.17
 [Stage 4b (match_degree/combine)] 	System time (seconds): 0.02
-[Stage 4b (match_degree/combine)] 	Percent of CPU this job got: 98%
-[Stage 4b (match_degree/combine)] 	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:00.18
+[Stage 4b (match_degree/combine)] 	Percent of CPU this job got: 99%
+[Stage 4b (match_degree/combine)] 	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:00.19
 [Stage 4b (match_degree/combine)] 	Average shared text size (kbytes): 0
 [Stage 4b (match_degree/combine)] 	Average unshared data size (kbytes): 0
 [Stage 4b (match_degree/combine)] 	Average stack size (kbytes): 0
 [Stage 4b (match_degree/combine)] 	Average total size (kbytes): 0
-[Stage 4b (match_degree/combine)] 	Maximum resident set size (kbytes): 86900
+[Stage 4b (match_degree/combine)] 	Maximum resident set size (kbytes): 86288
 [Stage 4b (match_degree/combine)] 	Average resident set size (kbytes): 0
 [Stage 4b (match_degree/combine)] 	Major (requiring I/O) page faults: 0
-[Stage 4b (match_degree/combine)] 	Minor (reclaiming a frame) page faults: 13747
+[Stage 4b (match_degree/combine)] 	Minor (reclaiming a frame) page faults: 13746
 [Stage 4b (match_degree/combine)] 	Voluntary context switches: 22
-[Stage 4b (match_degree/combine)] 	Involuntary context switches: 47
+[Stage 4b (match_degree/combine)] 	Involuntary context switches: 51
 [Stage 4b (match_degree/combine)] 	Swaps: 0
 [Stage 4b (match_degree/combine)] 	File system inputs: 0
 [Stage 4b (match_degree/combine)] 	File system outputs: 176
@@ -317,11 +317,11 @@
 [Stage 4b (match_degree/combine)] === exit=0 ===
 
 === [Stage 4b (match_degree/combine)] examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/match_degree/run.log ===
-[Stage 4b (match_degree/combine)] 2026-04-23 19:25:00,383 - INFO - --- Starting Edgelist Combination & Provenance Tracking ---
-[Stage 4b (match_degree/combine)] 2026-04-23 19:25:00,387 - INFO - Loaded 10346 total edges prior to deduplication.
-[Stage 4b (match_degree/combine)] 2026-04-23 19:25:00,392 - INFO - Retained 10346 unique undirected edges.
-[Stage 4b (match_degree/combine)] 2026-04-23 19:25:00,396 - INFO - Exported combined edgelist to edge.csv
-[Stage 4b (match_degree/combine)] 2026-04-23 19:25:00,396 - INFO - Exported provenance map to sources.json
-[Stage 4b (match_degree/combine)] 2026-04-23 19:25:00,396 - INFO - Combination elapsed: 0.0127 seconds
-[Stage 4b (match_degree/combine)] 2026-04-23 19:25:00,396 - INFO - --- Combination Complete ---
+[Stage 4b (match_degree/combine)] 2026-04-23 19:57:25,122 - INFO - --- Starting Edgelist Combination & Provenance Tracking ---
+[Stage 4b (match_degree/combine)] 2026-04-23 19:57:25,126 - INFO - Loaded 10346 total edges prior to deduplication.
+[Stage 4b (match_degree/combine)] 2026-04-23 19:57:25,130 - INFO - Retained 10346 unique undirected edges.
+[Stage 4b (match_degree/combine)] 2026-04-23 19:57:25,134 - INFO - Exported combined edgelist to edge.csv
+[Stage 4b (match_degree/combine)] 2026-04-23 19:57:25,134 - INFO - Exported provenance map to sources.json
+[Stage 4b (match_degree/combine)] 2026-04-23 19:57:25,134 - INFO - Combination elapsed: 0.0125 seconds
+[Stage 4b (match_degree/combine)] 2026-04-23 19:57:25,134 - INFO - --- Combination Complete ---
 

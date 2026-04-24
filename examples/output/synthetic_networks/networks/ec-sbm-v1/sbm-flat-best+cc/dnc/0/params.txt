@@ -1,4 +1,9 @@
+algorithm=greedy
 drop_outlier_outlier_edges=false
+edge_correction=none
+gen_outlier_mode=singleton
 n_threads=1
 outlier_mode=excluded
+sbm_overlay=true
+scope=outlier-incident
 seed=1
