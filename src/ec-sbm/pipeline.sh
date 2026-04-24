@@ -4,7 +4,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 if [[ "${SCRIPT_DIR}" == *"/slurmd/job"* ]]; then
     SCRIPT_DIR="${SLURM_SUBMIT_DIR}"
 fi
-SRC_DIR="$( cd "${SCRIPT_DIR}/../.." && pwd )"
+SRC_DIR="$( cd "${SCRIPT_DIR}/.." && pwd )"
 SHARED_DIR="$( cd "${SRC_DIR}/_common" && pwd )"
 
 # Default values
@@ -13,10 +13,13 @@ N_THREADS=1
 KEEP_STATE=0
 SEED=1
 PACKAGE_DIR=""
-# Profile stage excludes outliers; gen_outlier stage synthesizes them.
 OUTLIER_MODE="excluded"
 DROP_OO_BOOL="false"
+SBM_OVERLAY_BOOL="false"
+SCOPE="all"
 GEN_OUTLIER_MODE="combined"
+EDGE_CORRECTION="rewire"
+ALGORITHM="hybrid"
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -26,6 +29,9 @@ while [[ "$#" -gt 0 ]]; do
         --outlier-mode) OUTLIER_MODE="$2"; shift ;;
         --drop-outlier-outlier-edges) DROP_OO_BOOL="true" ;;
         --keep-outlier-outlier-edges) DROP_OO_BOOL="false" ;;
+        --sbm-overlay) SBM_OVERLAY_BOOL="true" ;;
+        --no-sbm-overlay) SBM_OVERLAY_BOOL="false" ;;
+        --scope) SCOPE="$2"; shift ;;
         --gen-outlier-mode) GEN_OUTLIER_MODE="$2"; shift ;;
         --edge-correction) EDGE_CORRECTION="$2"; shift ;;
         --match-degree-algorithm) ALGORITHM="$2"; shift ;;
@@ -48,7 +54,7 @@ PACKAGE_PY_DIR="${PACKAGE_DIR}/src"
 
 # SRC_DIR first so this repo's canonical helpers shadow ec-sbm's vendored
 # copies; PACKAGE_PY_DIR last so the algorithm modules (and
-# gen_clustered_core) resolve.
+# gen_kec_core) resolve.
 export PYTHONPATH="${SRC_DIR}:${PACKAGE_PY_DIR}${PYTHONPATH:+:${PYTHONPATH}}"
 
 export OMP_NUM_THREADS="${N_THREADS}"
@@ -79,6 +85,8 @@ write_params_file "${FINAL_PARAMS}" \
     "n_threads=${N_THREADS}" \
     "outlier_mode=${OUTLIER_MODE}" \
     "drop_outlier_outlier_edges=${DROP_OO_BOOL}" \
+    "sbm_overlay=${SBM_OVERLAY_BOOL}" \
+    "scope=${SCOPE}" \
     "gen_outlier_mode=${GEN_OUTLIER_MODE}" \
     "edge_correction=${EDGE_CORRECTION}" \
     "algorithm=${ALGORITHM}"
@@ -150,10 +158,16 @@ STG_GEN_CLUSTERED_PARAMS="${STG_GEN_CLUSTERED_DIR}/params.txt"
 write_params_file "${STG_GEN_CLUSTERED_PARAMS}" \
     "seed=${SEED}" \
     "n_threads=${N_THREADS}" \
-    "sbm_overlay=false"
+    "sbm_overlay=${SBM_OVERLAY_BOOL}"
 
 IN_GEN_CLUSTERED="${OUT_PROFILE} ${STG_GEN_CLUSTERED_PARAMS}"
 OUT_GEN_CLUSTERED="${STG_GEN_CLUSTERED_DIR}/edge.csv"
+
+if [ "${SBM_OVERLAY_BOOL}" = "true" ]; then
+    GEN_CLUSTERED_OVERLAY_FLAG=(--sbm-overlay)
+else
+    GEN_CLUSTERED_OVERLAY_FLAG=(--no-sbm-overlay)
+fi
 
 if ! is_step_done "${STG_GEN_CLUSTERED_DIR}/done" "${OUT_GEN_CLUSTERED}"; then
     run_stage "${STG_GEN_CLUSTERED_DIR}/time_and_err.log" \
@@ -166,7 +180,7 @@ if ! is_step_done "${STG_GEN_CLUSTERED_DIR}/done" "${OUT_GEN_CLUSTERED}"; then
         --edge-counts "${STG_PROFILE_DIR}/edge_counts.csv" \
         --output-folder "${STG_GEN_CLUSTERED_DIR}" \
         --seed "${SEED}" \
-        --no-sbm-overlay
+        "${GEN_CLUSTERED_OVERLAY_FLAG[@]}"
     mark_done "${STG_GEN_CLUSTERED_DIR}/done" "Stage 2 (gen_clustered)" "${IN_GEN_CLUSTERED}" "${OUT_GEN_CLUSTERED}"
 else
     note_stage_skipped "${STG_GEN_CLUSTERED_DIR}/time_and_err.log"
@@ -182,9 +196,16 @@ echo "=== Starting Stage 3: Outlier Generation & Combine ==="
 STG_GEN_OUTLIER_EDGES_PARAMS="${STG_GEN_OUTLIER_EDGES_DIR}/params.txt"
 write_params_file "${STG_GEN_OUTLIER_EDGES_PARAMS}" \
     "seed=$((SEED + 1))" \
-    "scope=all" \
+    "scope=${SCOPE}" \
     "outlier_mode=${GEN_OUTLIER_MODE}" \
     "edge_correction=${EDGE_CORRECTION}"
+
+# scope=outlier-incident (v1) ignores exist-edgelist; only the
+# residual-SBM-over-all-blocks branch (scope=all) subtracts it.
+GEN_OUTLIER_EXIST_FLAG=()
+if [ "${SCOPE}" = "all" ]; then
+    GEN_OUTLIER_EXIST_FLAG=(--exist-edgelist "${STG_GEN_CLUSTERED_DIR}/edge.csv")
+fi
 
 IN_GEN_OUTLIER="${INPUT_EDGELIST} ${INPUT_CLUSTERING} ${STG_GEN_CLUSTERED_DIR}/edge.csv ${STG_GEN_OUTLIER_EDGES_PARAMS}"
 OUT_GEN_OUTLIER="${STG_GEN_OUTLIER_EDGES_DIR}/edge_outlier.csv"
@@ -194,8 +215,8 @@ if ! is_step_done "${STG_GEN_OUTLIER_EDGES_DIR}/done" "${OUT_GEN_OUTLIER}"; then
         python "${PACKAGE_PY_DIR}/gen_outlier.py" \
         --orig-edgelist "${INPUT_EDGELIST}" \
         --orig-clustering "${INPUT_CLUSTERING}" \
-        --exist-edgelist "${STG_GEN_CLUSTERED_DIR}/edge.csv" \
-        --scope "all" \
+        "${GEN_OUTLIER_EXIST_FLAG[@]}" \
+        --scope "${SCOPE}" \
         --outlier-mode "${GEN_OUTLIER_MODE}" \
         --edge-correction "${EDGE_CORRECTION}" \
         --output-folder "${STG_GEN_OUTLIER_EDGES_DIR}" \

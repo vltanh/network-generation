@@ -45,7 +45,7 @@ stage 3a.
 
 ## Stage 2: building the k-edge-connected core
 
-[`externals/ec-sbm/src/gen_clustered_core.py`](../../externals/ec-sbm/src/gen_clustered_core.py)'s
+[`externals/ec-sbm/src/gen_kec_core.py`](../../externals/ec-sbm/src/gen_kec_core.py)'s
 `generate_cluster` runs per cluster in two phases.
 
 **Phase 1: the K_{k+1} core.** Take the k+1 highest-degree nodes in the
@@ -195,7 +195,7 @@ Dispatcher (`run_generator.sh`):
 
 - `--ec-sbm-dir <p>`: path to the ec-sbm submodule (default `externals/ec-sbm`). Forwarded to the pipeline wrapper as `--package-dir`.
 
-Pipeline (`./src/ec-sbm/v1/pipeline.sh`):
+Pipeline (`./src/ec-sbm/pipeline.sh`):
 
 - `--package-dir <p>`: required; path to the ec-sbm submodule that contains the algorithm Python modules.
 - `--outlier-mode`: only `excluded` is accepted; any other value errors. Outliers are synthesized by Stage 3.
