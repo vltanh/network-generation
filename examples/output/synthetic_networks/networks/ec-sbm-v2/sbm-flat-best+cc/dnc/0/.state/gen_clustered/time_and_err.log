@@ -1,19 +1,19 @@
-=== 2026-04-24T00:57:22Z | pid=298769 | host=nah-popos | EXECUTED ===
+=== 2026-04-24T01:52:35Z | pid=394422 | host=nah-popos | EXECUTED ===
 	Command being timed: "python /home/vltanh/Documents/network-generation/externals/ec-sbm/src/gen_clustered.py --node-id examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/profile/node_id.csv --cluster-id examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/profile/cluster_id.csv --assignment examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/profile/assignment.csv --degree examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/profile/degree.csv --mincut examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/profile/mincut.csv --edge-counts examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/profile/edge_counts.csv --output-folder examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/gen_clustered --seed 1 --no-sbm-overlay"
-	User time (seconds): 0.26
-	System time (seconds): 0.04
+	User time (seconds): 0.27
+	System time (seconds): 0.03
 	Percent of CPU this job got: 99%
 	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:00.30
 	Average shared text size (kbytes): 0
 	Average unshared data size (kbytes): 0
 	Average stack size (kbytes): 0
 	Average total size (kbytes): 0
-	Maximum resident set size (kbytes): 93228
+	Maximum resident set size (kbytes): 93936
 	Average resident set size (kbytes): 0
 	Major (requiring I/O) page faults: 0
-	Minor (reclaiming a frame) page faults: 15812
+	Minor (reclaiming a frame) page faults: 15816
 	Voluntary context switches: 22
-	Involuntary context switches: 57
+	Involuntary context switches: 50
 	Swaps: 0
 	File system inputs: 0
 	File system outputs: 56

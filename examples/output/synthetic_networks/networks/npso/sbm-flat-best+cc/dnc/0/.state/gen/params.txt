@@ -1,3 +1,7 @@
 model=nPSO2
 n_threads=1
+search_diff_tol=0.005
+search_max_iters=100
+search_step_tol=0.0001
+search_t_min=0.0005
 seed=1

@@ -1,6 +1,6 @@
 48fd52339fb3e27849ea04c6ddbb974d1a5f9eb555e59e437e80b552c88d424e  examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/.state/setup/degree.csv
 ce19257ae64910ba2de74ecb6c3306d5a9ebe156c31228014cbf5ba92950e2c7  examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/.state/setup/cluster_sizes.csv
 c48dc72b426cb0b905dd5fd3fe8c4101108df2e6aa4aacd2bfbf809907b10a4a  examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/.state/setup/derived.txt
-7be72c50166c1aa9e272e9d63dae3a919fe74ee9621c5a8d0dea2350cf07a55b  examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/.state/gen/params.txt
+e5ebd97b4cf5732ecf32013bad3dacd00410cacf4e68c915aa0994ecb9348a9c  examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/.state/gen/params.txt
 5dc2b4ee3023b756b4314f730852898ed3a22583faecf3a311d470dbeb02eccd  examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/.state/gen/edge.csv
 cb21d45441d88e0c36a71de41d39e3359db8c883b5e01429356b91f8d3aeec82  examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/.state/gen/com.csv

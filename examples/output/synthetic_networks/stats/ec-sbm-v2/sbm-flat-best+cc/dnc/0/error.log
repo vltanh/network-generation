@@ -1,18 +1,18 @@
 	Command being timed: "python /home/vltanh/Documents/network-generation/network_evaluation/compare/compare_pair.py --cluster-1-folder examples/output/synthetic_networks/stats/ec-sbm-v2/sbm-flat-best+cc/dnc/0/cluster --cluster-2-folder examples/input/reference_clusterings/stats/sbm-flat-best+cc/dnc --network-1-folder examples/output/synthetic_networks/stats/ec-sbm-v2/sbm-flat-best+cc/dnc/0/network --network-2-folder examples/input/empirical_networks/stats/dnc --output-file examples/output/synthetic_networks/stats/ec-sbm-v2/sbm-flat-best+cc/dnc/0/comparison.csv --is-compare-sequence"
-	User time (seconds): 0.52
+	User time (seconds): 0.53
 	System time (seconds): 0.05
 	Percent of CPU this job got: 99%
-	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:00.57
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:00.59
 	Average shared text size (kbytes): 0
 	Average unshared data size (kbytes): 0
 	Average stack size (kbytes): 0
 	Average total size (kbytes): 0
-	Maximum resident set size (kbytes): 141132
+	Maximum resident set size (kbytes): 140660
 	Average resident set size (kbytes): 0
 	Major (requiring I/O) page faults: 0
-	Minor (reclaiming a frame) page faults: 24666
+	Minor (reclaiming a frame) page faults: 24669
 	Voluntary context switches: 22
-	Involuntary context switches: 58
+	Involuntary context switches: 53
 	Swaps: 0
 	File system inputs: 0
 	File system outputs: 16
