@@ -184,21 +184,23 @@ FLAG_MATRIX = [
     ("ec-sbm-v1", "--package-dir", None, True),
     ("ec-sbm-v2", "--package-dir", None, True),
     ("sbm", "--package-dir", None, False),
-    # ec-sbm preset bundle: both configs forward the full residual-SBM knob
-    # set at the pipeline layer (sbm-overlay / scope / gen-outlier-mode /
-    # edge-correction / match-degree-algorithm). The profile-stage
-    # --outlier-mode stays at the pipeline default (excluded) and is not
-    # forwarded by either config.
-    ("ec-sbm-v1", "--sbm-overlay", None, True),
-    ("ec-sbm-v2", "--no-sbm-overlay", None, True),
-    ("ec-sbm-v1", "--scope", "outlier-incident", True),
-    ("ec-sbm-v2", "--scope", "all", True),
-    ("ec-sbm-v1", "--gen-outlier-mode", "singleton", True),
-    ("ec-sbm-v2", "--gen-outlier-mode", "combined", True),
-    ("ec-sbm-v1", "--edge-correction", "none", True),
-    ("ec-sbm-v2", "--edge-correction", "rewire", True),
-    ("ec-sbm-v1", "--match-degree-algorithm", "greedy", True),
-    ("ec-sbm-v2", "--match-degree-algorithm", "hybrid", True),
+    # ec-sbm: each config forwards --version {v1|v2} to pipeline.sh,
+    # which expands that into the per-stage preset bundle (sbm-overlay /
+    # scope / gen-outlier-mode / edge-correction / match-degree-algorithm).
+    # The configs do not list those individual flags, so the stub argv
+    # contains only --version plus the common flags.
+    ("ec-sbm-v1", "--version", "v1", True),
+    ("ec-sbm-v2", "--version", "v2", True),
+    ("ec-sbm-v1", "--sbm-overlay", None, False),
+    ("ec-sbm-v2", "--no-sbm-overlay", None, False),
+    ("ec-sbm-v1", "--scope", None, False),
+    ("ec-sbm-v2", "--scope", None, False),
+    ("ec-sbm-v1", "--gen-outlier-mode", None, False),
+    ("ec-sbm-v2", "--gen-outlier-mode", None, False),
+    ("ec-sbm-v1", "--edge-correction", None, False),
+    ("ec-sbm-v2", "--edge-correction", None, False),
+    ("ec-sbm-v1", "--match-degree-algorithm", None, False),
+    ("ec-sbm-v2", "--match-degree-algorithm", None, False),
     ("ec-sbm-v1", "--outlier-mode", None, False),
     ("ec-sbm-v2", "--outlier-mode", None, False),
     ("sbm", "--match-degree-algorithm", None, False),
