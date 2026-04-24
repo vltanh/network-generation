@@ -5,7 +5,8 @@
 #   * Per-run peak RSS via /usr/bin/time -v inside bench_gens.sh (already wired).
 #   * Per-second cgroup memory.current sampler writes a time-series.
 #   * Final memory.peak recorded before the transient cgroup is cleaned up.
-#   * Host snapshot (CPU / RAM / OS / package versions / git HEAD) saved.
+#   * Host snapshot (CPU / RAM / OS / package versions) via host_info.sh.
+#   * Plots (wallclock / memory / byte-identity) via plot_results.py.
 #
 # Env overrides:
 #   MEM_CAP=16G              memory cap passed to systemd-run (e.g. 8G, 32G).
@@ -14,15 +15,17 @@
 #   NW_ENV=...               forwarded to bench_gens.sh (conda env bin dir).
 #   NW_NPSO_ENV=...          same, for the nPSO gen.
 #
-# Outputs (under scripts/benchmark/, alongside results.csv):
+# Outputs (under benchmark/, alongside results.csv):
 #   host_snapshot.txt        host + toolchain at run start.
 #   memory_timeline.csv      ts_s,rss_bytes,peak_bytes (one row per sample).
 #   memory_peak.txt          last-observed cgroup memory.peak in bytes.
 #   results.csv              per-run time + RSS + hashes (produced by bench_gens.sh).
+#   plots/                   rendered plots (wallclock, memory timeline, byte-identity).
 set -euo pipefail
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-BENCH="$REPO_ROOT/scripts/benchmark/bench_gens.sh"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+BENCH="$SCRIPT_DIR/bench_gens.sh"
 OUT_DIR="$REPO_ROOT/examples/benchmark"
 
 MEM_CAP="${MEM_CAP:-16G}"
@@ -39,38 +42,10 @@ mkdir -p "$OUT_DIR"
 echo "ts_s,rss_bytes,peak_bytes" > "$MEM_TIMELINE"
 
 # ---------- Host snapshot ----------
-{
-  echo "=== Timestamp ==="; date -u -Iseconds
-  echo
-  echo "=== CPU pin ==="; echo "$CPU_LIST"
-  echo "=== Mem cap ==="; echo "$MEM_CAP"
-  echo "=== Sample interval (s) ==="; echo "$SAMPLE_INTERVAL_S"
-  echo
-  echo "=== lscpu (summary) ==="
-  lscpu | grep -E "Model name|Thread|Core|Socket|NUMA|CPU max MHz|^CPU\(s\)"
-  echo
-  echo "=== free -h ==="
-  free -h
-  echo
-  echo "=== /etc/os-release ==="
-  head -3 /etc/os-release
-  echo
-  echo "=== Kernel ==="
-  uname -a
-  echo
-  echo "=== git HEAD ==="
-  (cd "$REPO_ROOT" && git rev-parse HEAD) 2>/dev/null
-  (cd "$REPO_ROOT" && git status --short) 2>/dev/null
-  echo
-  echo "=== Toolchain ==="
-  which python 2>&1; python --version 2>&1
-  python -c "import graph_tool; print('graph-tool', graph_tool.__version__)" 2>&1 || true
-  python -c "import numpy, pandas; print('numpy', numpy.__version__); print('pandas', pandas.__version__)" 2>&1 || true
-  python -c "import networkit, powerlaw; print('networkit', networkit.__version__); print('powerlaw', powerlaw.__version__)" 2>&1 || true
-  python -c "import matlab.engine; print('matlabengine ok')" 2>&1 || true
-  julia --version 2>&1 || true
-  matlab -batch "disp(version); quit" 2>&1 | head -1 || true
-} > "$HOST_SNAPSHOT"
+# Delegate to host_info.sh so the snapshot format stays consistent with
+# standalone invocation. Env vars propagate via export.
+CPU_LIST="$CPU_LIST" MEM_CAP="$MEM_CAP" SAMPLE_INTERVAL_S="$SAMPLE_INTERVAL_S" \
+    "$SCRIPT_DIR/host_info.sh" > "$HOST_SNAPSHOT"
 
 # ---------- Memory sampler (background) ----------
 cg_dir="/sys/fs/cgroup/user.slice/user-$(id -u).slice/user@$(id -u).service/app.slice/$SCOPE_NAME.scope"
@@ -124,4 +99,10 @@ echo "Host snapshot: $HOST_SNAPSHOT"
 echo "Memory timeline: $MEM_TIMELINE"
 echo "Memory peak (bytes): $(cat "$MEM_PEAK" 2>/dev/null)"
 echo "Results: $OUT_DIR/results.csv"
+
+# Render plots (wallclock / memory timeline / byte-identity).
+if command -v python >/dev/null 2>&1; then
+    python "$SCRIPT_DIR/plot_results.py" --bench-dir "$OUT_DIR" || true
+fi
+
 exit $RC
