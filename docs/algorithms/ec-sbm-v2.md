@@ -26,7 +26,7 @@ just outlier-touching ones.
 dropped stuck stubs. v2 exposes five algorithms via `--algorithm`
 (`greedy`, `true_greedy`, `random_greedy`, `rewire`, `hybrid`). Most log
 gridlock instead of hiding it. The registry default in
-[`generators/ec-sbm-v2.sh`](../../generators/ec-sbm-v2.sh) is `true_greedy`,
+[`configs/ec-sbm-v2.sh`](../../configs/ec-sbm-v2.sh) is `hybrid`,
 though `hybrid` is usually the more robust choice.
 
 ## The K_{k+1} core

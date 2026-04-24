@@ -6,12 +6,12 @@
 # (MATLAB engine, graph-tool import, etc.) get amortized across runs.
 #
 # Usage:
-#   scripts/benchmark/bench_gens.sh
-#   scripts/benchmark/bench_gens.sh --gens sbm,lfr --seeds "1 42" --runs 5 --warmup 1
+#   benchmark/bench_gens.sh
+#   benchmark/bench_gens.sh --gens sbm,lfr --seeds "1 42" --runs 5 --warmup 1
 
 set -euo pipefail
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT"
 
 GENS_DEFAULT="sbm,ec-sbm-v1,ec-sbm-v2,abcd,abcd+o,lfr,npso"
