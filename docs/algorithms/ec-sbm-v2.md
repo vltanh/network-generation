@@ -205,7 +205,7 @@ Dispatcher (`run_generator.sh`):
 The dispatcher also hardcodes `--edge-correction rewire` and
 `--match-degree-algorithm hybrid`; override by direct pipeline invocation.
 
-Pipeline (`./src/ec-sbm/v2/pipeline.sh`):
+Pipeline (`./src/ec-sbm/pipeline.sh`):
 
 - `--package-dir <p>`: required; path to the ec-sbm submodule that contains the algorithm Python modules.
 - `--outlier-mode`: default `excluded`.

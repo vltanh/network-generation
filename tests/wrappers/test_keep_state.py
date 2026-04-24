@@ -5,9 +5,9 @@ wrapper into a tmp dir alongside a stub `_common/simple_pipeline.sh` that
 echoes the value of KEEP_STATE and exits.  Confirms the wrapper parses
 --keep-state and propagates it into the dispatcher's scope.
 
-For the 2 ec-sbm pipelines (v1, v2): static check that the script both
-parses --keep-state into KEEP_STATE=1 and gates the final `rm -rf`
-on it.  Behavioral verification of the gating happens in the slow
+For ec-sbm's unified `pipeline.sh`: static check that it parses
+--keep-state into KEEP_STATE=1 and gates the final `rm -rf` on it.
+Behavioral verification of the gating happens in the slow
 ec-sbm integration suite.
 """
 from __future__ import annotations
@@ -116,8 +116,7 @@ def test_wrapper_propagates_keep_state(wrapper_repo: Path, gen: str):
 # ---------------------------------------------------------------------------
 
 EC_SBM_PIPELINES = [
-    REPO_ROOT / "src" / "ec-sbm" / "v1" / "pipeline.sh",
-    REPO_ROOT / "src" / "ec-sbm" / "v2" / "pipeline.sh",
+    REPO_ROOT / "src" / "ec-sbm" / "pipeline.sh",
 ]
 
 

@@ -59,11 +59,10 @@ def stub_repo(tmp_path: Path) -> Path:
     shutil.copytree(REPO_ROOT / "generators", root / "generators")
 
     for gen in GENS:
-        gen_dir = root / "src" / gen / ("v2" if gen == "ec-sbm-v2" else "v1" if gen == "ec-sbm-v1" else "")
-        # the path the dispatcher invokes: src/<gen>/pipeline.sh for simple
-        # gens, src/ec-sbm/v{1,2}/pipeline.sh for ec-sbm.
+        # Path the dispatcher invokes: src/<gen>/pipeline.sh for simple
+        # gens; src/ec-sbm/pipeline.sh for both ec-sbm presets.
         if gen.startswith("ec-sbm-"):
-            stub_path = root / "src" / "ec-sbm" / gen.split("-")[-1] / "pipeline.sh"
+            stub_path = root / "src" / "ec-sbm" / "pipeline.sh"
         else:
             stub_path = root / "src" / gen / "pipeline.sh"
         stub_path.parent.mkdir(parents=True, exist_ok=True)
@@ -185,15 +184,23 @@ FLAG_MATRIX = [
     ("ec-sbm-v1", "--package-dir", None, True),
     ("ec-sbm-v2", "--package-dir", None, True),
     ("sbm", "--package-dir", None, False),
-    # ec-sbm-v2 algorithm trio.  --outlier-mode / --gen-outlier-mode are not in
-    # GEN_EXTRA_ARGS: the pipeline's defaults ("combined" for both the profile
-    # stage and the gen-outlier stage) apply, and generators/ec-sbm-v2.sh stays
-    # silent on outlier policy.
-    ("ec-sbm-v2", "--outlier-mode", None, False),
-    ("ec-sbm-v2", "--gen-outlier-mode", None, False),
+    # ec-sbm preset bundle: both configs forward the full residual-SBM knob
+    # set at the pipeline layer (sbm-overlay / scope / gen-outlier-mode /
+    # edge-correction / match-degree-algorithm). The profile-stage
+    # --outlier-mode stays at the pipeline default (excluded) and is not
+    # forwarded by either config.
+    ("ec-sbm-v1", "--sbm-overlay", None, True),
+    ("ec-sbm-v2", "--no-sbm-overlay", None, True),
+    ("ec-sbm-v1", "--scope", "outlier-incident", True),
+    ("ec-sbm-v2", "--scope", "all", True),
+    ("ec-sbm-v1", "--gen-outlier-mode", "singleton", True),
+    ("ec-sbm-v2", "--gen-outlier-mode", "combined", True),
+    ("ec-sbm-v1", "--edge-correction", "none", True),
     ("ec-sbm-v2", "--edge-correction", "rewire", True),
+    ("ec-sbm-v1", "--match-degree-algorithm", "greedy", True),
     ("ec-sbm-v2", "--match-degree-algorithm", "hybrid", True),
     ("ec-sbm-v1", "--outlier-mode", None, False),
+    ("ec-sbm-v2", "--outlier-mode", None, False),
     ("sbm", "--match-degree-algorithm", None, False),
 ]
 
