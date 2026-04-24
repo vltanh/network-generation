@@ -138,9 +138,8 @@ Adding outliers does not meaningfully change runtime vs plain ABCD.
 - **Yes**: your empirical graph has genuine background nodes and you want
   them preserved.
 - **Maybe**: [ABCD](./abcd.md) if your graph has no outlier concept.
-- **Consider**: [nPSO](./npso.md) if you want outliers *and* a
-  clustering-coefficient target. nPSO also uses a cluster_id=1 outlier
-  convention.
+- **Consider**: [nPSO](./npso.md) if you want a clustering-coefficient
+  target.
 
 ## CLI flags
 

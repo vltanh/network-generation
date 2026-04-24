@@ -2,89 +2,224 @@
 
 [← back to index](../algorithms.md)
 
-The other six generators in this repo produce graphs that tend toward
-tree-like: sparse, low triangle density, clustering coefficient around
-0.01-0.05 where your real social graph might be 0.3 or higher. This is a
-known limitation of the degree-corrected SBM and configuration-model
-families: they do not target triangles.
+Non-uniform Popularity-Similarity Optimisation. Embeds nodes on a
+hyperbolic disk and connects pairs that lie close in the geometry. A
+temperature knob trades clustering coefficient against randomness.
 
-nPSO is the exception. It is the only generator here that *targets* the
-global clustering coefficient. It does so by a different route: instead of
-sampling stubs, it embeds nodes in a hyperbolic disk, sets a temperature
-parameter that controls how clustering-heavy the geometry is, and
-*searches* over that temperature at stage 2 to match the input's triangle
-density.
+Most generators in this project are driven by degree and block
+statistics, not geometry. They place edges from counts, so triangles
+happen only by coincidence. nPSO is the exception: it gets triangles
+by embedding nodes on a hyperbolic disk and connecting pairs that are
+geometrically close. A temperature knob `T ∈ (0, 1)` controls how
+strictly "close" is enforced. Small `T` means only very close pairs
+connect (high clustering). Large `T` means connections become
+random-ish (low clustering). Matching an empirical clustering
+coefficient means searching for the right `T`.
 
-This is expensive. And, on some inputs, the search does not converge
-because the model's achievable range does not include the target. See the
-"what you get on the shipped example" section below for a concrete case.
+## Stage 1: profile
 
-## Model class in 60 seconds
+Profile reads the reference network + clustering and distils them
+into a small, explicit contract. The default model is nPSO2, so
+alongside the scalars profile also emits a weight vector `ρ_k =
+size_k / N`, one entry per mixture component.
 
-non-uniform Popularity-Similarity Optimisation. Nodes live on a hyperbolic
-disk.
+| Scalar | Meaning |
+| --- | --- |
+| `N` | Number of nodes. |
+| `m` | Half of the mean degree, rounded. Controls how many existing nodes each arrival attaches to. |
+| `γ` | Power-law exponent of the degree distribution, fit using the Python `powerlaw` package and floored at `γ ≥ 2`. |
+| `C` | Number of mixture components. Under outlier-mode `singleton` (the default), each input outlier becomes its own 1-node cluster, bumping `C` by the outlier count. |
+| `C_G` | Global clustering coefficient of the input (via `networkit`). This is the target for Stage 4's search. |
 
-- **Popularity** = radial position, driven by a power law (exponent γ).
-- **Similarity** = angular position, drawn from a mixture of c Gaussians
-  (one per cluster; the "non-uniform" part). Each Gaussian contributes
-  an angular sector.
-- **Edges** form between nodes that are geometrically close in hyperbolic
-  distance.
-- **Temperature** T ∈ (0, 1) controls how strictly "close" is enforced.
-  At T → 0, only the geometrically closest nodes connect (high clustering
-  coefficient); at T → 1, connections become essentially random (low
-  clustering coefficient).
+Outliers are nodes that are unclustered in the input or sole members
+of a size-1 cluster. Under outlier-mode `singleton` they are
+promoted to their own `__outlier_<id>__` pseudo-cluster at the
+profile step, so each outlier becomes a valid singleton cluster for
+Stage 2 to embed as a tiny mixture weight.
 
-Matching an empirical clustering coefficient means finding the T that
-reproduces it.
+### Why nPSO2 (and not 1 or 3)
 
-## Stage 1: the bare minimum
+The paper defines three angular-distribution variants:
 
-[`src/npso/profile.py`](../../src/npso/profile.py) emits only:
+- **nPSO1** uses uniform weights `ρ_k = 1/C`. Paper's primary benchmark.
+- **nPSO2** accepts caller-supplied `ρ_k`. Paper's way to generate "communities of different sizes".
+- **nPSO3** mixes Gaussians with Gammas to build asymmetric lobes.
 
-- `degree.csv`
-- `cluster_sizes.csv`
+All three are available via `--npso-model`. The default is nPSO2
+because our inputs have clusters of very different sizes. A long
+right-hand tail of singleton outliers is typical. Treating them as
+`1/C`-weighted components (nPSO1) would have each outlier claim a
+full angular sector, producing outlier "communities" with several
+nodes each. nPSO2 with `ρ_k = size_k / N` gives singleton outliers
+correspondingly tiny mixture weight, which is closer to the reality
+that they are outliers.
 
-No mixing parameter file; nPSO derives cross-cluster behaviour from
-angular positions. Cluster *sizes* are discarded at stage 2; nPSO uses
-only the *count* c. The actual sizes in the output are determined by
-nPSO's angular sector assignments, not by the input distribution.
+## Stage 2: the disk
 
-## Stage 2: four derived params + a search
+Each node gets two polar coordinates. The *radial* position encodes
+popularity (hubs near the centre, low-degree nodes at the rim). The
+*angular* position encodes similarity (nearby angles = similar).
 
-```python
-N     = len(degrees)
-m     = int(round(mean(degrees) / 2))                     # average half-degree
-gamma = max(powerlaw.Fit(degrees).power_law.alpha, 2.0)   # floored at 2
-c     = len(cluster_sizes)                                # number of clusters
+Nodes are indexed in descending order by degree, so the biggest hub
+is `t_i = 1` and the lowest-degree node is `t_i = N`.
+
+With `β = 1/(γ - 1)`, following the PSO growth process
+(Papadopoulos et al. 2012, extended for communities in Muscoloni &
+Cannistraci 2018), node `i`'s radial coordinate after all `N`
+arrivals is
+
+```
+r_i = 2β · ln(t_i) + 2(1-β) · ln(N).
 ```
 
-And the target:
+Default model is nPSO2: the angular coordinate is sampled from a
+Gaussian mixture with `C` equidistant means `μ_k = 2π k / C`, common
+width `σ = 2π / (6C)`, and profile-supplied weights `ρ_k = size_k /
+N`:
 
-```python
-target_global_ccoeff = compute_global_ccoeff_from_edgelist(input_edgelist)
+```
+θ_i ~ Σ_{k=1}^{C} ρ_k · N(μ_k, σ²)   (mod 2π).
 ```
 
-measured exactly (not sampled) via networkit's
-`ClusteringCoefficient.exactGlobal`, after removing multi-edges and
-self-loops.
+Each sample first picks a component `k` with probability `ρ_k`, then
+draws `θ_i` from `N(μ_k, σ²)`. Input cluster labels do not survive
+this stage. Every node is re-assigned to the nearest component mean:
 
-## Standalone `gen.py` invocation
+```
+C'(i) = argmin_k d_ang(θ_i, μ_k),
+```
 
-`src/npso/gen.py` takes the four derived scalars plus the target as
-required CLI flags, so it can run without Stage 1 if the caller has fit
-the model parameters elsewhere (e.g. regenerating from a previously
-cached profile, or a from-scratch experiment where only the scalars are
-known).
+where `d_ang` is the shortest circular distance between two angles.
+Nodes drawn from low-weight components can land closer to a
+high-weight component's mean and get re-assigned. That is by design,
+and it is why singleton outliers (with `ρ = 1/N`) can end up absorbed
+by nearby large clusters rather than staying isolated. When that
+happens the outlier's component ends up empty, and the 1-node
+cluster it would have formed becomes a true generator outlier in the
+output (stripped by `drop_singleton_clusters`).
+
+## Stage 3: temperature
+
+For each pair of nodes `(i, j)`, nPSO computes a hyperbolic distance
+`h_ij` on the Poincaré disk,
+
+```
+h_ij = arccosh(cosh r_i · cosh r_j − sinh r_i · sinh r_j · cos d_ang(θ_i, θ_j)),
+```
+
+and compares it to the current disk radius `R(T)` (a closed form in
+`T`, `N`, `m`, `β`, derived in the paper). Connection is a
+Fermi-Dirac coin flip:
+
+```
+p(i, j) = 1 / (1 + exp((h_ij − R(T)) / (2T))).
+```
+
+At `T → 0` the sigmoid turns into a hard cutoff: every pair with
+`h_ij < R(T)` connects and nothing else does. Triangles are plentiful
+because close triples all lie inside the cutoff. At `T → 1` the
+sigmoid is shallow and most pairs flip a near-fair coin regardless of
+distance, so edges look random and triangle density collapses.
+`cc(T)` is the clustering coefficient of a specific nPSO sample at
+temperature `T`. Different draws at the same `T` give different
+values, so the curve is noisy.
+
+Edges are placed via the paper's **implementation 3**: each node
+arriving at time `t_i` picks exactly `m` targets from earlier
+arrivals without replacement, with probability proportional to
+`p(i, j)`. Total edge count is `m(m+1)/2 + (N-m-1) · m`, independent
+of `T`. The `T` knob reshuffles *which* pairs get picked but not how
+many. The paper proves impl 1 (per-pair Bernoulli against `p(i, j)`)
+and impl 3 are equivalent in expectation. The MATLAB binary uses impl
+3, and so does this documentation.
+
+## Stage 4: the secant search
+
+`cc(T)` trends downward in `T` but is not strictly monotone (see
+Stage 3). The code nonetheless treats this as 1D root-finding. Start
+with `[T_min, T_max] = [0, 1]` and bisect. Residual signs drive the
+bracket update backwards from the textbook: `cc > target` means `T`
+is too small, so `T_min` moves right. `cc < target` means `T` is too
+large, so `T_max` moves left.
+
+Once both bracket ends have opposite-signed residuals, secant kicks
+in:
+
+```
+T_sec = T_min − f_min / (f_max − f_min) · (T_max − T_min).
+```
+
+**Margin guard.** If the secant iterate falls within 5% of the
+bracket width from either endpoint, the code falls back to the
+bracket midpoint for that iter. Without the guard, secant stalls
+hugging the endpoint when `cc(T)` flattens near a bracket edge.
+
+**Stop conditions.** residual < 0.005, step < 0.0001, or 100 iters.
+The wrapper keeps the lowest-residual iterate regardless of whether
+convergence was formally reached.
+
+### Caveat 1: bisect + secant assumes monotone
+
+The framework assumes `cc(T)` is monotone so residual signs carry
+information. The mean curve drifts downward but is not strictly so,
+and single-shot noise is substantial. Equal-signed residuals can
+cluster on the wrong side, the secant never fires, and bisection
+walks into a local minimum. Better options when `cc(T)` is noisy or
+non-monotone: grid-scan `T` on a log-uniform schedule and keep the
+best-residual iterate; sample several times per `T` and minimise over
+the mean; or a golden-section search if unimodality is plausible. The
+current code does none of these.
+
+### Caveat 2: the target may be too high
+
+nPSO's achievable `cc` ceiling depends on `(N, m, γ, C)`. If the
+target sits above the ceiling at every `T`, even driving `T` toward
+0 cannot push `cc(T)` up to it. When that happens the search never
+crosses the target, residuals stay same-signed across the whole
+bracket, and bisection walks `T → 0` until the step collapses. The
+DNC case study below is the extreme: target 0.548, achievable top
+barely above 0.1.
+
+## Case study: dnc
+
+Default run on `dnc` + `sbm-flat-best+cc` at `--seed 1` (nPSO2,
+outlier-mode singleton):
+
+| Stat | Input | nPSO output | Note |
+| --- | --- | --- | --- |
+| `N` | 906 | 906 | exact |
+| edges | 10,429 | 10,794 | within 3.5%; `m = round(mean_deg / 2)`, rounded |
+| mean degree | 23.02 | 23.78 | follows from edge count |
+| global cc | 0.548 | 0.098 | **did not converge** |
+| mean local cc | 0.494 | 0.557 | local overshoots the input while global stays low; different triangle structure |
+| num clusters | 42 | 161 | nPSO2 with `C = 442` mixture components argmin-reassigns nodes across them; 161 components survive `drop_singleton_clusters` |
+
+The 281 components that do not survive are the generator's own
+outliers (singleton clusters by definition, stripped from
+`com.csv` as a shipping guard). Their nodes remain in `edge.csv`
+with their edges intact.
+
+nPSO with `(N = 906, m = 12, γ = 2.0, C = 442)` peaks at `cc ≈ 0.098`
+across the full `[0, 1]` range: the hyperbolic disk with these
+parameters cannot generate clustering as high as 0.548. The search
+walks down the left half of the bracket by pure bisection, stalls
+after 5 iters at `T_best = 0.125` with `cc = 0.098` and residual
+0.450.
+
+## Standalone `gen.py`
+
+`src/npso/gen.py` takes the derived scalars plus the target as
+required CLI flags, so it can run without Stage 1 if the caller has
+fit the model parameters elsewhere.
 
 | Flag | Meaning |
 | --- | --- |
 | `--N <int>` | Node count. |
 | `--m <int>` | Half-degree target (`mean(degrees) / 2`, rounded). |
-| `--gamma <float>` | Power-law exponent of the degree distribution (floored at 2 by Stage 1). |
-| `--c <int>` | Number of communities / GMM components on the disk. |
-| `--target-ccoeff <float>` | Global clustering-coefficient target for the temperature search. |
-| `--mixing-proportions <csv>` | Comma-separated `rho_k` values for `nPSO2`; one per community. Empty for `nPSO1` / `nPSO3`. |
+| `--gamma <float>` | Power-law exponent of the degree distribution. |
+| `--c <int>` | Number of mixture components. |
+| `--target-ccoeff <float>` | Global clustering-coefficient target. |
+| `--mixing-proportions <csv>` | Comma-separated `ρ_k` for nPSO2; one per component. Empty for nPSO1 / nPSO3. |
 | `--npso-dir <p>` | `nPSO_model` checkout. |
 | `--model <m>` | `nPSO1` \| `nPSO2` \| `nPSO3` (default `nPSO2`). |
 | `--seed <n>` | Seed (default `1`). |
@@ -92,206 +227,14 @@ known).
 | `--output-folder <p>` | Where to write `edge.csv` + `com.csv`. |
 
 When called via `src/npso/pipeline.sh`, these flags are filled from
-`derived.txt` emitted by Stage 1 (see the post-stage-1 hook in
-`pipeline.sh`).
+`derived.txt` emitted by Stage 1.
 
-### Selecting the model variant
-
-`--model` accepts `nPSO1`, `nPSO2` (default), or `nPSO3`. The three share
-the same hyperbolic-disk substrate but differ in how the angular
-community mixture is built:
-
-- **nPSO1**: upstream paper's default GMM with equal `ρ_k` across
-  communities (passes the integer `C` to the MATLAB helper, which
-  triggers the equal-weight path).
-- **nPSO2**: `gmdistribution` with caller-supplied weights. Stage 1
-  estimates `ρ_k` per community and forwards it as
-  `--mixing-proportions`; the MATLAB helper builds a `gmdistribution`
-  with means `2πk/C`, equal variance, and those weights.
-- **nPSO3**: Gaussian/Gamma mixture built by the upstream
-  `create_mixture_gaussian_gamma_pdf(C)` helper; does not use
-  `--mixing-proportions`.
-
-At the top-level dispatcher, use `--npso-model <m>` on `run_generator.sh`
-(same values); at the per-generator pipeline layer (`src/npso/pipeline.sh`)
-or the standalone `gen.py`, use `--model <m>`.
-
-## The temperature search
-
-Clustering coefficient as a function of T is monotonically decreasing in
-(0, 1). So the search is a 1D root-finding problem: find T such that
-`ccoeff(T) − target = 0`.
-
-The search in [`_next_T`](../../src/npso/gen.py#L406) is a secant step
-with a margin guard over a bisection fallback:
-
-- Default: midpoint of the current bracket `[min_T, max_T]`.
-- Once both bracket endpoints have known residuals with opposite signs,
-  try the secant formula:
-  ```
-  T_sec = min_T − f_min_T × (max_T − min_T) / (f_max_T − f_min_T)
-  ```
-- Margin guard: if T_sec lands within 5% of either endpoint, fall back to
-  midpoint. Without this guard the secant can stall near a bracket
-  boundary when the function flattens.
-
-Stopping conditions:
-
-- `best_diff < 0.005` (tight match).
-- `|ccoeff_t − ccoeff_{t-1}| < 0.0001` (stagnation).
-- `T < 0.0005` (degenerate bracket).
-- 100 iterations.
-
-At the end, the best `(T, edges, com)` seen is what gets written. If the
-search has not converged, the best-so-far is used.
-
-## Resumable search via JSON log
-
-Each iteration appends `{T, ccoeff}` to `output_dir/search_log.json`,
-keyed by a SHA-256 of `(N, m, gamma, c, target_ccoeff, seed)`. On rerun
-with the same inputs, the log is replayed to restore bracket state and
-the search picks up where it left off. On input mismatch the log is
-invalidated and deleted.
-
-Writes are atomic via sibling tempfile + `os.replace`. The log does not
-store edge matrices. On a fresh resume with `best_T` already known, the
-wrapper re-runs MATLAB once at that T to restore matrices before
-continuing. If that re-run fails, the log is treated as stale and
-discarded.
-
-Each MATLAB iter is ~1 second. Losing state on interruption is painful
-when the search runs 10+ iters.
-
-## The MATLAB runner fallback chain
-
-nPSO is the only generator here that depends on MATLAB. The wrapper
-handles the licensing variability in three layers:
-
-1. **`EngineRunner`**: persistent session via the `matlab.engine` Python
-   package. Requires a proper MATLAB install plus the Python engine
-   wheel. Returns matrices directly (no TSV round-trip).
-2. **`SubprocessRunner`**: spawns a fresh `matlab` per iter via a bash
-   one-liner that optionally `module load matlab` if `matlab` is not in
-   PATH. Writes TSVs, reads them back. Slow (fresh startup per iter) but
-   works on vanilla hosts.
-3. **Mid-run fallback**: if `EngineRunner.run_iter` fails (MATLAB error
-   inside an otherwise-alive engine), the main loop spawns a one-off
-   `SubprocessRunner` for that iter and keeps the engine for subsequent
-   ones.
-
-The MATLAB wrapper
-[`src/npso/matlab/run_npso.m`](../../src/npso/matlab/run_npso.m) is short:
-
-```matlab
-function [edges, comm] = run_npso(N, m, T, gamma, c, output_prefix, seed)
-    if nargin >= 7, rng(seed); end
-    [adj, ~, comm, ~] = nPSO_model(N, m, T, gamma, c, 0);
-    comm = double(comm(:));
-
-    if nargout == 0
-        % Subprocess path: write edge.tsv / com.tsv.
-        ...
-    else
-        % Engine path: return matrices.
-        [u_list, v_list] = find(triu(adj, 1));
-        edges = double([u_list, v_list]);
-    end
-end
-```
-
-One wrinkle: the two paths produce edges in different orderings.
-Subprocess uses outer-u inner-v (row-major on the upper triangle). Engine
-uses `find(triu)` which is column-major. Both are deterministic within a
-path given a fixed seed. They are not byte-compatible across paths.
-
-## What you get on the shipped example
-
-Default run on dnc + sbm-flat-best+cc at `--seed 1`:
-
-| Stat | Input | nPSO output | Note |
-| --- | --- | --- | --- |
-| N | 906 | 906 | exact |
-| Edges | 10429 | 10794 | within 3.5% (m is set to round(mean_deg / 2), so edges are within rounding) |
-| Mean degree | 23.02 | 23.83 | |
-| Global clustering coeff. | 0.548 | 0.099 | **did not converge**; see below |
-| Local clustering coeff. | 0.494 | 0.811 | |
-| Num clusters | 42 | 42 | exact (c = len(cluster_sizes)) |
-
-**Non-convergence caveat.** The dnc input has an empirical global
-clustering coefficient of 0.548. The nPSO model with
-`(N=906, m=12, γ=2.0, c=442)` peaks at around 0.099 even when T is pushed
-below 0.01: the hyperbolic disk with these parameters cannot generate
-clustering that high. The search ran its 100-iter budget and settled at
-`best_T=0.0625` with `ccoeff=0.099` and `diff=0.449`. The output is the
-best nPSO could do, but it is nowhere near the target.
-
-The relevant parameters here are m (average half-degree) and γ
-(power-law exponent). Raising m or lowering γ raises the achievable
-clustering coefficient; the current flooring of γ at 2.0 is conservative
-and rules out a higher-clustering regime. Treat nPSO's target as
-advisory, not guaranteed: check the achieved ccoeff in `run.log` and the
-trajectory in `search_log.json`.
-
-## Output guarantees
-
-- **N** exact.
-- **Number of clusters** = c exact (angular sectors).
-- **Global clustering coefficient**: at target within 0.005, *or* best
-  achieved after 100 iters. On inputs where the model's achievable range
-  does not include the target, the best is not close.
-- **Degree distribution** at power-law(γ) asymptotically.
-
-## What you do not get
-
-- **Exact degree sequence.** Power-law asymptote only.
-- **Cluster sizes.** Angular sectors have their own distribution; the
-  input cluster sizes are thrown away.
-- **Block structure.** Fresh clustering by angular sector; no
-  correspondence to input.
-- **Outlier identity.** cluster_id=1 is nPSO's internal outlier bucket
-  (same convention as [ABCD+o](./abcd+o.md)). It is stripped from
-  `com.csv`. The nodes remain in `edge.csv` with their edges intact.
-
-## Determinism
-
-- Single MATLAB RNG source: `rng(seed)` at the top of `run_npso.m`. The
-  same seed is used across all 100 search iters; the trajectory is fully
-  determined by `(N, m, gamma, c, target, seed)`.
-- MATLAB pinned single-threaded three ways on the subprocess path:
-  pipeline default `N_THREADS=1`, subprocess flag `-singleCompThread`,
-  MATLAB call `maxNumCompThreads(n_threads)`.
-- networkit's `exactGlobal` clustering coefficient is closed-form
-  deterministic.
-- `PYTHONHASHSEED=0` exported by
-  [`pipeline.sh`](../../src/npso/pipeline.sh) for the profile stage.
-
-## Cost
-
-10 seeds x 10 kept runs on 4 cores, 16 GiB cgroup cap:
-
-- kept mean: 6.17 s
-- kept std: 0.56 s
-
-nPSO is the slowest of the seven generators. Cold cost (first run in a
-fresh shell) is much higher, dominated by MATLAB engine startup. Warm
-cost is the 10-iter temperature search itself; each iter runs
-`nPSO_model` on N nodes, which is O(N²) for the pairwise hyperbolic
-distance computation.
-
-## When to use
-
-- **Yes**: you care about clustering coefficient and can tolerate the
-  non-convergence risk.
-- **Maybe**: you can afford ~6 s of wall-clock and the MATLAB dependency.
-- **No**: you need exact degree sequence, exact block structure, or
-  specific outlier semantics.
-
-## CLI flags
+## Dispatcher + pipeline flags
 
 Dispatcher (`run_generator.sh`):
 
 - `--npso-dir <p>`: path to `nPSO_model` checkout. Default `externals/npso`. Requires `matlab` on `PATH`.
-- `--npso-model <m>`: `nPSO1` \| `nPSO2` \| `nPSO3`. Default `nPSO2`. See "Selecting the model variant" above.
+- `--npso-model <m>`: `nPSO1` \| `nPSO2` \| `nPSO3`. Default `nPSO2`.
 
 Pipeline (`./src/npso/pipeline.sh`):
 
@@ -301,13 +244,29 @@ Pipeline (`./src/npso/pipeline.sh`):
 - `--drop-outlier-outlier-edges` / `--keep-outlier-outlier-edges`: default keep.
 - `--match-degree` / `--no-match-degree`: default off.
 - `--match-degree-algorithm <greedy|true_greedy|random_greedy|rewire|hybrid>`: default `hybrid`.
-- `--remap` / `--no-remap`: default on (MATLAB sampler emits fresh 1..N IDs).
-
-Standalone `gen.py` invocation: see the section above for scalar CLI
-(`--N`, `--m`, `--gamma`, `--c`, `--target-ccoeff`,
-`--mixing-proportions`) that lets callers bypass Stage 1 entirely.
+- `--remap` / `--no-remap`: default on (MATLAB sampler emits fresh `1..N` IDs).
 
 See [../advanced-usage.md](../advanced-usage.md).
+
+## Determinism
+
+- Single MATLAB RNG source: `rng(seed)` at the top of `run_npso.m`. The same seed is used across all 100 search iters; the trajectory is fully determined by `(N, m, gamma, c, target, seed)`.
+- MATLAB pinned single-threaded three ways on the subprocess path: pipeline default `N_THREADS=1`, subprocess flag `-singleCompThread`, MATLAB call `maxNumCompThreads(n_threads)`.
+- networkit's `exactGlobal` clustering coefficient is closed-form deterministic.
+- `PYTHONHASHSEED=0` exported by [`pipeline.sh`](../../src/npso/pipeline.sh) for the profile stage.
+
+## Cost
+
+10 seeds x 10 kept runs on 4 cores, 16 GiB cgroup cap:
+
+- kept mean: 6.17 s
+- kept std: 0.56 s
+
+nPSO is the slowest of the seven generators. Cold cost (first run in
+a fresh shell) is much higher, dominated by MATLAB engine startup.
+Warm cost is the 10-iter temperature search itself. Each iter runs
+`nPSO_model` on `N` nodes, which is `O(N²)` for the pairwise
+hyperbolic distance computation.
 
 ## Where to look next
 
@@ -316,5 +275,6 @@ See [../advanced-usage.md](../advanced-usage.md).
 - [Source: `src/npso/profile.py`](../../src/npso/profile.py)
 - [Upstream: nPSO_model](https://github.com/biomedical-cybernetics/nPSO_model)
 - [Interactive GUI: npso steps at default settings](https://vltanh.me/netgen/npso.html)
-- [ABCD+o (also has a cluster_id=1 outlier convention)](./abcd+o.md)
+- [ABCD+o](./abcd+o.md)
+- [LFR](./lfr.md) (same power-law fit for degrees)
 - [Index of all generators](../algorithms.md)
