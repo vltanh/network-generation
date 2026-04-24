@@ -199,6 +199,10 @@ def run_npso_generation(
     seed,
     n_threads,
     model=DEFAULT_MODEL,
+    search_max_iters=100,
+    search_diff_tol=0.005,
+    search_step_tol=0.0001,
+    search_t_min=0.0005,
 ):
     output_dir = standard_setup(output_dir)
 
@@ -228,7 +232,7 @@ def run_npso_generation(
     best_global_ccoeff = None
     best_diff = None
     prev_global_ccoeff, global_ccoeff = None, None
-    max_iters = 100
+    max_iters = search_max_iters
     npso_dir_abs = Path(npso_dir).resolve()
     matlab_wrapper_dir = (Path(__file__).resolve().parent / "matlab")
 
@@ -259,10 +263,10 @@ def run_npso_generation(
             f_min_T = f_T
         prev_global_ccoeff = cc_r
         global_ccoeff = cc_r
-        if best_diff is not None and best_diff < 0.005:
+        if best_diff is not None and best_diff < search_diff_tol:
             converged_in_replay = True
             break
-        if step_r < 0.0001:
+        if step_r < search_step_tol:
             converged_in_replay = True
             break
     if iter_records:
@@ -309,7 +313,7 @@ def run_npso_generation(
             if not converged_in_replay:
                 for it in range(start_iter, max_iters):
                     T = _next_T(min_T, max_T, f_min_T, f_max_T)
-                    if T < 0.0005:
+                    if T < search_t_min:
                         break
                     logging.info(f"[iter {it}] T={T}")
 
@@ -349,9 +353,9 @@ def run_npso_generation(
                         best_diff = diff
 
                     logging.info(f"Step: {step}  Best T: {best_T}  Best ccoeff: {best_global_ccoeff}  Best diff: {best_diff}")
-                    if best_diff is not None and best_diff < 0.005:
+                    if best_diff is not None and best_diff < search_diff_tol:
                         break
-                    if step < 0.0001:
+                    if step < search_step_tol:
                         break
 
                     if global_ccoeff is not None:
@@ -483,6 +487,14 @@ def parse_args():
     parser.add_argument("--n-threads", type=int, default=1)
     parser.add_argument("--model", choices=MODELS, default=DEFAULT_MODEL,
                         help="nPSO angular-distribution variant")
+    parser.add_argument("--search-max-iters", type=int, default=100,
+                        help="Max bisection/secant iterations on T.")
+    parser.add_argument("--search-diff-tol", type=float, default=0.005,
+                        help="Converge when |ccoeff - target| falls below this.")
+    parser.add_argument("--search-step-tol", type=float, default=0.0001,
+                        help="Converge when successive ccoeff steps fall below this.")
+    parser.add_argument("--search-t-min", type=float, default=0.0005,
+                        help="Give up the search once T falls below this.")
     return parser.parse_args()
 
 
@@ -500,6 +512,10 @@ def main():
         args.seed,
         args.n_threads,
         model=args.model,
+        search_max_iters=args.search_max_iters,
+        search_diff_tol=args.search_diff_tol,
+        search_step_tol=args.search_step_tol,
+        search_t_min=args.search_t_min,
     )
 
 

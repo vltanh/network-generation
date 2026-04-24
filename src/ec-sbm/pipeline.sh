@@ -7,25 +7,28 @@ fi
 SRC_DIR="$( cd "${SCRIPT_DIR}/.." && pwd )"
 SHARED_DIR="$( cd "${SRC_DIR}/_common" && pwd )"
 
-# Default values
+# Default values. Per-stage knobs start empty so --version presets can
+# fill them; any explicit flag after --version wins via first-assign.
 TIMEOUT="3d"
 N_THREADS=1
 KEEP_STATE=0
 SEED=1
 PACKAGE_DIR=""
+VERSION=""
 OUTLIER_MODE="excluded"
 DROP_OO_BOOL="false"
-SBM_OVERLAY_BOOL="false"
-SCOPE="all"
-GEN_OUTLIER_MODE="combined"
-EDGE_CORRECTION="rewire"
-ALGORITHM="hybrid"
+SBM_OVERLAY_BOOL=""
+SCOPE=""
+GEN_OUTLIER_MODE=""
+EDGE_CORRECTION=""
+ALGORITHM=""
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         --input-edgelist) INPUT_EDGELIST="$2"; shift ;;
         --input-clustering) INPUT_CLUSTERING="$2"; shift ;;
         --output-dir) OUTPUT_DIR="$2"; shift ;;
+        --version) VERSION="$2"; shift ;;
         --outlier-mode) OUTLIER_MODE="$2"; shift ;;
         --drop-outlier-outlier-edges) DROP_OO_BOOL="true" ;;
         --keep-outlier-outlier-edges) DROP_OO_BOOL="false" ;;
@@ -44,6 +47,35 @@ while [[ "$#" -gt 0 ]]; do
     esac
     shift
 done
+
+# --version selects a preset flag bundle. Individual flags passed
+# alongside --version win (set earlier in the parse), because the
+# fallback below fills only empty slots.
+case "${VERSION}" in
+    v1)
+        : "${SBM_OVERLAY_BOOL:=true}"
+        : "${SCOPE:=outlier-incident}"
+        : "${GEN_OUTLIER_MODE:=singleton}"
+        : "${EDGE_CORRECTION:=none}"
+        : "${ALGORITHM:=greedy}"
+        ;;
+    v2)
+        : "${SBM_OVERLAY_BOOL:=false}"
+        : "${SCOPE:=all}"
+        : "${GEN_OUTLIER_MODE:=combined}"
+        : "${EDGE_CORRECTION:=rewire}"
+        : "${ALGORITHM:=hybrid}"
+        ;;
+    "") ;;
+    *) echo "Error: --version must be v1 or v2 (got '${VERSION}')." >&2; exit 1 ;;
+esac
+
+# Defaults if neither --version nor explicit flag set them.
+: "${SBM_OVERLAY_BOOL:=false}"
+: "${SCOPE:=all}"
+: "${GEN_OUTLIER_MODE:=combined}"
+: "${EDGE_CORRECTION:=rewire}"
+: "${ALGORITHM:=hybrid}"
 
 if [ -z "${PACKAGE_DIR}" ]; then
     echo "Error: --package-dir is required (path to externals/ec-sbm)." >&2
