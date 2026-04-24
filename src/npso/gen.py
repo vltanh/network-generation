@@ -381,8 +381,7 @@ def run_npso_generation(
             msg += f" Last MATLAB error:\n{last}"
         raise RuntimeError(msg)
 
-    # cluster_id == 1 is nPSO's outlier bucket.
-    final_com = drop_singleton_clusters(best_com_df[best_com_df["cluster_id"] > 1])
+    final_com = drop_singleton_clusters(best_com_df)
     final_edge = simplify_edges(best_edge_df)
 
     final_edge.to_csv(output_dir / "edge.csv", index=False)
