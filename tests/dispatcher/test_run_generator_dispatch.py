@@ -55,8 +55,8 @@ def stub_repo(tmp_path: Path) -> Path:
     root.mkdir()
     shutil.copy(RUN_GENERATOR_SRC, root / "run_generator.sh")
     (root / "run_generator.sh").chmod(0o755)
-    # Mirror the generators/ registry so the dispatcher can discover them.
-    shutil.copytree(REPO_ROOT / "generators", root / "generators")
+    # Mirror the configs/ registry so the dispatcher can discover them.
+    shutil.copytree(REPO_ROOT / "configs", root / "configs")
 
     for gen in GENS:
         # Path the dispatcher invokes: src/<gen>/pipeline.sh for simple
@@ -175,7 +175,7 @@ FLAG_MATRIX = [
     ("ec-sbm-v2", "--n-threads", "3", True),
     ("lfr", "--n-threads", None, False),
     # external-binary flags — dispatcher's --abcd-dir/--lfr-binary/--npso-dir
-    # are translated by generators/*.sh into short pipeline-level flags
+    # are translated by configs/*.sh into short pipeline-level flags
     # (--package-dir for abcd/abcd+o/npso, --binary for lfr).
     ("abcd", "--package-dir", None, True),
     ("abcd+o", "--package-dir", None, True),
@@ -255,12 +255,12 @@ def test_unsupported_generator_rejected(stub_repo: Path):
 
 
 def test_generators_glob_ignores_non_regular_files(stub_repo: Path):
-    """A directory or dangling symlink named `foo.sh` under generators/ must
+    """A directory or dangling symlink named `foo.sh` under configs/ must
     not leak into ACCEPTED_GENERATORS — only regular files count."""
     # A directory that masquerades as a generator config.
-    (stub_repo / "generators" / "ghost.sh").mkdir()
+    (stub_repo / "configs" / "ghost.sh").mkdir()
     # A symlink pointing at a nonexistent target.
-    (stub_repo / "generators" / "phantom.sh").symlink_to("nonexistent")
+    (stub_repo / "configs" / "phantom.sh").symlink_to("nonexistent")
 
     result = invoke(stub_repo, "ghost")
     assert result.returncode != 0, "directory entry must not be accepted"
@@ -306,7 +306,7 @@ def test_missing_required_external_dir_rejected(tmp_path: Path):
     root.mkdir()
     shutil.copy(RUN_GENERATOR_SRC, root / "run_generator.sh")
     (root / "run_generator.sh").chmod(0o755)
-    shutil.copytree(REPO_ROOT / "generators", root / "generators")
+    shutil.copytree(REPO_ROOT / "configs", root / "configs")
     # No src/abcd/pipeline.sh needed — we expect to fail before that.
     inp_edge = root / "in.csv"
     inp_com = root / "com.csv"

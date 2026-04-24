@@ -203,7 +203,7 @@ skip generators whose externals are not installed. See
 
 ## Benchmarking
 
-[`scripts/benchmark/bench_gens.sh`](scripts/benchmark/bench_gens.sh)
+[`benchmark/bench_gens.sh`](benchmark/bench_gens.sh)
 measures end-to-end wall-clock and byte-reproducibility across the seven
 generators (default: 2 warmup + 10 kept runs per seed, seeds 1-10,
 single-threaded, on the shipped `dnc + sbm-flat-best+cc` example). See

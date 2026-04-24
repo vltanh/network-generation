@@ -1,11 +1,12 @@
-# Generator registry
+# Generator dispatcher configs
 
-Each `*.sh` file in this directory registers one generator with `run_generator.sh`.
-The basename (minus `.sh`) is the generator name passed via `--generator`.
+Each `*.sh` file in this directory registers one generator with
+`run_generator.sh`. The basename (minus `.sh`) is the generator name
+passed via `--generator`.
 
 ## Adding a new generator
 
-Create `generators/<name>.sh` declaring:
+Create `configs/<name>.sh` declaring:
 
 ```bash
 GEN_PIPELINE="src/<name>/pipeline.sh"   # relative to repo root
@@ -33,7 +34,7 @@ and reference it from `GEN_EXTRA_ARGS`. Otherwise hardcode the value in the arra
 Two similarly-named arrays live at different layers of the pipeline. They
 are not interchangeable:
 
-- **`GEN_EXTRA_ARGS`** lives in `generators/<name>.sh` (this directory). It is
+- **`GEN_EXTRA_ARGS`** lives in `configs/<name>.sh` (this directory). It is
   forwarded by the dispatcher (`run_generator.sh`) to the per-generator
   `pipeline.sh` *after* the common `--input-edgelist / --input-clustering /
   --output-dir` flags. Use it for pipeline-level knobs like `--seed`,

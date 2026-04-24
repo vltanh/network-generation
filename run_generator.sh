@@ -83,7 +83,7 @@ if [ -z "${run_id}" ]; then
     exit 1
 fi
 
-GENERATORS_DIR="${SCRIPT_DIR}/generators"
+GENERATORS_DIR="${SCRIPT_DIR}/configs"
 ACCEPTED_GENERATORS=()
 for cfg in "${GENERATORS_DIR}"/*.sh; do
     # -f requires a regular file (not a directory); dereferences symlinks
@@ -305,7 +305,7 @@ log "Running: ${generator} on ${dataset_name}"
 # ==========================================
 log "Evaluating synthetic network generation state..."
 
-# Source the per-generator config (see generators/README.md). Each config
+# Source the per-generator config (see configs/README.md). Each config
 # declares: GEN_PIPELINE, GEN_REQUIRED_DIR_VAR, GEN_REQUIRED_DIR_FLAG,
 # GEN_EXTRA_ARGS. GEN_EXTRA_ARGS is evaluated here, so it can reference
 # parsed CLI vars like ${seed}, ${n_threads}, ${abcd_dir}.

@@ -186,7 +186,7 @@ trajectory.
 ### Runtime (dnc network, isolated cgroup, 4 cores, 16 GiB cap)
 
 Measured via
-[`scripts/benchmark/bench_isolated.sh`](../scripts/benchmark/bench_isolated.sh):
+[`benchmark/bench_isolated.sh`](../benchmark/bench_isolated.sh):
 per generator, 2 warmup + 10 kept runs per seed across seeds 1-10. All
 100 kept runs per generator produce byte-identical `edge.csv` within
 each (gen, seed).
