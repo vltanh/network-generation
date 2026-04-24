@@ -42,6 +42,10 @@ abcd_dir="${SCRIPT_DIR}/externals/abcd"
 lfr_binary="${SCRIPT_DIR}/externals/lfr/unweighted_undirected/benchmark"
 npso_dir="${SCRIPT_DIR}/externals/npso"
 npso_model=""
+npso_search_max_iters=""
+npso_search_diff_tol=""
+npso_search_step_tol=""
+npso_search_t_min=""
 ec_sbm_dir="${SCRIPT_DIR}/externals/ec-sbm"
 
 while [[ "$#" -gt 0 ]]; do
@@ -66,6 +70,10 @@ while [[ "$#" -gt 0 ]]; do
         --lfr-binary) lfr_binary="$2"; shift 2 ;;
         --npso-dir) npso_dir="$2"; shift 2 ;;
         --npso-model) npso_model="$2"; shift 2 ;;
+        --npso-search-max-iters) npso_search_max_iters="$2"; shift 2 ;;
+        --npso-search-diff-tol) npso_search_diff_tol="$2"; shift 2 ;;
+        --npso-search-step-tol) npso_search_step_tol="$2"; shift 2 ;;
+        --npso-search-t-min) npso_search_t_min="$2"; shift 2 ;;
         --ec-sbm-dir) ec_sbm_dir="$2"; shift 2 ;;
         -*) log "Unknown parameter passed: $1"; exit 1 ;;
         *) log "Unexpected argument: $1"; exit 1 ;;
