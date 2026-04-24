@@ -1,19 +1,19 @@
-=== 2026-04-21T22:06:14Z | pid=620808 | host=nah-popos | EXECUTED ===
+=== 2026-04-24T00:25:07Z | pid=280598 | host=nah-popos | EXECUTED ===
 	Command being timed: "python /home/vltanh/Documents/network-generation/src/abcd+o/gen.py --degree examples/output/synthetic_networks/networks/abcd+o/sbm-flat-best+cc/dnc/0/.state/setup/degree.csv --cluster-sizes examples/output/synthetic_networks/networks/abcd+o/sbm-flat-best+cc/dnc/0/.state/setup/cluster_sizes.csv --mixing-parameter examples/output/synthetic_networks/networks/abcd+o/sbm-flat-best+cc/dnc/0/.state/setup/mixing_parameter.txt --n-outliers examples/output/synthetic_networks/networks/abcd+o/sbm-flat-best+cc/dnc/0/.state/setup/n_outliers.txt --abcd-dir /home/vltanh/Documents/network-generation/externals/abcd --output-folder examples/output/synthetic_networks/networks/abcd+o/sbm-flat-best+cc/dnc/0/.state/gen --seed 1"
-	User time (seconds): 3.65
-	System time (seconds): 0.16
+	User time (seconds): 3.46
+	System time (seconds): 0.14
 	Percent of CPU this job got: 99%
-	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:03.81
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:03.60
 	Average shared text size (kbytes): 0
 	Average unshared data size (kbytes): 0
 	Average stack size (kbytes): 0
 	Average total size (kbytes): 0
-	Maximum resident set size (kbytes): 509844
+	Maximum resident set size (kbytes): 504416
 	Average resident set size (kbytes): 0
 	Major (requiring I/O) page faults: 0
-	Minor (reclaiming a frame) page faults: 103515
+	Minor (reclaiming a frame) page faults: 104589
 	Voluntary context switches: 36
-	Involuntary context switches: 111
+	Involuntary context switches: 90
 	Swaps: 0
 	File system inputs: 0
 	File system outputs: 328

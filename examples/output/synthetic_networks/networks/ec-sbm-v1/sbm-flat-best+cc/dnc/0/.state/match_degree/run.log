@@ -1,7 +1,7 @@
-2026-04-23 19:20:44,057 - INFO - --- Starting Edgelist Combination & Provenance Tracking ---
-2026-04-23 19:20:44,062 - INFO - Loaded 10422 total edges prior to deduplication.
-2026-04-23 19:20:44,066 - INFO - Retained 10422 unique undirected edges.
-2026-04-23 19:20:44,070 - INFO - Exported combined edgelist to edge.csv
-2026-04-23 19:20:44,070 - INFO - Exported provenance map to sources.json
-2026-04-23 19:20:44,070 - INFO - Combination elapsed: 0.0131 seconds
-2026-04-23 19:20:44,070 - INFO - --- Combination Complete ---
+2026-04-23 19:24:56,267 - INFO - --- Starting Edgelist Combination & Provenance Tracking ---
+2026-04-23 19:24:56,271 - INFO - Loaded 10422 total edges prior to deduplication.
+2026-04-23 19:24:56,276 - INFO - Retained 10422 unique undirected edges.
+2026-04-23 19:24:56,280 - INFO - Exported combined edgelist to edge.csv
+2026-04-23 19:24:56,280 - INFO - Exported provenance map to sources.json
+2026-04-23 19:24:56,280 - INFO - Combination elapsed: 0.0129 seconds
+2026-04-23 19:24:56,280 - INFO - --- Combination Complete ---

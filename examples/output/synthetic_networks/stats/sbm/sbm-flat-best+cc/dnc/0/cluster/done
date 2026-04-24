@@ -1,8 +1,8 @@
-a55621c176bf9db6dbfff02741c3e9ad2f4ed1b4c604578799f9160ad42f3f87  examples/output/synthetic_networks/networks/sbm/sbm-flat-best+cc/dnc/0/edge.csv
+3f8356d4236fe91fb75d9282e2f7c7339d525dda67146c814fc3f1743db25e21  examples/output/synthetic_networks/networks/sbm/sbm-flat-best+cc/dnc/0/edge.csv
 e240ae23f3ea32f05e1a9135bbc3d310752dacfbbcaf80900cbf09e7dfd59984  examples/output/synthetic_networks/networks/sbm/sbm-flat-best+cc/dnc/0/com.csv
-d3d6b356816221cbc5ab508003736deae3cc3c180edd97cf8d20ea5bca64f89d  examples/output/synthetic_networks/stats/sbm/sbm-flat-best+cc/dnc/0/cluster/node.idx
+769d0cd6e0dbee2305f09bd5c48c7400b3d3d99f3e64604b42bfd409a66a77b3  examples/output/synthetic_networks/stats/sbm/sbm-flat-best+cc/dnc/0/cluster/node.idx
 c9992e9df2e60d7409ca13c00bf9e73a23cccd5a2d31d8873280e37e6284a58f  examples/output/synthetic_networks/stats/sbm/sbm-flat-best+cc/dnc/0/cluster/com.idx
-45953a261ab20d0200b640749a5564a29cd251bc1ddcc8795e62d5e5b3dd0fab  examples/output/synthetic_networks/stats/sbm/sbm-flat-best+cc/dnc/0/cluster/outliers.idx
+8f72767c9de374d968ba2322921b42b7c49010689f309a98369a5ceb0dda395f  examples/output/synthetic_networks/stats/sbm/sbm-flat-best+cc/dnc/0/cluster/outliers.idx
 0e845d15706e39a2bf66e7761bd1d838924ac20c751039cfea7c7a0fd9ac468c  examples/output/synthetic_networks/stats/sbm/sbm-flat-best+cc/dnc/0/cluster/global_n.txt
 ad37380ff2b4c305daf5f0b6855fc70441e35bea72461b2f94a9270e15c7e177  examples/output/synthetic_networks/stats/sbm/sbm-flat-best+cc/dnc/0/cluster/global_m.txt
 7041f5a42a3bbe125ac0c3320455e2553344df7b401c33dc7a26a7e9e0cf4dba  examples/output/synthetic_networks/stats/sbm/sbm-flat-best+cc/dnc/0/cluster/node_coverage.txt

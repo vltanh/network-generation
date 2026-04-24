@@ -9,7 +9,7 @@ c399051b4fe54b6876a439207852e115c6c7cb9f365c15dc9b4a6abb0d26a3ea  examples/outpu
 302d5fb3bc5a15c6b1ad0fae02a0fd3f7dce135f4eecd0eefbdb01304f5e059e  examples/output/synthetic_networks/stats/lfr/sbm-flat-best+cc/dnc/0/network/global_ccoeff.txt
 e456fad819ff33215cde9aa40a397a306eb3f60c43ec16f5da40b1c01bc27f88  examples/output/synthetic_networks/stats/lfr/sbm-flat-best+cc/dnc/0/network/local_ccoeff.txt
 5ca797740e932dd836206d2b4bea825c83bc47e25e45006d0a2b62fe71be40b6  examples/output/synthetic_networks/stats/lfr/sbm-flat-best+cc/dnc/0/network/pseudo_diameter.txt
-5813753fc1171555d0d58029d802604501983ff99aacf751678700f2d29972b9  examples/output/synthetic_networks/stats/lfr/sbm-flat-best+cc/dnc/0/network/char_time.txt
+ef8bafe69c84434f58376981b5aec4d9228b733f68d3c887eb6ab691dea29230  examples/output/synthetic_networks/stats/lfr/sbm-flat-best+cc/dnc/0/network/char_time.txt
 dd26392cb26c3c84773d704bd5ff6cc3029d6c173b1fb698768adf18ae1a8329  examples/output/synthetic_networks/stats/lfr/sbm-flat-best+cc/dnc/0/network/node_percolation_targeted.txt
 3be0bcc82fc7c0496710eea803820370276e2044f4b43426e7185d5598b415d2  examples/output/synthetic_networks/stats/lfr/sbm-flat-best+cc/dnc/0/network/node_percolation_random.txt
 5717e7c840171019a4eeab5b79a7f894a4986eaff93d04ec5b12c9a189f594bf  examples/output/synthetic_networks/stats/lfr/sbm-flat-best+cc/dnc/0/network/frac_giant_ccomp.txt
