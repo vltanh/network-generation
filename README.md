@@ -213,8 +213,7 @@ reference numbers.
 ## Acknowledgements
 
 - **`sbm`**: [graph-tool](https://graph-tool.skewed.de/).
-- **`ec-sbm-v1`**: [illinois-or-research-analytics/ec-sbm](https://github.com/illinois-or-research-analytics/ec-sbm); uses [python-mincut](https://github.com/vikramr2/python-mincut).
-- **`ec-sbm-v2`**: extended from `ec-sbm-v1`.
+- **`ec-sbm-v1`, `ec-sbm-v2`**: [illinois-or-research-analytics/ec-sbm](https://github.com/illinois-or-research-analytics/ec-sbm). The two versions are flag-bundle presets over a shared pipeline.
 - **`abcd` / `abcd+o`**: [ABCDGraphGenerator.jl](https://github.com/bkamins/ABCDGraphGenerator.jl).
 - **`lfr`**: [LFR benchmark](https://www.santofortunato.net/resources).
 - **`npso`**: [nPSO_model](https://github.com/biomedical-cybernetics/nPSO_model).

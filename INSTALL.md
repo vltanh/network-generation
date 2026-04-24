@@ -1,6 +1,6 @@
 # Installation
 
-Each generator is independent. Install only the generators you plan to use — each section below is self-contained. If you want `--run-stats` or `--run-comp`, also follow [Optional: run-stats and run-comp](#optional-run-stats-and-run-comp).
+Each generator is independent. Install only the generators you plan to use; each section below is self-contained. If you want `--run-stats` or `--run-comp`, also follow [Optional: run-stats and run-comp](#optional-run-stats-and-run-comp).
 
 ## `sbm`
 
@@ -14,22 +14,11 @@ conda install -c conda-forge graph-tool -y
 
 ## `ec-sbm-v1`, `ec-sbm-v2`
 
-Python deps: `numpy`, `pandas`, `scipy`, `graph-tool`, `pymincut`.  
-Build deps: C++ toolchain, `openmpi`, `cmake >= 3.2` and `< 4.0`.
+Initialize the submodule, then follow its
+[`INSTALL.md`](externals/ec-sbm/INSTALL.md) for the conda recipe + the
+CMake 4.0+ workaround.
 
 ```bash
-conda create -n ecsbm python=3.11 numpy pandas scipy setuptools wheel pybind11 -y
-conda activate ecsbm
-conda install -c conda-forge graph-tool -y
-pip install 'cmake<4' && pip install --no-build-isolation git+https://github.com/vikramr2/python-mincut
-git submodule update --init --recursive externals/ec-sbm
-```
-
-If SSH access to `illinois-or-research-analytics/ec-sbm` is not set up, switch the submodule URL to HTTPS once:
-
-```bash
-git config -f .gitmodules submodule.externals/ec-sbm.url https://github.com/illinois-or-research-analytics/ec-sbm.git
-git submodule sync externals/ec-sbm
 git submodule update --init --recursive externals/ec-sbm
 ```
 
@@ -43,7 +32,6 @@ conda create -n abcd python=3.11 pandas -y
 conda activate abcd
 curl -fsSL https://install.julialang.org | sh -s -- -y
 export PATH="$HOME/.juliaup/bin:$PATH"   # add to your shell rc for future shells
-
 git submodule update --init --recursive externals/abcd
 julia -e 'using Pkg; Pkg.develop(path="externals/abcd"); Pkg.instantiate()'
 ```
@@ -104,12 +92,11 @@ NW_TEST_PATH_PREFIX="$CONDA_PREFIX/bin:$HOME/.juliaup/bin" python -m pytest test
 
 ## Optional: run-stats and run-comp
 
-Only needed if you pass `--run-stats` or `--run-comp` to `run_generator.sh`. These flags invoke the `network_evaluation/` submodule, which has its own deps on top of whatever the chosen generator needs: `graph-tool`, `pymincut`, `scipy`, `sklearn`, `networkit`, `tqdm`, `matplotlib`, `seaborn` (plus `numpy` / `pandas`, already present for every generator).
+Only needed if you pass `--run-stats` or `--run-comp` to
+`run_generator.sh`. Those flags invoke the `network_evaluation/`
+submodule; initialize it and install its dependencies per
+[`network_evaluation/INSTALL.md`](network_evaluation/INSTALL.md).
 
 ```bash
 git submodule update --init --recursive network_evaluation
-conda install -c conda-forge graph-tool   # if not already installed for sbm, ec-sbm
-conda install scipy scikit-learn tqdm matplotlib seaborn -y
-pip install networkit                     # if not already installed for npso
-pip install 'cmake<4' && pip install --no-build-isolation git+https://github.com/vikramr2/python-mincut   # if not already installed for ec-sbm
 ```
