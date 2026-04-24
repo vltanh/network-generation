@@ -3,11 +3,7 @@ GEN_REQUIRED_DIR_VAR="ec_sbm_dir"
 GEN_REQUIRED_DIR_FLAG="--ec-sbm-dir"
 GEN_EXTRA_ARGS=(
     --package-dir "${ec_sbm_dir}"
-    --sbm-overlay
-    --scope "outlier-incident"
-    --gen-outlier-mode "singleton"
-    --edge-correction "none"
-    --match-degree-algorithm "greedy"
+    --version v1
     --n-threads "${n_threads}"
     --seed "${seed}"
     --timeout "${timeout_duration}"

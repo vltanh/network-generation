@@ -3,11 +3,7 @@ GEN_REQUIRED_DIR_VAR="ec_sbm_dir"
 GEN_REQUIRED_DIR_FLAG="--ec-sbm-dir"
 GEN_EXTRA_ARGS=(
     --package-dir "${ec_sbm_dir}"
-    --no-sbm-overlay
-    --scope "all"
-    --gen-outlier-mode "combined"
-    --edge-correction "rewire"
-    --match-degree-algorithm "hybrid"
+    --version v2
     --n-threads "${n_threads}"
     --seed "${seed}"
     --timeout "${timeout_duration}"
