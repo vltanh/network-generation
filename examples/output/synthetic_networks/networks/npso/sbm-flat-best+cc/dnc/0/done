@@ -2,4 +2,4 @@
 e240ae23f3ea32f05e1a9135bbc3d310752dacfbbcaf80900cbf09e7dfd59984  examples/input/reference_clusterings/clusterings/sbm-flat-best+cc/dnc/com.csv
 e406a860cde9f26dae637cf7b2ce15e622ac8d08108c8a2e5d4f4965c7bec923  examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/params.txt
 5dc2b4ee3023b756b4314f730852898ed3a22583faecf3a311d470dbeb02eccd  examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/edge.csv
-cb21d45441d88e0c36a71de41d39e3359db8c883b5e01429356b91f8d3aeec82  examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/com.csv
+e7e3a6a047b8a6036fa16f3cd817a4862f00cdb3b6feb0551576a591ee1e5583  examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/com.csv
