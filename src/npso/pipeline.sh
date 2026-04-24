@@ -15,6 +15,11 @@ NPSO_DIR=""
 OUTLIER_MODE="singleton"
 DROP_OO_BOOL="false"
 MODEL="nPSO2"
+# Bisection/secant search on T for target clustering coefficient.
+SEARCH_MAX_ITERS=100
+SEARCH_DIFF_TOL=0.005
+SEARCH_STEP_TOL=0.0001
+SEARCH_T_MIN=0.0005
 # nPSO's MATLAB sampler emits integer node IDs 1..N with fresh clusters;
 # when match_degree runs, --remap pairs by descending-degree rank.
 REMAP_ENABLE=1
@@ -35,6 +40,10 @@ while [[ "$#" -gt 0 ]]; do
         --drop-outlier-outlier-edges) DROP_OO_BOOL="true" ;;
         --keep-outlier-outlier-edges) DROP_OO_BOOL="false" ;;
         --model) MODEL="$2"; shift ;;
+        --search-max-iters) SEARCH_MAX_ITERS="$2"; shift ;;
+        --search-diff-tol) SEARCH_DIFF_TOL="$2"; shift ;;
+        --search-step-tol) SEARCH_STEP_TOL="$2"; shift ;;
+        --search-t-min) SEARCH_T_MIN="$2"; shift ;;
         --remap) REMAP_ENABLE=1 ;;
         --no-remap) REMAP_ENABLE=0 ;;
         --match-degree) MATCH_DEGREE_ENABLE=1 ;;
@@ -85,6 +94,10 @@ GEN_TOPLEVEL_PARAMS=(
     "model=${MODEL}"
     "outlier_mode=${OUTLIER_MODE}"
     "drop_outlier_outlier_edges=${DROP_OO_BOOL}"
+    "search_max_iters=${SEARCH_MAX_ITERS}"
+    "search_diff_tol=${SEARCH_DIFF_TOL}"
+    "search_step_tol=${SEARCH_STEP_TOL}"
+    "search_t_min=${SEARCH_T_MIN}"
     "match_degree_enable=${MATCH_DEGREE_ENABLE}"
     "match_degree_algorithm=${MATCH_DEGREE_ALGORITHM}"
     "match_degree_use_remap=${REMAP_ENABLE}"
@@ -99,6 +112,10 @@ GEN_STAGE2_PARAMS=(
     "seed=${SEED}"
     "n_threads=${N_THREADS}"
     "model=${MODEL}"
+    "search_max_iters=${SEARCH_MAX_ITERS}"
+    "search_diff_tol=${SEARCH_DIFF_TOL}"
+    "search_step_tol=${SEARCH_STEP_TOL}"
+    "search_t_min=${SEARCH_T_MIN}"
 )
 
 # Post-stage-1 hook: unpack derived.txt into scalar CLI flags. Keeps
@@ -129,6 +146,10 @@ gen_post_stage1() {
         --npso-dir            "${NPSO_DIR}"
         --n-threads           "${N_THREADS}"
         --model               "${MODEL}"
+        --search-max-iters    "${SEARCH_MAX_ITERS}"
+        --search-diff-tol     "${SEARCH_DIFF_TOL}"
+        --search-step-tol     "${SEARCH_STEP_TOL}"
+        --search-t-min        "${SEARCH_T_MIN}"
     )
 }
 
