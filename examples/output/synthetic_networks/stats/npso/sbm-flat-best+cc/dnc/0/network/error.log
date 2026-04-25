@@ -1,18 +1,18 @@
 	Command being timed: "python /home/vltanh/Documents/network-generation/network_evaluation/network_stats/compute_network_stats.py --network examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/edge.csv --outdir examples/output/synthetic_networks/stats/npso/sbm-flat-best+cc/dnc/0/network"
-	User time (seconds): 0.89
-	System time (seconds): 0.07
+	User time (seconds): 0.91
+	System time (seconds): 0.08
 	Percent of CPU this job got: 99%
-	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:00.97
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:00.99
 	Average shared text size (kbytes): 0
 	Average unshared data size (kbytes): 0
 	Average stack size (kbytes): 0
 	Average total size (kbytes): 0
-	Maximum resident set size (kbytes): 269316
+	Maximum resident set size (kbytes): 268992
 	Average resident set size (kbytes): 0
 	Major (requiring I/O) page faults: 0
-	Minor (reclaiming a frame) page faults: 37785
-	Voluntary context switches: 207
-	Involuntary context switches: 91
+	Minor (reclaiming a frame) page faults: 37801
+	Voluntary context switches: 206
+	Involuntary context switches: 95
 	Swaps: 0
 	File system inputs: 0
 	File system outputs: 384

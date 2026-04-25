@@ -1,8 +1,8 @@
-2026-04-23 19:24:51,032 - INFO - Starting SBM Generation...
-2026-04-23 19:24:51,032 - INFO - Seed: 1 n_threads: 1
-2026-04-23 19:24:51,071 - INFO - N=906 clusters=88
-2026-04-23 19:24:51,071 - INFO - Input loading elapsed: 0.0388 seconds
-2026-04-23 19:24:51,072 - INFO - Generation elapsed: 0.0009 seconds
-2026-04-23 19:24:51,529 - INFO - simplify_edges: dropped 2837 self-loops / parallel edges from edge.csv
-2026-04-23 19:24:51,534 - INFO - Export elapsed: 0.4623 seconds
-2026-04-23 19:24:51,534 - INFO - SBM generation complete.
+2026-04-24 22:56:24,849 - INFO - Starting SBM Generation...
+2026-04-24 22:56:24,849 - INFO - Seed: 1 n_threads: 1
+2026-04-24 22:56:24,890 - INFO - N=906 clusters=88
+2026-04-24 22:56:24,890 - INFO - Input loading elapsed: 0.0408 seconds
+2026-04-24 22:56:24,893 - INFO - Generation elapsed: 0.0031 seconds
+2026-04-24 22:56:25,375 - INFO - simplify_edges: dropped 2837 self-loops / parallel edges from edge.csv
+2026-04-24 22:56:25,379 - INFO - Export elapsed: 0.4853 seconds
+2026-04-24 22:56:25,379 - INFO - SBM generation complete.
