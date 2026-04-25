@@ -1,14 +1,12 @@
 === Timestamp ===
-2026-04-23T02:34:26+00:00
+2026-04-25T04:00:59+00:00
 
-=== CPU pin ===
-0-3
-=== Mem cap ===
-16G
-=== Sample interval (s) ===
-1
+=== Run config ===
+cpu_pin=0-3
+mem_cap=16G
+sample_interval_s=1
 
-=== lscpu (summary) ===
+=== CPU ===
 CPU(s):                                  20
 Model name:                              12th Gen Intel(R) Core(TM) i9-12900HK
 Thread(s) per core:                      2
@@ -18,95 +16,23 @@ CPU max MHz:                             5000.0000
 NUMA node(s):                            1
 NUMA node0 CPU(s):                       0-19
 
-=== free -h ===
+=== Memory ===
                total        used        free      shared  buff/cache   available
-Mem:            62Gi       6.8Gi        13Gi       6.0Gi        42Gi        44Gi
+Mem:            62Gi       9.4Gi        37Gi       4.2Gi        15Gi        44Gi
 Swap:           19Gi          0B        19Gi
 
-=== /etc/os-release ===
+=== OS ===
 NAME="Pop!_OS"
 VERSION="22.04 LTS"
 ID=pop
-
-=== Kernel ===
-Linux nah-popos 6.17.9-76061709-generic #202511241048~1764704751~22.04~b24b425 SMP PREEMPT_DYNAMIC Tue D x86_64 x86_64 x86_64 GNU/Linux
-
-=== git HEAD ===
-840f8594707ad483ed943e26e135443d37629eb6
- M examples/benchmark/host_snapshot.txt
- M examples/benchmark/memory_peak.txt
- M examples/benchmark/memory_timeline.csv
- M examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/.state/gen/com.csv
- M examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/.state/gen/done
- M examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/.state/gen/edge.csv
- M examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/.state/gen/params.txt
- M examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/.state/gen/run.log
- M examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/.state/gen/search_log.json
- M examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/.state/gen/time_and_err.log
- M examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/.state/setup/done
- M examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/.state/setup/run.log
- M examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/.state/setup/time_and_err.log
- M examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/com.csv
- M examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/done
- M examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/edge.csv
- M examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/params.txt
- M examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/run.log
- M examples/output/synthetic_networks/stats/npso/sbm-flat-best+cc/dnc/0/cluster/c.txt
- M examples/output/synthetic_networks/stats/npso/sbm-flat-best+cc/dnc/0/cluster/com.idx
- M examples/output/synthetic_networks/stats/npso/sbm-flat-best+cc/dnc/0/cluster/conductance.txt
- M examples/output/synthetic_networks/stats/npso/sbm-flat-best+cc/dnc/0/cluster/degree_density.txt
- M examples/output/synthetic_networks/stats/npso/sbm-flat-best+cc/dnc/0/cluster/done
- M examples/output/synthetic_networks/stats/npso/sbm-flat-best+cc/dnc/0/cluster/edge_density.txt
- M examples/output/synthetic_networks/stats/npso/sbm-flat-best+cc/dnc/0/cluster/error.log
- M examples/output/synthetic_networks/stats/npso/sbm-flat-best+cc/dnc/0/cluster/m.txt
- M examples/output/synthetic_networks/stats/npso/sbm-flat-best+cc/dnc/0/cluster/mincut.txt
- M examples/output/synthetic_networks/stats/npso/sbm-flat-best+cc/dnc/0/cluster/mixing_parameter.txt
- M examples/output/synthetic_networks/stats/npso/sbm-flat-best+cc/dnc/0/cluster/modularity.txt
- M examples/output/synthetic_networks/stats/npso/sbm-flat-best+cc/dnc/0/cluster/n.txt
- M examples/output/synthetic_networks/stats/npso/sbm-flat-best+cc/dnc/0/cluster/n_clusters.txt
- M examples/output/synthetic_networks/stats/npso/sbm-flat-best+cc/dnc/0/cluster/n_connected_clusters.txt
- M examples/output/synthetic_networks/stats/npso/sbm-flat-best+cc/dnc/0/cluster/n_disconnected_clusters.txt
- M examples/output/synthetic_networks/stats/npso/sbm-flat-best+cc/dnc/0/cluster/n_outliers.txt
- M examples/output/synthetic_networks/stats/npso/sbm-flat-best+cc/dnc/0/cluster/node.idx
- M examples/output/synthetic_networks/stats/npso/sbm-flat-best+cc/dnc/0/cluster/node_coverage.txt
- M examples/output/synthetic_networks/stats/npso/sbm-flat-best+cc/dnc/0/cluster/outliers.idx
- M examples/output/synthetic_networks/stats/npso/sbm-flat-best+cc/dnc/0/cluster/run.log
- M examples/output/synthetic_networks/stats/npso/sbm-flat-best+cc/dnc/0/comparison.csv
- M examples/output/synthetic_networks/stats/npso/sbm-flat-best+cc/dnc/0/error.log
- M examples/output/synthetic_networks/stats/npso/sbm-flat-best+cc/dnc/0/network/char_time.txt
- M examples/output/synthetic_networks/stats/npso/sbm-flat-best+cc/dnc/0/network/deg_assort.txt
- M examples/output/synthetic_networks/stats/npso/sbm-flat-best+cc/dnc/0/network/degree.txt
- M examples/output/synthetic_networks/stats/npso/sbm-flat-best+cc/dnc/0/network/done
- M examples/output/synthetic_networks/stats/npso/sbm-flat-best+cc/dnc/0/network/error.log
- M examples/output/synthetic_networks/stats/npso/sbm-flat-best+cc/dnc/0/network/global_ccoeff.txt
- M examples/output/synthetic_networks/stats/npso/sbm-flat-best+cc/dnc/0/network/local_ccoeff.txt
- M examples/output/synthetic_networks/stats/npso/sbm-flat-best+cc/dnc/0/network/local_ccoeff_nodes.txt
- M examples/output/synthetic_networks/stats/npso/sbm-flat-best+cc/dnc/0/network/node_percolation_random.txt
- M examples/output/synthetic_networks/stats/npso/sbm-flat-best+cc/dnc/0/network/pagerank.txt
- M examples/output/synthetic_networks/stats/npso/sbm-flat-best+cc/dnc/0/network/run.log
- ? externals/lfr
-?? examples/output/synthetic_networks/networks/npso/sbm-flat-best+cc/dnc/0/.state/setup/derived.txt
-?? vltanh.github.io
+Linux 6.17.9-76061709-generic x86_64
 
 === Toolchain ===
-/home/vltanh/miniconda3/bin/python
-Python 3.13.5
-Traceback (most recent call last):
-  File "<string>", line 1, in <module>
-    import graph_tool; print('graph-tool', graph_tool.__version__)
-    ^^^^^^^^^^^^^^^^^
-ModuleNotFoundError: No module named 'graph_tool'
-numpy 2.4.2
-pandas 3.0.1
-Traceback (most recent call last):
-  File "<string>", line 1, in <module>
-    import networkit, powerlaw; print('networkit', networkit.__version__); print('powerlaw', powerlaw.__version__)
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^
-ModuleNotFoundError: No module named 'networkit'
-Traceback (most recent call last):
-  File "<string>", line 1, in <module>
-    import matlab.engine; print('matlabengine ok')
-    ^^^^^^^^^^^^^^^^^^^^
-ModuleNotFoundError: No module named 'matlab'
-julia version 1.12.6
-/home/vltanh/Documents/network-generation/scripts/benchmark/bench_isolated.sh: line 72: matlab: command not found
+python 3.11.15
+graph-tool 2.98
+numpy 2.4.4
+pandas 3.0.2
+networkit 11.2.1
+powerlaw 2.0.0
+matlab.engine 24.1.4
+julia 1.12.6
