@@ -43,16 +43,24 @@ intra-block edge is two half-edges, both landing in the same block.
 
 ## Stage 2: one call, two cleanups
 
-The generation step in [`src/sbm/gen.py`](../../src/sbm/gen.py) is three lines:
+The generation step in [`src/sbm/gen.py`](../../src/sbm/gen.py) hands the
+profile straight to graph-tool, then runs the project-wide pandas
+simplifier:
 
 ```python
 g = gt.generate_sbm(
     assignments, probs, out_degs=degrees,
     micro_ers=True, micro_degs=True, directed=False,
 )
-gt.remove_parallel_edges(g)
-gt.remove_self_loops(g)
+edges = [(node_ids[int(s)], node_ids[int(t)]) for s, t in g.iter_edges()]
+edge_df = simplify_edges(pd.DataFrame(edges, columns=["source", "target"]))
 ```
+
+`pipeline_common.simplify_edges` drops self-loops and collapses parallel
+edges. graph-tool ships its own `remove_parallel_edges` / `remove_self_loops`
+that would do the same job; we keep one shared simplifier across every
+generator (sbm, ec-sbm, abcd, lfr, npso) so the on-disk `edge.csv` contract
+is identical regardless of upstream toolchain.
 
 The micro-SBM sampler is allowed to emit multigraphs. It hits the count
 constraints as counts, not as distinct edges. If a small block has a high
@@ -63,6 +71,26 @@ On sparse empirical networks this loss is small. On denser cases it can be
 larger: the hard ceiling per cell is "how many distinct pairs actually exist".
 The ceiling is the same one in the canonical SBM, just less visible there
 because canonical SBM marginals already absorb it.
+
+### What the kernel actually does
+
+Reading
+[graph_sbm.hh](../../graph-tool/src/graph/generation/graph_sbm.hh)
+verbatim: the kernel builds one urn per block, populated by every node `v`
+with `b_v = r` repeated `k_v` times. Stubs in the urn are not typed by
+target block. For each `(r, s)` pair with `r <= s` in row-major order on
+the input matrix, the kernel pulls `e_{rs}` half-edges out of urn `r` (and
+another `e_{rs}` from urn `s` when `r != s`) without replacement, pairing
+them up into edges. So the per-pair edge count and the per-node degree
+land exactly on the input; what fluctuates is which specific stubs of `v`
+end up in which `(r, s)` cell, i.e. v's per-block-degree profile is hit
+in expectation only.
+
+The only consistency check is per-pair: `urn_r.size() >= e_{rs}` and the
+same on the `s` side. If they fail, graph-tool throws
+`"Inconsistent SBM parameters: node degrees do not agree with matrix of
+edge counts between groups"`. A consistent profile (sum of degrees in
+block r equals the row sum of e_{r,*}) drains every urn to zero.
 
 ## What you get on the shipped example
 
@@ -76,12 +104,37 @@ clustering at `--seed 1`:
 | Edges | 10429 | 7438 | 29% lost to multi-edge / self-loop removal |
 | Mean degree | 23.02 | 16.49 | tracks the edge loss |
 | Global clustering coeff. | 0.548 | 0.341 | lower (DC-SBM tends toward tree-like) |
-| Mean k-core | 15.99 | 10.49 | |
-| Num clusters | 42 | 42 | exact (passthrough of input) |
+| Mean local CC | 0.494 | 0.216 | same story per node |
+| Num clusters | 87 | 87 | exact (passthrough of input, minus singletons) |
 
 The big number to read is the 29% edge loss. That is the dedup bill for this
 input: a highly clustered graph (global ccoeff 0.548) compressed through a
 micro-SBM whose block matrix was filled with duplicate-heavy cells.
+
+## Outlier mode: a benchmarking trap
+
+The default `--outlier-mode combined` folds every outlier into one
+`__outliers__` pseudo-block. Outlier&ndash;cluster edges aggregate at the
+pseudo-block level, so the sampler has freedom to reshuffle which specific
+outlier connects to which cluster member.
+
+Switch to `--outlier-mode singleton` and every outlier becomes its own
+size-1 block, with its own row in the edge count matrix. The urn for that
+block contains a single node repeated `k_u` times, so the sampler has no
+choice on the outlier side: for each pair of outliers `(u, v)` with an
+input edge, the sampler draws u's only-stub and v's only-stub and emits
+exactly the edge `(u, v)`; for each pair `(u, c)` with `c` a real cluster,
+the sampler keeps `u`'s per-cluster degree exact and only rerolls the
+specific cluster-side neighbour.
+
+The motivation for this project is benchmarking community detection: we
+hand an algorithm a synthetic graph plus a ground-truth clustering and
+ask whether it can recover the truth. Singleton mode breaks that contract
+when outliers themselves carry community structure that the reference
+clustering missed. The synthetic preserves that structure verbatim while
+the ground truth claims those nodes are unclustered. Use the default
+`combined` mode for benchmarks. Singleton mode is useful when the goal is
+faithful replication, not a clean ground truth.
 
 ## Output guarantees
 
