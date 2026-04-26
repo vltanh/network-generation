@@ -1,17 +1,22 @@
 // Node port of the five match-degree algorithms in
-// vltanh.github.io/netgen/matcher.html. Reads a JSON fixture from
-// stdin (iids, target_deg, exist_neighbor, seed, algo) and prints
-// achieved degrees + edges on stdout.
+// vltanh.github.io/netgen/matcher.html, plus replay-mode versions of
+// the three randomized algos (random_greedy / rewire / hybrid) that
+// consume an externally-supplied PRNG trace and produce byte-equal
+// edges to canonical src/match_degree.py.
+//
+// Reads a JSON fixture from stdin (iids, target_deg, exist_neighbor,
+// seed, algo) and prints achieved degrees + edges on stdout. Pass
+// `mode: "replay"` plus `trace: [...]` to drive the canonical-
+// equivalent algorithms; otherwise the page algorithms run via LCG.
 //
 // Run:
-//   node tools/match_degree/kernel_check.mjs < cell.json
+//   node tools/viz_check/match_degree/kernel_check.mjs < cell.json
 //
-// The JS algorithms ported here are the same five rendered by
-// matcher.html: greedy / true_greedy / random_greedy / rewire /
-// hybrid. The PRNG is the same LCG matcher.html's makeLCG uses
-// (1664525 / 1013904223). Python and JS use independent PRNGs;
-// determinism cross-checks are limited to greedy and true_greedy
-// (no random calls), structural-only on the rest.
+// The page algos mirror the d3-style LCG used in matcher.html. The
+// replay algos mirror src/match_degree.py exactly: same control flow,
+// same set/list bookkeeping, same tie-breaks. Trace entries cover
+// shuffle (j_seq), choices (indices), randrange (value), random
+// (value).
 
 function makeLCG(seed) {
   let s = (seed >>> 0) || 1;
@@ -312,6 +317,405 @@ function runHybrid(payload, seed) {
   return edges;
 }
 
+// ── trace consumer ─────────────────────────────────────────────
+function makeTrace(trace) {
+  let cursor = 0;
+  return {
+    next(expectSite) {
+      if (cursor >= trace.length) {
+        throw new Error(`trace exhausted at expected site=${expectSite}`);
+      }
+      const e = trace[cursor++];
+      if (e.site !== expectSite) {
+        throw new Error(
+          `trace mismatch at ${cursor - 1}: expected=${expectSite} got=${e.site}`,
+        );
+      }
+      return e;
+    },
+    consumed: () => cursor,
+    length: () => trace.length,
+  };
+}
+
+function edgeKey(u, v) { return u < v ? `${u}-${v}` : `${v}-${u}`; }
+
+function _adjFromExist(payload) {
+  const adj = new Map();
+  for (const k of payload.iids) adj.set(k, new Set());
+  for (const k in payload.exist_neighbor) {
+    const u = parseInt(k, 10);
+    if (!adj.has(u)) adj.set(u, new Set());
+    for (const v of payload.exist_neighbor[k]) adj.get(u).add(v);
+  }
+  return adj;
+}
+
+// ── replay: greedy ─────────────────────────────────────────────
+// Mirrors src/match_degree.py:match_missing_degrees_greedy. Static
+// max-heap, lazy delete on deg-mismatch, batch partner picks per u via
+// sorted(non-neighbors)[:avail_k]. Different from runGreedy (page algo),
+// which dynamically re-evaluates max-residual every outer iter.
+function _heapPushMin(heap, item) {
+  // Tuple item: [a, b]; min-heap on lexicographic. Use sort for clarity
+  // (small heaps; the canonical mirror semantics matters more than
+  // asymptotics here).
+  heap.push(item);
+  heap.sort((x, y) => (x[0] - y[0]) || (x[1] - y[1]));
+}
+function _heapPopMin(heap) {
+  return heap.shift();
+}
+
+function runGreedyReplay(payload, _trace) {
+  // available_node_degrees: insertion-order dict, keyed sorted iid asc.
+  const targetEntries = Object.entries(payload.target_deg)
+    .map(([k, v]) => [parseInt(k, 10), Number(v)])
+    .filter(([_, v]) => v > 0)
+    .sort((a, b) => a[0] - b[0]);
+  const availDeg = new Map(targetEntries);
+  const availSet = new Set(targetEntries.map(([k, _]) => k));
+  const adj = _adjFromExist(payload);
+  // Initial heap (no re-push; lazy delete).
+  const heap = [];
+  for (const [n, d] of targetEntries) heap.push([-d, n]);
+  heap.sort((x, y) => (x[0] - y[0]) || (x[1] - y[1]));
+  const edges = new Set();
+  while (heap.length > 0) {
+    const [_, u] = _heapPopMin(heap);
+    if (!availDeg.has(u)) continue;
+    const invalid = new Set(adj.get(u) || []);
+    invalid.add(u);
+    const nonNeighbors = [];
+    for (const n of availSet) if (!invalid.has(n)) nonNeighbors.push(n);
+    const availK = Math.min(availDeg.get(u), nonNeighbors.length);
+    nonNeighbors.sort((a, b) => a - b);
+    for (let k = 0; k < availK; k++) {
+      const edgeEnd = nonNeighbors[k];
+      edges.add(edgeKey(u, edgeEnd));
+      if (!adj.has(u)) adj.set(u, new Set());
+      if (!adj.has(edgeEnd)) adj.set(edgeEnd, new Set());
+      adj.get(u).add(edgeEnd);
+      adj.get(edgeEnd).add(u);
+      availDeg.set(edgeEnd, availDeg.get(edgeEnd) - 1);
+      if (availDeg.get(edgeEnd) === 0) {
+        availSet.delete(edgeEnd);
+        availDeg.delete(edgeEnd);
+      }
+    }
+    availDeg.delete(u);
+    availSet.delete(u);
+  }
+  return Array.from(edges).map(s => s.split("-").map(Number));
+}
+
+// ── replay: true_greedy ────────────────────────────────────────
+// Mirrors src/match_degree.py:match_missing_degrees_true_greedy.
+// Dynamic heap with re-push after every single edge; lazy-delete on
+// stale (-deg, n) tuples. Different from runTrueGreedy (page algo),
+// which processes u's full burst before reconsidering.
+function runTrueGreedyReplay(payload, _trace) {
+  const targetEntries = Object.entries(payload.target_deg)
+    .map(([k, v]) => [parseInt(k, 10), Number(v)])
+    .filter(([_, v]) => v > 0)
+    .sort((a, b) => a[0] - b[0]);
+  const currentDeg = new Map(targetEntries);
+  const adj = _adjFromExist(payload);
+  const heap = [];
+  for (const [n, d] of targetEntries) heap.push([-d, n]);
+  heap.sort((x, y) => (x[0] - y[0]) || (x[1] - y[1]));
+  const edges = new Set();
+  while (heap.length > 0) {
+    const [negDeg, u] = _heapPopMin(heap);
+    const degU = -negDeg;
+    if (!currentDeg.has(u) || currentDeg.get(u) !== degU) continue;
+    const invalid = adj.get(u) || new Set();
+    const validTargets = [];
+    for (const n of currentDeg.keys()) {
+      if (n === u) continue;
+      if (invalid.has(n)) continue;
+      validTargets.push(n);
+    }
+    if (validTargets.length === 0) {
+      currentDeg.delete(u);
+      continue;
+    }
+    // v = max(valid_targets, key=lambda x: (current_degrees[x], -x))
+    let v = null;
+    let vDeg = -1;
+    for (const n of validTargets) {
+      const d = currentDeg.get(n);
+      if (d > vDeg || (d === vDeg && (v === null || n < v))) {
+        v = n; vDeg = d;
+      }
+    }
+    edges.add(edgeKey(u, v));
+    if (!adj.has(u)) adj.set(u, new Set());
+    if (!adj.has(v)) adj.set(v, new Set());
+    adj.get(u).add(v); adj.get(v).add(u);
+    currentDeg.set(u, currentDeg.get(u) - 1);
+    currentDeg.set(v, currentDeg.get(v) - 1);
+    if (currentDeg.get(u) > 0) {
+      _heapPushMin(heap, [-currentDeg.get(u), u]);
+    } else {
+      currentDeg.delete(u);
+    }
+    if (currentDeg.get(v) > 0) {
+      _heapPushMin(heap, [-currentDeg.get(v), v]);
+    } else if (currentDeg.has(v)) {
+      currentDeg.delete(v);
+    }
+  }
+  return Array.from(edges).map(s => s.split("-").map(Number));
+}
+
+// ── replay: random_greedy ──────────────────────────────────────
+// Mirrors src/match_degree.py:match_missing_degrees_random_greedy.
+function runRandomGreedyReplay(payload, trace) {
+  const tr = makeTrace(trace);
+  // available_degrees = {iid: deg}, sorted-by-iid, deg > 0.
+  const targetEntries = Object.entries(payload.target_deg)
+    .map(([k, v]) => [parseInt(k, 10), Number(v)])
+    .filter(([_, v]) => v > 0)
+    .sort((a, b) => a[0] - b[0]);
+  const availableDegrees = new Map(targetEntries);
+  const availableNodes = targetEntries.map(([k, _]) => k);
+  const adj = _adjFromExist(payload);
+  const edges = new Set();
+  const stuck = new Set();
+  while (availableNodes.length > 0) {
+    // weights = [available_degrees[n] for n in available_nodes]
+    const uEntry = tr.next("choices");
+    const uIdx = uEntry.indices[0];
+    const u = availableNodes[uIdx];
+    const invalid = adj.get(u);
+    const validTargets = [];
+    for (const n of availableNodes) {
+      if (n === u) continue;
+      if (invalid.has(n)) continue;
+      validTargets.push(n);
+    }
+    if (validTargets.length === 0) {
+      const i = availableNodes.indexOf(u);
+      availableNodes.splice(i, 1);
+      stuck.add(u);
+      continue;
+    }
+    const vEntry = tr.next("choices");
+    const vIdx = vEntry.indices[0];
+    const v = validTargets[vIdx];
+    edges.add(edgeKey(u, v));
+    adj.get(u).add(v);
+    adj.get(v).add(u);
+    availableDegrees.set(u, availableDegrees.get(u) - 1);
+    availableDegrees.set(v, availableDegrees.get(v) - 1);
+    if (availableDegrees.get(u) === 0) {
+      const i = availableNodes.indexOf(u);
+      availableNodes.splice(i, 1);
+    }
+    if (availableDegrees.get(v) === 0) {
+      const i = availableNodes.indexOf(v);
+      if (i >= 0) availableNodes.splice(i, 1);
+    }
+  }
+  return Array.from(edges).map(s => s.split("-").map(Number));
+}
+
+// ── replay: rewire ─────────────────────────────────────────────
+// Mirrors src/match_degree.py:match_missing_degrees_rewire +
+// graph_utils.run_rewire_attempts. Returns {validEdges, invalidEdges,
+// adj} so hybrid can chain.
+function _runRewireReplayCore(payload, trace, adj) {
+  const tr = makeTrace(trace);
+  // stubs: sorted by iid, [iid] * deg.
+  const stubs = [];
+  const targetEntries = Object.entries(payload.target_deg)
+    .map(([k, v]) => [parseInt(k, 10), Number(v)])
+    .sort((a, b) => a[0] - b[0]);
+  for (const [iid, deg] of targetEntries) {
+    for (let i = 0; i < deg; i++) stubs.push(iid);
+  }
+  if (stubs.length % 2 !== 0) stubs.pop();
+  // Replay shuffle.
+  const sh = tr.next("shuffle");
+  if (sh.n !== stubs.length) {
+    throw new Error(`shuffle n mismatch: trace ${sh.n} vs stubs ${stubs.length}`);
+  }
+  for (let i = stubs.length - 1, k = 0; i >= 1; i--, k++) {
+    const j = sh.j_seq[k];
+    [stubs[i], stubs[j]] = [stubs[j], stubs[i]];
+  }
+  const validEdges = new Set();
+  const validPool = [];
+  const invalidEdges = [];
+  for (let i = 0; i < stubs.length; i += 2) {
+    const u = stubs[i], v = stubs[i + 1];
+    const k = edgeKey(u, v);
+    const existsAdj = adj.get(u) && adj.get(u).has(v);
+    if (u === v || validEdges.has(k) || existsAdj) {
+      invalidEdges.push([Math.min(u, v), Math.max(u, v)]);
+    } else {
+      validEdges.add(k);
+    }
+  }
+  // valid_pool = sorted(valid_edges). Edges as (u, v) tuples lex-sorted.
+  for (const ek of Array.from(validEdges).sort((a, b) => {
+    const [a1, a2] = a.split("-").map(Number);
+    const [b1, b2] = b.split("-").map(Number);
+    return (a1 - b1) || (a2 - b2);
+  })) {
+    const [a, b] = ek.split("-").map(Number);
+    validPool.push([a, b]);
+  }
+  function isValid(e) {
+    const [u, v] = e;
+    if (u === v) return false;
+    if (validEdges.has(edgeKey(u, v))) return false;
+    if (adj.get(u) && adj.get(u).has(v)) return false;
+    return true;
+  }
+  // run_rewire_attempts loop, max_retries=10.
+  const MAX = 10;
+  for (let attempt = 0; attempt < MAX; attempt++) {
+    if (invalidEdges.length === 0) break;
+    let lastRecycle = invalidEdges.length;
+    let recycle = lastRecycle;
+    while (invalidEdges.length > 0) {
+      recycle--;
+      if (recycle < 0) {
+        if (invalidEdges.length < lastRecycle) {
+          lastRecycle = invalidEdges.length;
+          recycle = lastRecycle;
+        } else {
+          break;
+        }
+      }
+      const e1 = invalidEdges.shift();
+      // process_one_edge:
+      if (validPool.length === 0) {
+        invalidEdges.push(e1);
+        break;  // returned True
+      }
+      const idxEntry = tr.next("randrange");
+      const idx = idxEntry.value;
+      const e2 = validPool[idx];
+      const coinEntry = tr.next("random");
+      const coin = coinEntry.value;
+      let newE1, newE2;
+      if (coin < 0.5) {
+        newE1 = [Math.min(e1[0], e2[0]), Math.max(e1[0], e2[0])];
+        newE2 = [Math.min(e1[1], e2[1]), Math.max(e1[1], e2[1])];
+      } else {
+        newE1 = [Math.min(e1[0], e2[1]), Math.max(e1[0], e2[1])];
+        newE2 = [Math.min(e1[1], e2[0]), Math.max(e1[1], e2[0])];
+      }
+      const k1 = edgeKey(newE1[0], newE1[1]);
+      const k2 = edgeKey(newE2[0], newE2[1]);
+      if (isValid(newE1) && isValid(newE2) && k1 !== k2) {
+        validEdges.delete(edgeKey(e2[0], e2[1]));
+        validPool[idx] = validPool[validPool.length - 1];
+        validPool.pop();
+        validEdges.add(k1);
+        validEdges.add(k2);
+        validPool.push(newE1);
+        validPool.push(newE2);
+      } else {
+        invalidEdges.push(e1);
+      }
+    }
+  }
+  return { validEdges, invalidEdges, adj };
+}
+
+function runRewireReplay(payload, trace) {
+  const adj = _adjFromExist(payload);
+  const { validEdges } = _runRewireReplayCore(payload, trace, adj);
+  return Array.from(validEdges).map(s => s.split("-").map(Number));
+}
+
+// ── replay: hybrid ─────────────────────────────────────────────
+// Mirrors src/match_degree.py:match_missing_degrees_hybrid: rewire
+// then true_greedy on the remaining out-degrees.
+function runHybridReplay(payload, trace) {
+  const adj = _adjFromExist(payload);
+  const { validEdges, invalidEdges } = _runRewireReplayCore(payload, trace, adj);
+  if (invalidEdges.length === 0) {
+    return Array.from(validEdges).map(s => s.split("-").map(Number));
+  }
+  // remaining_out_degs = {n: 0 for n in sorted(out_degs.keys())}
+  const targetKeys = Object.keys(payload.target_deg)
+    .map(k => parseInt(k, 10))
+    .sort((a, b) => a - b);
+  const remaining = new Map();
+  for (const n of targetKeys) remaining.set(n, 0);
+  for (const [u, v] of invalidEdges) {
+    remaining.set(u, remaining.get(u) + 1);
+    remaining.set(v, remaining.get(v) + 1);
+  }
+  // Strip zeros, preserving order.
+  const remainingFiltered = new Map();
+  for (const [k, v] of remaining) if (v > 0) remainingFiltered.set(k, v);
+  // Update adj with valid_edges before true_greedy.
+  for (const ek of validEdges) {
+    const [u, v] = ek.split("-").map(Number);
+    if (!adj.has(u)) adj.set(u, new Set());
+    if (!adj.has(v)) adj.set(v, new Set());
+    adj.get(u).add(v); adj.get(v).add(u);
+  }
+  // true_greedy on remainingFiltered + adj (mirrors canonical heap +
+  // (degree desc, id asc) tie-break).
+  const currentDeg = new Map(remainingFiltered);
+  // current_degrees in canonical Python is keyed by the input dict's
+  // iteration order, which here is sorted-iid. Heap pop gives largest
+  // degree first, ties by smallest iid via tuple ordering.
+  const greedyEdges = new Set();
+  const stuck = new Set();
+  while (currentDeg.size > 0) {
+    // Pop the max-residual node, tiebreak id asc.
+    let best = null;
+    let bestDeg = -1;
+    for (const [n, d] of currentDeg) {
+      if (d > bestDeg || (d === bestDeg && n < best)) {
+        best = n; bestDeg = d;
+      }
+    }
+    const u = best;
+    const invalid = adj.get(u) || new Set();
+    const validTargets = [];
+    for (const n of currentDeg.keys()) {
+      if (n === u) continue;
+      if (invalid.has(n)) continue;
+      validTargets.push(n);
+    }
+    if (validTargets.length === 0) {
+      stuck.add(u);
+      currentDeg.delete(u);
+      continue;
+    }
+    // v = max(valid_targets, key=lambda x: (current_degrees[x], -x))
+    let v = null;
+    let vDeg = -1;
+    for (const n of validTargets) {
+      const d = currentDeg.get(n);
+      if (d > vDeg || (d === vDeg && (v === null || n < v))) {
+        v = n; vDeg = d;
+      }
+    }
+    greedyEdges.add(edgeKey(u, v));
+    if (!adj.has(u)) adj.set(u, new Set());
+    if (!adj.has(v)) adj.set(v, new Set());
+    adj.get(u).add(v); adj.get(v).add(u);
+    currentDeg.set(u, currentDeg.get(u) - 1);
+    currentDeg.set(v, currentDeg.get(v) - 1);
+    if (currentDeg.get(u) === 0) currentDeg.delete(u);
+    if (currentDeg.get(v) === 0) currentDeg.delete(v);
+  }
+  // Union with validEdges.
+  const all = new Set(validEdges);
+  for (const e of greedyEdges) all.add(e);
+  return Array.from(all).map(s => s.split("-").map(Number));
+}
+
 // ── runner ─────────────────────────────────────────────────────
 function isSimple(edges, exist) {
   const seen = new Set();
@@ -343,17 +747,32 @@ const src = await readStdin();
 const payload = JSON.parse(src);
 const algo = payload.algo;
 const seed = payload.seed;
+const mode = payload.mode || "rng";
 
 let edges;
-switch (algo) {
-  case "greedy":         edges = runGreedy(payload); break;
-  case "true_greedy":    edges = runTrueGreedy(payload); break;
-  case "random_greedy":  edges = runRandomGreedy(payload, seed); break;
-  case "rewire":         edges = runRewire(payload, seed, false); break;
-  case "hybrid":         edges = runHybrid(payload, seed); break;
-  default:
-    process.stderr.write(`unknown algo: ${algo}\n`);
-    process.exit(2);
+if (mode === "replay") {
+  const trace = payload.trace || [];
+  switch (algo) {
+    case "greedy":         edges = runGreedyReplay(payload, trace); break;
+    case "true_greedy":    edges = runTrueGreedyReplay(payload, trace); break;
+    case "random_greedy":  edges = runRandomGreedyReplay(payload, trace); break;
+    case "rewire":         edges = runRewireReplay(payload, trace); break;
+    case "hybrid":         edges = runHybridReplay(payload, trace); break;
+    default:
+      process.stderr.write(`unknown algo: ${algo}\n`);
+      process.exit(2);
+  }
+} else {
+  switch (algo) {
+    case "greedy":         edges = runGreedy(payload); break;
+    case "true_greedy":    edges = runTrueGreedy(payload); break;
+    case "random_greedy":  edges = runRandomGreedy(payload, seed); break;
+    case "rewire":         edges = runRewire(payload, seed, false); break;
+    case "hybrid":         edges = runHybrid(payload, seed); break;
+    default:
+      process.stderr.write(`unknown algo: ${algo}\n`);
+      process.exit(2);
+  }
 }
 
 const ach = achievedFrom(payload, edges);

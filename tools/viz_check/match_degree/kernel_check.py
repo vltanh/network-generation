@@ -1,5 +1,20 @@
 """match_degree kernel check.
 
+Adds a faithful-replay cross-check on top of the existing structural check:
+
+  - tools/viz_check/match_degree/instrumented/runner.py runs the canonical
+    src/match_degree.py with monkey-patched random.{shuffle, choices,
+    randrange, random} that log every PRNG draw.
+  - kernel_check.mjs has replay-mode versions of random_greedy / rewire /
+    hybrid that consume the trace and reproduce canonical edges exactly.
+  - Per (fixture, algo, seed, remap) cell: assert the JS replay's edge
+    set equals canonical's edge set.
+
+The legacy LCG-vs-CPython structural check is preserved for the netgen
+page algorithms; the new check is the byte-equality bar.
+
+
+
 Verifies the five top-up algorithms in ``src/match_degree.py``
 (``greedy``, ``true_greedy``, ``random_greedy``, ``rewire``,
 ``hybrid``) against simple-graph and stub-budget invariants on two
@@ -442,6 +457,72 @@ def run_cell(
 
 
 # ---------------------------------------------------------------------------
+# Faithful-replay cross-check (instrumented Python + JS replay mode)
+# ---------------------------------------------------------------------------
+
+INSTRUMENTED = Path(__file__).with_name("instrumented") / "runner.py"
+
+
+def run_canonical_instrumented(algo: str, payload: dict, seed: int) -> dict:
+    """Drive the instrumented canonical runner and return its trace + edges."""
+    job = {"algo": algo, "payload": payload, "seed": int(seed)}
+    proc = subprocess.run(
+        ["python", str(INSTRUMENTED)],
+        input=json.dumps(job), capture_output=True, text=True,
+    )
+    if proc.returncode != 0:
+        return {"_error": proc.stderr.strip() or proc.stdout.strip()}
+    return json.loads(proc.stdout)
+
+
+def run_js_replay(mjs_path: Path, payload: dict, algo: str, trace: list) -> dict:
+    job = dict(payload)
+    job["algo"] = algo
+    job["mode"] = "replay"
+    job["trace"] = trace
+    proc = subprocess.run(
+        ["node", str(mjs_path)],
+        input=json.dumps(job), capture_output=True, text=True,
+    )
+    if proc.returncode != 0:
+        return {"_error": proc.stderr.strip() or proc.stdout.strip()}
+    return json.loads(proc.stdout)
+
+
+def replay_cross_check(payload: dict, mjs_path: Path, algo: str,
+                       seed: int) -> dict:
+    """Per-cell faithful-replay check: instrumented canonical → JS replay
+    → assert the edge sets match.
+    """
+    canonical = run_canonical_instrumented(algo, payload, seed)
+    if "_error" in canonical:
+        return {"replay_ok": False,
+                "diff": f"instrumented runner: {canonical['_error']}"}
+    js = run_js_replay(mjs_path, payload, algo, canonical.get("trace", []))
+    if "_error" in js:
+        return {"replay_ok": False, "diff": f"js replay: {js['_error']}"}
+    def _norm(uv):
+        u, v = int(uv[0]), int(uv[1])
+        return (u, v) if u <= v else (v, u)
+    canon_edges = sorted(_norm(e) for e in canonical["edges"])
+    js_edges = sorted(_norm(e) for e in js["edges"])
+    if canon_edges == js_edges:
+        return {"replay_ok": True,
+                "diff": f"edges={len(canon_edges)} trace_len={len(canonical['trace'])}"}
+    canon_set = set(canon_edges)
+    js_set = set(js_edges)
+    only_canon = sorted(canon_set - js_set)[:3]
+    only_js = sorted(js_set - canon_set)[:3]
+    return {
+        "replay_ok": False,
+        "diff": (
+            f"edge-set differs: canon={len(canon_edges)} js={len(js_edges)} "
+            f"only_canon[:3]={only_canon} only_js[:3]={only_js}"
+        ),
+    }
+
+
+# ---------------------------------------------------------------------------
 # JS cross-check via the .mjs sidecar
 # ---------------------------------------------------------------------------
 
@@ -542,6 +623,12 @@ def cross_check(
 # Reporting
 # ---------------------------------------------------------------------------
 
+def format_row_replay(cell: dict, replay: dict | None) -> str:
+    if replay is None:
+        return ""
+    return f"  | replay: ok={replay['replay_ok']} ({replay['diff']})"
+
+
 def format_row(cell: dict, js: dict | None) -> str:
     flags = cell["flags"]
     base = (
@@ -571,9 +658,11 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--seeds", type=int, nargs="*", default=list(range(1, 6)))
     ap.add_argument("--algos", nargs="*", default=ALGOS, choices=ALGOS)
-    ap.add_argument("--js-mjs", default=str(Path(__file__).with_name("match_degree_kernel_check.mjs")))
+    ap.add_argument("--js-mjs", default=str(Path(__file__).with_name("kernel_check.mjs")))
     ap.add_argument("--no-js", action="store_true",
                     help="skip the JS cross-check (Python-only run).")
+    ap.add_argument("--no-replay", action="store_true",
+                    help="skip the faithful-replay byte-equality check.")
     ap.add_argument("--no-remap", action="store_true",
                     help="skip the --remap mode cells.")
     args = ap.parse_args()
@@ -606,8 +695,15 @@ def main():
                     if do_js:
                         payload = js_payload_for_cell(fx, cell["_py"], seed)
                         js = cross_check(cell, run_js(mjs_path, payload, algo))
-                    print(format_row(cell, js))
+                    replay = None
+                    if not args.no_replay and INSTRUMENTED.exists():
+                        payload = js_payload_for_cell(fx, cell["_py"], seed)
+                        replay = replay_cross_check(payload, mjs_path, algo, seed)
+                    line = format_row(cell, js) + format_row_replay(cell, replay)
+                    print(line)
                     cell_ok = cell_pass(cell, js)
+                    if replay is not None and not replay["replay_ok"]:
+                        cell_ok = False
                     overall_pass = overall_pass and cell_ok
                     summary_rows.append({
                         "fixture": cell["fixture"],
@@ -618,6 +714,7 @@ def main():
                         "residual": cell["total_residual"],
                         "ok": cell_ok,
                         "js_ok": (js["js_ok"] if js else None),
+                        "replay_ok": (replay["replay_ok"] if replay else None),
                         "notes": cell["notes"],
                     })
 
