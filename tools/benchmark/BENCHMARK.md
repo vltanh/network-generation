@@ -9,14 +9,38 @@ generators on a single empirical input, recorded under
 ## Quick start
 
 ```bash
-# from the repo root, with the conda env containing the project active
-NW_ENV=$CONDA_PREFIX/bin tools/benchmark/bench_isolated.sh
+# from the repo root, plain shell, no env vars required
+tools/benchmark/bench_isolated.sh
+
+# verify the toolchain without running the bench
+tools/benchmark/bench_isolated.sh --check
 ```
+
+The driver auto-detects the project's conda env via:
+
+1. `$NW_ENV` if you set it,
+2. otherwise the active `$CONDA_PREFIX`,
+3. otherwise an env named `$NW_ENV_NAME` (default `nwbench`) found by
+   `conda env list`.
+
+Each candidate is validated by importing `graph_tool` from its python
+binary; a base conda or unrelated env that lacks `graph_tool` is
+skipped, so the right env is picked even if a wrong one is active.
+
+A preflight check runs every requested gen's deps before any benchmark
+work starts and aborts with a single clear message if anything is
+missing (use `--skip-preflight` to bypass; `--check` runs only the
+preflight and exits).
 
 Defaults: 7 gens (`sbm,ec-sbm-v1,ec-sbm-v2,abcd,abcd+o,lfr,npso`), seeds
 1..10, 10 kept runs + 2 warmups per (gen, seed), CPU pin to cores 0-3,
 16 GiB memory cap, sample interval 1 s. Wall time on a quiet i9-12900HK:
 ~12-18 minutes.
+
+`results.csv` is written via temp-file + atomic rename and only the
+requested gens' rows are replaced; a partial `--gens npso` run preserves
+the other gens' previous numbers. A Ctrl-C / kill mid-bench leaves the
+prior file intact.
 
 Outputs land under `examples/benchmark/`:
 

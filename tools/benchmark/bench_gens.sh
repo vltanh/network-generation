@@ -26,8 +26,36 @@ INPUT_CLUSTERING="examples/input/reference_clusterings/clusterings/sbm-flat-best
 # the active conda env's bin so a plain `conda activate <env> && bench_gens.sh`
 # works out of the box. Override by exporting NW_ENV (all gens except npso) or
 # NW_NPSO_ENV (npso only) when you need separate envs.
-NW_ENV="${NW_ENV:-${CONDA_PREFIX:-}/bin}"
-NW_NPSO_ENV="${NW_NPSO_ENV:-${CONDA_PREFIX:-}/bin}"
+# NW_ENV resolution chain (no machine-specific hardcodes):
+#   1. caller-supplied $NW_ENV
+#   2. active $CONDA_PREFIX
+#   3. canonical conda env named via $NW_ENV_NAME (default "nwbench")
+#      looked up via `conda env list`.
+# Bench refuses to start unless the resolved bin has python with the
+# required modules; see preflight() in bench_isolated.sh.
+NW_ENV_NAME="${NW_ENV_NAME:-nwbench}"
+_nw_env_works() {
+  [[ -n "$1" && -x "$1/python" ]] || return 1
+  "$1/python" -c "import graph_tool" 2>/dev/null
+}
+resolve_nw_env() {
+  if [[ -n "${NW_ENV:-}" ]] && _nw_env_works "$NW_ENV"; then
+    echo "$NW_ENV"; return
+  fi
+  if [[ -n "${CONDA_PREFIX:-}" ]] && _nw_env_works "$CONDA_PREFIX/bin"; then
+    echo "$CONDA_PREFIX/bin"; return
+  fi
+  if command -v conda >/dev/null 2>&1; then
+    local p
+    p=$(conda env list 2>/dev/null | awk -v n="$NW_ENV_NAME" '$1==n {print $NF}')
+    if [[ -n "$p" ]] && _nw_env_works "$p/bin"; then
+      echo "$p/bin"; return
+    fi
+  fi
+  echo ""
+}
+NW_ENV="$(resolve_nw_env)"
+NW_NPSO_ENV="${NW_NPSO_ENV:-$NW_ENV}"
 
 GENS="$GENS_DEFAULT"
 SEEDS="$SEEDS_DEFAULT"
@@ -45,7 +73,23 @@ while [[ $# -gt 0 ]]; do
 done
 
 mkdir -p "$OUT_BASE" "$(dirname "$RESULTS_FILE")"
-echo "gen,seed,phase,run,time_s,peak_rss_kb,edge_sha256,com_sha256" > "$RESULTS_FILE"
+# Preserve rows for gens not in this run. Atomic via temp + rename so a
+# Ctrl-C / kill mid-bench leaves the previous results.csv intact.
+RESULTS_HEADER="gen,seed,phase,run,time_s,peak_rss_kb,edge_sha256,com_sha256"
+RESULTS_TMP="$RESULTS_FILE.tmp.$$"
+trap 'rm -f "$RESULTS_TMP"' EXIT
+if [[ -f "$RESULTS_FILE" ]]; then
+  # Drop only the rows whose gen is requested for this run; keep the rest.
+  awk -F, -v gens="$GENS" '
+    BEGIN { n = split(gens, a, ","); for (i=1; i<=n; i++) keep[a[i]] = 1 }
+    NR == 1 { print; next }
+    !($1 in keep) { print }
+  ' "$RESULTS_FILE" > "$RESULTS_TMP"
+else
+  echo "$RESULTS_HEADER" > "$RESULTS_TMP"
+fi
+mv "$RESULTS_TMP" "$RESULTS_FILE"
+trap - EXIT
 
 # Run all (seed, run) combos for one gen inside a single shell so env init and
 # subprocess warmups are amortized.
