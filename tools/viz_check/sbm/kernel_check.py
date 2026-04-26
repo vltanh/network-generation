@@ -1,25 +1,30 @@
 """SBM kernel cross-check.
 
-Verifies three things on the same fixture:
+Three legs per (fixture, seed):
 
-1. graph-tool's `gt.generate_sbm(micro_ers=True, micro_degs=True)` produces
-   a multigraph whose per-block-pair edge counts match the input `e_rs`
-   exactly and whose per-node degree matches the input `k_v` exactly.
-2. The standalone C++ reference kernel (`tools/sbm/kernel_check.cpp`,
-   built to `/tmp/sbm_kernel_check`) produces a multigraph that satisfies
-   the same invariants. Different PRNG, same algorithm.
-3. The two implementations agree on every per-pair `mrs` / `ers` value
-   and on the urn population at every step (different draws, same urn
-   bookkeeping).
+1. ``gt.generate_sbm(micro_ers=True, micro_degs=True)`` produces a
+   multigraph whose per-block-pair edge counts match the input ``e_rs``
+   exactly and whose per-node degree matches the input ``k_v`` exactly.
+2. The standalone C++ reference kernel
+   (``tools/viz_check/sbm/instrumented/kernel_check.cpp``, built to
+   ``/tmp/sbm_kernel_check``) produces a multigraph that satisfies the
+   same invariants. Same algorithm as gt; different PRNG family
+   (``std::mt19937`` vs gt's ``pcg64_k1024``), so specific edges differ.
+3. The JS port (``kernel_check.mjs``) consumes the C++ trace and
+   replays edges byte-for-byte equal to the C++ output. This is the
+   faithful-replay bar: ``js_replay_edges == cpp_edges``.
+
+Byte-equality vs gt itself is out of scope for this check (would require
+porting pcg64_k1024 or patching graph-tool source); leg 1 verifies gt
+against the same algorithmic invariants instead.
 
 Run:
 
-    python tools/sbm/kernel_check.py            # both fixtures, seeds 1..10
-    python tools/sbm/kernel_check.py --verbose  # also dump the C++ trace
+    python tools/viz_check/sbm/kernel_check.py            # all fixtures
+    python tools/viz_check/sbm/kernel_check.py --verbose  # dump traces
 
-The 20-node fixture mirrors the shared.js synthetic that the netgen pages
-use. The 100-node fixture is a random graph with 5 planted clusters; it
-exists to scale-test the algorithm beyond the toy.
+Fixtures: 20-node (matches netgen shared.js), 100-node 5-cluster random,
+200-node 8-cluster random.
 """
 
 from __future__ import annotations
@@ -252,7 +257,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--seeds", type=int, nargs="*", default=list(range(1, 11)))
     ap.add_argument("--cpp-binary", default="/tmp/sbm_kernel_check")
-    ap.add_argument("--js-mjs", default=str(Path(__file__).with_name("sbm_kernel_check.mjs")))
+    ap.add_argument("--js-mjs", default=str(Path(__file__).with_name("kernel_check.mjs")))
     ap.add_argument("--verbose", action="store_true")
     args = ap.parse_args()
 
