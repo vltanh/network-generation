@@ -68,6 +68,8 @@ Run::
 from __future__ import annotations
 
 import argparse
+import json
+import os
 import random
 import subprocess
 import sys
@@ -79,10 +81,14 @@ import pandas as pd
 import powerlaw
 
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
+REPO_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_BINARY = (
     REPO_ROOT / "externals" / "lfr" / "unweighted_undirected" / "benchmark"
 )
+INSTRUMENTED_BINARY = (
+    Path(__file__).resolve().parent / "instrumented" / "benchmark-instrumented"
+)
+JS_REPLAY = Path(__file__).resolve().parent / "kernel_check.mjs"
 
 # Below this floor, powerlaw.Fit saturates on its alpha ceiling
 # (typically ~3.0) and the input-vs-output comparison stops being
@@ -269,6 +275,83 @@ def run_lfr(binary: Path, params: dict, seed: int, work_dir: Path) -> dict:
         community_dat, sep=r"\s+", header=None, names=["node_id", "cluster_id"]
     )
     return {"edges": edges_df, "com": com_df, "params": params}
+
+
+# ---------------------------------------------------------------------------
+# Instrumented + JS replay byte-equality (degree-sampler stage)
+# ---------------------------------------------------------------------------
+
+def run_lfr_instrumented(params: dict, seed: int, work_dir: Path) -> dict:
+    """Drive the patched binary; return paths to ran4 trace + degseq dump.
+
+    Same CLI as the canonical binary; emits two extra files via env vars:
+      - LFR_TRACE_PATH: every ran4(true) draw, one double per line.
+      - LFR_DEGSEQ_PATH: post-sort post-parity degree_seq.
+    """
+    work_dir.mkdir(parents=True, exist_ok=True)
+    (work_dir / "time_seed.dat").write_text(f"{seed}\n")
+    trace_path = work_dir / "ran4_trace.txt"
+    degseq_path = work_dir / "degseq.txt"
+    env = os.environ.copy()
+    env["LFR_TRACE_PATH"] = str(trace_path)
+    env["LFR_DEGSEQ_PATH"] = str(degseq_path)
+    cmd = [
+        str(INSTRUMENTED_BINARY),
+        "-N", str(params["N"]),
+        "-k", str(params["k"]),
+        "-maxk", str(params["maxk"]),
+        "-minc", str(params["minc"]),
+        "-maxc", str(params["maxc"]),
+        "-mu", str(params["mu"]),
+        "-t1", str(params["t1"]),
+        "-t2", str(params["t2"]),
+    ]
+    proc = subprocess.run(
+        cmd, cwd=work_dir, capture_output=True, text=True, env=env,
+    )
+    if proc.returncode != 0:
+        raise RuntimeError(
+            f"instrumented binary failed (rc={proc.returncode}):\n{proc.stderr}"
+        )
+    if not trace_path.exists() or not degseq_path.exists():
+        raise RuntimeError("instrumented binary did not emit trace/degseq")
+    return {"trace_path": trace_path, "degseq_path": degseq_path}
+
+
+def js_replay_degseq(params: dict, seed: int, work_dir: Path) -> tuple[bool, str]:
+    """Per-seed byte-equality on degree_seq via the .mjs port.
+
+    Scope: only the degree-sequence sampler stage of LFR is ported.
+    Cluster-size sampler, internal/external split, config-model edge
+    generation, and rewire are deferred to a later session and consume
+    the rest of the trace; the JS port asserts the FIRST N draws + sort
+    + parity-fix produce the canonical degree_seq.
+    """
+    if not INSTRUMENTED_BINARY.exists():
+        return False, f"instrumented binary missing at {INSTRUMENTED_BINARY}"
+    if not JS_REPLAY.exists():
+        return False, f"js port missing at {JS_REPLAY}"
+    instr = run_lfr_instrumented(params, seed, work_dir)
+    job = {
+        "mode": "replay",
+        "N": params["N"],
+        "k": params["k"],
+        "maxk": params["maxk"],
+        "t1": params["t1"],
+        "trace_path": str(instr["trace_path"]),
+        "degseq_path": str(instr["degseq_path"]),
+    }
+    proc = subprocess.run(
+        ["node", str(JS_REPLAY)],
+        input=json.dumps(job), capture_output=True, text=True,
+    )
+    if proc.returncode != 0:
+        return False, (proc.stderr or proc.stdout)[-400:].strip()
+    try:
+        result = json.loads(proc.stdout)
+    except Exception as exc:
+        return False, f"js output not JSON: {exc} ({proc.stdout[:200]!r})"
+    return bool(result.get("ok")), str(result.get("diff", ""))
 
 
 # ---------------------------------------------------------------------------
@@ -543,6 +626,26 @@ def main() -> int:
                 )
                 for m in msgs:
                     print(f"    {m}")
+
+                if INSTRUMENTED_BINARY.exists() and JS_REPLAY.exists():
+                    try:
+                        replay_ok, replay_diff = js_replay_degseq(
+                            params, seed, work_dir,
+                        )
+                    except Exception as exc:
+                        replay_ok = False
+                        replay_diff = (
+                            f"replay raised {type(exc).__name__}: {exc}"
+                        )
+                    tag = "PASS" if replay_ok else "FAIL"
+                    print(f"    js-replay degree_seq byte-eq: {tag}  {replay_diff}")
+                    ok = ok and replay_ok
+                else:
+                    print(
+                        "    js-replay degree_seq byte-eq: SKIP "
+                        "(instrumented binary or kernel_check.mjs missing)"
+                    )
+
                 if ok:
                     fx_pass += 1
                     pass_count += 1
