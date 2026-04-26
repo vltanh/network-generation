@@ -62,10 +62,12 @@ SRC_DIR = REPO_ROOT / "src"
 SEED = 1
 
 
-def _stage_env() -> dict:
-    """Match pipeline.sh's env: PYTHONPATH = SRC_DIR:PACKAGE_PY, plus the
-    PYTHONHASHSEED=0 pin so the standalone invocation lands in the same
-    determinism regime as pipeline.sh.
+def _stage_env(pythonhashseed: str = "0") -> dict:
+    """PYTHONPATH = SRC_DIR:PACKAGE_PY, OMP_NUM_THREADS=1, plus a
+    caller-controlled PYTHONHASHSEED. pipeline.sh pins this to "0";
+    parametrising it lets the test prove the per-stage output is
+    byte-equal to the pipeline's regardless of the hash-seed regime
+    standalone callers happen to land in.
     """
     env = _env()
     paths = [str(SRC_DIR), str(PACKAGE_PY)]
@@ -73,7 +75,7 @@ def _stage_env() -> dict:
         paths.append(env["PYTHONPATH"])
     env["PYTHONPATH"] = ":".join(paths)
     env["OMP_NUM_THREADS"] = "1"
-    env["PYTHONHASHSEED"] = "0"
+    env["PYTHONHASHSEED"] = pythonhashseed
     return env
 
 
@@ -144,7 +146,7 @@ def pipeline_states(tmp_path_factory):
     return out
 
 
-def _replay_profile(state_dir: Path, version: str, tmp: Path):
+def _replay_profile(state_dir: Path, version: str, tmp: Path, hashseed: str):
     flags = VERSION_FLAGS[version]
     params = tmp / "params.txt"
     params.write_text(
@@ -158,12 +160,12 @@ def _replay_profile(state_dir: Path, version: str, tmp: Path):
         "--output-folder", str(tmp),
         "--params-file", str(params),
     ]
-    proc = _run(cmd, _stage_env())
+    proc = _run(cmd, _stage_env(hashseed))
     assert proc.returncode == 0, proc.stderr
     return _data_files(tmp), _data_files(state_dir / "profile")
 
 
-def _replay_gen_clustered(state_dir: Path, version: str, tmp: Path):
+def _replay_gen_clustered(state_dir: Path, version: str, tmp: Path, hashseed: str):
     flags = VERSION_FLAGS[version]
     overlay = "--sbm-overlay" if flags["sbm_overlay"] == "true" else "--no-sbm-overlay"
     profile_dir = state_dir / "profile"
@@ -179,12 +181,12 @@ def _replay_gen_clustered(state_dir: Path, version: str, tmp: Path):
         "--seed", str(SEED),
         overlay,
     ]
-    proc = _run(cmd, _stage_env())
+    proc = _run(cmd, _stage_env(hashseed))
     assert proc.returncode == 0, proc.stderr
     return _data_files(tmp), _data_files(state_dir / "gen_clustered")
 
 
-def _replay_gen_outlier(state_dir: Path, version: str, tmp: Path):
+def _replay_gen_outlier(state_dir: Path, version: str, tmp: Path, hashseed: str):
     flags = VERSION_FLAGS[version]
     cmd = [
         "python", str(PACKAGE_PY / "gen_outlier.py"),
@@ -200,12 +202,12 @@ def _replay_gen_outlier(state_dir: Path, version: str, tmp: Path):
         cmd.extend([
             "--exist-edgelist", str(state_dir / "gen_clustered" / "edge.csv"),
         ])
-    proc = _run(cmd, _stage_env())
+    proc = _run(cmd, _stage_env(hashseed))
     assert proc.returncode == 0, proc.stderr
     return _data_files(tmp), _data_files(state_dir / "gen_outlier" / "edges")
 
 
-def _replay_match_degree(state_dir: Path, version: str, tmp: Path):
+def _replay_match_degree(state_dir: Path, version: str, tmp: Path, hashseed: str):
     flags = VERSION_FLAGS[version]
     cmd = [
         "python", str(SRC_DIR / "match_degree.py"),
@@ -215,7 +217,7 @@ def _replay_match_degree(state_dir: Path, version: str, tmp: Path):
         "--output-folder", str(tmp),
         "--seed", str(SEED + 2),
     ]
-    proc = _run(cmd, _stage_env())
+    proc = _run(cmd, _stage_env(hashseed))
     assert proc.returncode == 0, proc.stderr
     return _data_files(tmp), _data_files(state_dir / "match_degree" / "edges")
 
@@ -228,22 +230,33 @@ REPLAY_STAGES = [
 ]
 
 
+# Pipeline pins PYTHONHASHSEED=0; vary the standalone replay's hash seed
+# to prove the per-stage output is independent of it.
+HASHSEEDS = ("0", "1234567")
+
+
 @pytest.mark.parametrize("version", list(VERSION_FLAGS))
+@pytest.mark.parametrize("hashseed", HASHSEEDS)
 @pytest.mark.parametrize("stage_name,replay", REPLAY_STAGES, ids=[s[0] for s in REPLAY_STAGES])
 def test_stage_standalone_matches_pipeline(
-    pipeline_states, version, stage_name, replay, tmp_path
+    pipeline_states, version, hashseed, stage_name, replay, tmp_path
 ):
     """Standalone re-invocation of `<stage>` produces byte-equal output
-    to what `pipeline.sh` produced for the same gen + same inputs.
+    to what `pipeline.sh` produced — both under the canonical
+    PYTHONHASHSEED=0 (which pipeline.sh also pins) AND under a different
+    seed, proving the per-stage output is independent of hash order.
     """
     state_dir = pipeline_states[version]
     standalone_tmp = tmp_path / "stage_out"
     standalone_tmp.mkdir()
-    standalone_hashes, pipeline_hashes = replay(state_dir, version, standalone_tmp)
+    standalone_hashes, pipeline_hashes = replay(
+        state_dir, version, standalone_tmp, hashseed,
+    )
 
     diff = _diff(pipeline_hashes, standalone_hashes)
     assert not diff, (
-        f"{version}/{stage_name}: standalone re-invocation differs from "
-        f"pipeline output:\n  " + "\n  ".join(diff)
+        f"{version}/{stage_name} @ PYTHONHASHSEED={hashseed}: standalone "
+        f"re-invocation differs from pipeline output:\n  "
+        + "\n  ".join(diff)
         + f"\n\npipeline_state={state_dir}\nstandalone={standalone_tmp}"
     )
