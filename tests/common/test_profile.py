@@ -25,9 +25,13 @@ sys.path.insert(0, str(REPO_ROOT / "src"))
 from profile_common import (  # noqa: E402
     COMBINED_OUTLIER_CLUSTER_ID,
     apply_outlier_mode,
+    compute_comm_size,
     compute_edge_count,
     compute_mixing_parameter,
+    compute_node_degree,
     identify_outliers,
+    read_clustering,
+    read_edgelist,
 )
 
 
@@ -387,6 +391,109 @@ def test_mixing_parameter_rejects_unknown_reduction(two_cluster_network):
 # ---------------------------------------------------------------------------
 # End-to-end Step A + Step B behavior matching the per-generator contract
 # ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# read_clustering / read_edgelist
+# ---------------------------------------------------------------------------
+
+def test_read_clustering_basic(tmp_path):
+    import pandas as pd
+
+    p = tmp_path / "com.csv"
+    pd.DataFrame({
+        "node_id":    ["a", "b", "c", "d"],
+        "cluster_id": ["C0", "C0", "C1", "C1"],
+    }).to_csv(p, index=False)
+
+    nodes, node2com, cluster_counts = read_clustering(p)
+    assert nodes == {"a", "b", "c", "d"}
+    assert node2com == {"a": "C0", "b": "C0", "c": "C1", "d": "C1"}
+    assert cluster_counts == {"C0": 2, "C1": 2}
+
+
+def test_read_clustering_drops_nan_rows(tmp_path):
+    import pandas as pd
+    p = tmp_path / "com.csv"
+    p.write_text("node_id,cluster_id\na,C0\nb,\n,C1\nc,C0\n")
+    nodes, node2com, cluster_counts = read_clustering(p)
+    assert nodes == {"a", "c"}
+    assert node2com == {"a": "C0", "c": "C0"}
+    assert cluster_counts == {"C0": 2}
+
+
+def test_read_edgelist_ignores_self_loops(tmp_path):
+    import pandas as pd
+    p = tmp_path / "e.csv"
+    pd.DataFrame({"source": ["a", "b", "a"],
+                  "target": ["b", "c", "a"]}).to_csv(p, index=False)
+    nodes, neighbors = read_edgelist(p, {"a", "b", "c"})
+    assert neighbors["a"] == {"b"}
+    assert neighbors["b"] == {"a", "c"}
+    assert neighbors["c"] == {"b"}
+
+
+def test_read_edgelist_adds_endpoint_nodes_not_in_input(tmp_path):
+    """Nodes that appear in the edgelist but not the clustering become
+    outliers — read_edgelist must add them to ``nodes``."""
+    import pandas as pd
+    p = tmp_path / "e.csv"
+    pd.DataFrame({"source": ["a", "a"],
+                  "target": ["b", "z"]}).to_csv(p, index=False)
+    nodes, neighbors = read_edgelist(p, {"a", "b"})
+    assert "z" in nodes  # added via edgelist
+    assert neighbors["z"] == {"a"}
+
+
+def test_read_edgelist_is_bidirectional(tmp_path):
+    import pandas as pd
+    p = tmp_path / "e.csv"
+    pd.DataFrame({"source": ["a"], "target": ["b"]}).to_csv(p, index=False)
+    nodes, neighbors = read_edgelist(p, set())
+    # Both directions recorded.
+    assert "b" in neighbors["a"]
+    assert "a" in neighbors["b"]
+
+
+# ---------------------------------------------------------------------------
+# compute_node_degree — sort by (-degree, id asc) for hash-seed stability
+# ---------------------------------------------------------------------------
+
+def test_compute_node_degree_sorts_desc_degree_then_asc_id():
+    nb = _neighbors([("a", "b"), ("b", "c"), ("a", "c"), ("a", "d")])
+    # degrees: a=3, b=2, c=2, d=1
+    sorted_list, id2iid = compute_node_degree({"a", "b", "c", "d"}, nb)
+    assert [nid for nid, _ in sorted_list] == ["a", "b", "c", "d"]
+    assert id2iid == {"a": 0, "b": 1, "c": 2, "d": 3}
+
+
+def test_compute_node_degree_deterministic_across_iteration_orders():
+    nb = _neighbors([("a", "b"), ("b", "c")])
+    ns1 = {"a", "b", "c"}
+    ns2 = {"c", "b", "a"}
+    r1, _ = compute_node_degree(ns1, nb)
+    r2, _ = compute_node_degree(ns2, nb)
+    assert r1 == r2
+
+
+# ---------------------------------------------------------------------------
+# compute_comm_size — sort by (-size, id asc)
+# ---------------------------------------------------------------------------
+
+def test_compute_comm_size_sorts_desc_size_then_asc_id():
+    counts = {"C1": 3, "C2": 5, "C3": 3, "C4": 1}
+    sorted_list, id2iid = compute_comm_size(counts)
+    # size 5 (C2) > size 3 (C1 < C3 lex) > size 1 (C4).
+    assert [cid for cid, _ in sorted_list] == ["C2", "C1", "C3", "C4"]
+    assert id2iid == {"C2": 0, "C1": 1, "C3": 2, "C4": 3}
+
+
+def test_compute_comm_size_deterministic_across_dict_orders():
+    a = {"C2": 5, "C1": 3, "C3": 3}
+    b = {"C3": 3, "C2": 5, "C1": 3}
+    r1, _ = compute_comm_size(a)
+    r2, _ = compute_comm_size(b)
+    assert r1 == r2
+
 
 def test_abcd_plus_o_default_drops_oo_and_gives_global_mu():
     """ABCD+o default is (singleton, drop_oo=True). Rebuild the hand graph,

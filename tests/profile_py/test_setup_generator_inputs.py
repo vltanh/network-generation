@@ -57,7 +57,7 @@ EXPECTED_OUTPUTS = {
         "mixing_parameter.txt", "n_outliers.txt",
     },
     "lfr": {"degree.csv", "cluster_sizes.csv", "mixing_parameter.txt"},
-    "npso": {"degree.csv", "cluster_sizes.csv"},
+    "npso": {"degree.csv", "cluster_sizes.csv", "derived.txt"},
 }
 
 
