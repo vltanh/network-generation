@@ -4,6 +4,6 @@ a8893e46e9a3a9cb98514a7058d6936b89a7e81ef32ea5eac41af03b2448fbcd  examples/outpu
 1349e0ba1b39731b0d5b72cab9bfb5b0357a24f7c89d2ba49bc2536e9e40c363  examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/profile/degree.csv
 381c62b6d70d9c7ba0a59513851a3c6860e42af0dadcf9102bf9b2826fb53022  examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/profile/mincut.csv
 360f12ad003de7c6661ab5ea0ef37fb13a84a3c067e2623fec5058ffa0b96578  examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/profile/edge_counts.csv
-e240ae23f3ea32f05e1a9135bbc3d310752dacfbbcaf80900cbf09e7dfd59984  examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/profile/com.csv
+5a5afc352f13bb2cbcd0e23b5b012d259d5680d4dd89ade5be48d6afe4ff2e3b  examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/profile/com.csv
 f29fe7fcae389d9d4715218122a2ef2821973e0ab31cfc7785e124bff68485da  examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/gen_clustered/params.txt
-8ed35d72633593a284ea322194775fd0f90b2108ff3af363232538d5f6ca995b  examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/gen_clustered/edge.csv
+14ff648a34ab1a936378d75763ab757bbfd45cf1e50b91b90d553a1c7122a84f  examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/gen_clustered/edge.csv
