@@ -1,5 +1,5 @@
 83aefbfc0a1ad8641549d5235fe03c343304dbc860e5c41515402b3562783834  examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/gen_outlier/edge.csv
 8622cf76c27d9592e07170c80716a79405e3969492678bc963656a91e4dac443  examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/gen_outlier/sources.json
-5deddf0bf2c109461300a2abd444a714c8ce7e3f79abbf6a5e66a1082e689034  examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/match_degree/edges/degree_matching_edge.csv
-43da874a4dcb3c14db1d4d7a1c504ed090f966b86559d471013319a0782616f1  examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/edge.csv
+b41187d23312405a1ce96efdb6f71b6b77a91746b69df92535ad0ad7fdd80ca3  examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/match_degree/edges/degree_matching_edge.csv
+e0d6d1d7feb545445d2c5a407ea2f6070642ac24f00b01e8b06d34d2f20781c1  examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/edge.csv
 d85c31ebbd7c322e605cf5b2c691fbad7b3eab693eda9160d809df8906cadd53  examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/sources.json

@@ -231,8 +231,9 @@ REPLAY_STAGES = [
 
 
 # Pipeline pins PYTHONHASHSEED=0; vary the standalone replay's hash seed
-# to prove the per-stage output is independent of it.
-HASHSEEDS = ("0", "1234567")
+# across 10 values (0..9) to prove the per-stage output is independent
+# of hash order.
+HASHSEEDS = tuple(str(i) for i in range(10))
 
 
 @pytest.mark.parametrize("version", list(VERSION_FLAGS))

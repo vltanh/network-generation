@@ -80,7 +80,7 @@ modularity,distribution,emd,0.00011630610540656522
 n,distribution,ks,0.0
 n,distribution,emd,0.0
 pagerank,distribution,ks,0.23620309050772628
-pagerank,distribution,emd,0.00010589156312449812
+pagerank,distribution,emd,0.00010589156312449821
 c,sequence,l1,305.0
 c,sequence,mean_l1,3.5057471264367814
 c,sequence,l2,102.01470482239313
@@ -141,8 +141,8 @@ n,sequence,mean_l1,0.0
 n,sequence,l2,0.0
 n,sequence,rmse,0.0
 n,sequence,cosine,0.0
-pagerank,sequence,l1,0.14204929616326728
-pagerank,sequence,mean_l1,0.00015678730260846278
+pagerank,sequence,l1,0.1420492961632674
+pagerank,sequence,mean_l1,0.0001567873026084629
 pagerank,sequence,l2,0.02713053985329018
 pagerank,sequence,rmse,0.0009013518132863177
 pagerank,sequence,cosine,0.06977969125834493
