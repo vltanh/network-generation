@@ -1,8 +1,15 @@
-// Node port of the impl-3 walker in vltanh.github.io/netgen/npso.html.
-// Reads a fixture JSON from stdin (N, m, gamma, optional c +
-// mixing_proportions + seed + replay), prints achieved invariants on
-// stdout. Pair-by-pair logic mirrors edgesAtT() in the page; PRNG is
-// the same LCG d3.randomLcg uses (verbatim).
+// Two flavors live in this file:
+//
+// 1. Node port of the impl-3 walker in vltanh.github.io/netgen/npso.html.
+//    Reads a fixture JSON from stdin (N, m, gamma, optional c +
+//    mixing_proportions + seed + replay), prints achieved invariants on
+//    stdout. Pair-by-pair logic mirrors edgesAtT() in the page; PRNG is
+//    the same LCG d3.randomLcg uses (verbatim).
+//
+// 2. Faithful-replay against MATLAB nPSO_model. Pass `mode: "matlab_replay"`
+//    plus the {N, m, T, gamma, C, mu, trace} blob from
+//    tools/viz_check/npso/instrumented/runner.py. Produces edges and comm
+//    that byte-equal the canonical MATLAB sampler under the same seed.
 //
 // Fixture shape:
 //   {
@@ -222,6 +229,57 @@ function checkSimpleGraph(edges) {
   return { ok: selfLoops === 0 && parallels === 0, selfLoops, parallels };
 }
 
+// ── faithful MATLAB replay ─────────────────────────────────────
+// Consumes a trace produced by tools/viz_check/npso/instrumented/runner.py.
+// The trace gives N angles + (N-m-1) per-arrival pick vectors. We compute
+// coords (radial + angular), comm (arg-min cluster), and replay each
+// arrival's m predecessors from the trace.
+//
+// Output: edges sorted lex (canonicalised (min,max)) + comm; matches the
+// MATLAB sampler byte-for-byte under the same seed.
+function matlabReplay(payload) {
+  const { N, m, T, gamma, C, mu, trace } = payload;
+  const angles = trace.angles;
+  const picks = trace.picks;
+  const beta = 1 / (gamma - 1);
+  const log_N = Math.log(N);
+
+  // comm = arg min |angle - mu_k| (with wrap-around). Mirrors MATLAB's
+  // min(pi - abs(pi - abs(theta - mu_k))) form line-for-line.
+  const comm = new Array(N);
+  for (let i = 0; i < N; i++) {
+    let best = 0, bestVal = Infinity;
+    for (let k = 0; k < C; k++) {
+      let raw = Math.abs(angles[i] - mu[k]);
+      if (raw > Math.PI) raw = 2 * Math.PI - raw;
+      // MATLAB: pi - abs(pi - abs(...))
+      const distVal = Math.PI - Math.abs(Math.PI - raw);
+      if (distVal < bestVal) { bestVal = distVal; best = k; }
+    }
+    comm[i] = best + 1; // MATLAB 1-based
+  }
+
+  const edges = [];
+  let pickCursor = 0;
+  for (let t = 2; t <= N; t++) {
+    if (t - 1 <= m) {
+      for (let j = 1; j <= t - 1; j++) {
+        edges.push([Math.min(t, j), Math.max(t, j)]);
+      }
+    } else {
+      const picksT = picks[pickCursor++];
+      for (const j of picksT) {
+        edges.push([Math.min(t, j), Math.max(t, j)]);
+      }
+    }
+  }
+  if (pickCursor !== picks.length) {
+    throw new Error(`pick trace not fully consumed: ${pickCursor}/${picks.length}`);
+  }
+  edges.sort((a, b) => (a[0] - b[0]) || (a[1] - b[1]));
+  return { edges, comm, picks_consumed: pickCursor, picks_total: picks.length };
+}
+
 async function readStdin() {
   const chunks = [];
   for await (const c of process.stdin) chunks.push(c);
@@ -231,32 +289,37 @@ async function readStdin() {
 const src = await readStdin();
 const fx = JSON.parse(src);
 
-const N = fx.N;
-const m = fx.m;
-const gamma = fx.gamma;
-const c = fx.c || 0;
-const rho = fx.mixing_proportions || [];
-const seed = fx.seed || 1;
-const T_target = fx.T != null ? fx.T : 0.3;
-const replay = Array.isArray(fx.replay) ? fx.replay : null;
+if (fx.mode === "matlab_replay") {
+  const out = matlabReplay(fx);
+  process.stdout.write(JSON.stringify(out) + "\n");
+} else {
+  const N = fx.N;
+  const m = fx.m;
+  const gamma = fx.gamma;
+  const c = fx.c || 0;
+  const rho = fx.mixing_proportions || [];
+  const seed = fx.seed || 1;
+  const T_target = fx.T != null ? fx.T : 0.3;
+  const replay = Array.isArray(fx.replay) ? fx.replay : null;
 
-const emb = computeEmbedding(N, m, gamma, c, rho, seed);
+  const emb = computeEmbedding(N, m, gamma, c, rho, seed);
 
-const edges = edgesImpl3(T_target, emb, m, N, gamma, replay);
-const arr = checkPerArrivalM(edges, N, m);
-const sim = checkSimpleGraph(edges);
+  const edges = edgesImpl3(T_target, emb, m, N, gamma, replay);
+  const arr = checkPerArrivalM(edges, N, m);
+  const sim = checkSimpleGraph(edges);
 
-const out = {
-  seed,
-  T: T_target,
-  mode: replay ? "replay" : "rng",
-  edges,
-  edges_count: edges.length,
-  per_arrival_m_ok: arr.ok,
-  per_arrival_m_bad: arr.bad,
-  simple_ok: sim.ok,
-  self_loops: sim.selfLoops,
-  parallels: sim.parallels,
-  U_NODE: emb.U_NODE,
-};
-process.stdout.write(JSON.stringify(out) + "\n");
+  const out = {
+    seed,
+    T: T_target,
+    mode: replay ? "replay" : "rng",
+    edges,
+    edges_count: edges.length,
+    per_arrival_m_ok: arr.ok,
+    per_arrival_m_bad: arr.bad,
+    simple_ok: sim.ok,
+    self_loops: sim.selfLoops,
+    parallels: sim.parallels,
+    U_NODE: emb.U_NODE,
+  };
+  process.stdout.write(JSON.stringify(out) + "\n");
+}
