@@ -4,5 +4,5 @@ __pycache__
 # Runtime artifacts
 complete.log
 
-# Local-only verification harnesses (never pushed)
-tools/
+# Benchmark output (reproducible via tools/benchmark/bench_gens.sh)
+examples/benchmark/

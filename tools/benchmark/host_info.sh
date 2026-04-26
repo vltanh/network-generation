@@ -4,8 +4,8 @@
 # No absolute paths, no git state, no working-tree listing.
 #
 # Usage:
-#   benchmark/host_info.sh                  # defaults: cpu_pin/mem_cap/sample_interval unset
-#   benchmark/host_info.sh > snapshot.txt
+#   tools/benchmark/host_info.sh                  # defaults: cpu_pin/mem_cap/sample_interval unset
+#   tools/benchmark/host_info.sh > snapshot.txt
 #
 # Env overrides (shown verbatim under "Run config" if set):
 #   CPU_LIST               taskset pin description.
