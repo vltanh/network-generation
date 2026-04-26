@@ -28,9 +28,11 @@ from .conftest import _env, run_dir, run_generator
 pytestmark = pytest.mark.slow
 
 
-# Two arbitrary distinct seeds; if any set/dict iteration site leaks,
-# at least one of these will produce a different hash-slot order.
-HASHSEEDS = ("0", "1234567")
+# Ten distinct PYTHONHASHSEED values (0..9). More seeds = higher chance
+# any leftover set/dict iteration leak surfaces. The test compares every
+# subsequent run against run-0; if all match run-0 they match each other
+# pairwise too.
+HASHSEEDS = tuple(str(i) for i in range(10))
 
 # Suffixes to compare. .log and the bare `done` file carry timestamps;
 # `time_and_err.log` ditto. Everything else is data.
@@ -87,27 +89,29 @@ def test_pythonhashseed_determinism(
         out_dirs[hs] = out
         hashes[hs] = _collect_data_files(out)
 
-    a, b = HASHSEEDS
+    base = HASHSEEDS[0]
     diff: list[str] = []
-    only_a = set(hashes[a]) - set(hashes[b])
-    only_b = set(hashes[b]) - set(hashes[a])
-    for name in sorted(only_a):
-        diff.append(f"{name}: missing under PYTHONHASHSEED={b}")
-    for name in sorted(only_b):
-        diff.append(f"{name}: missing under PYTHONHASHSEED={a}")
-    for name in sorted(set(hashes[a]) & set(hashes[b])):
-        if hashes[a][name] != hashes[b][name]:
-            diff.append(
-                f"{name}: {hashes[a][name][:12]} vs {hashes[b][name][:12]}"
-            )
+    for other in HASHSEEDS[1:]:
+        only_base = set(hashes[base]) - set(hashes[other])
+        only_other = set(hashes[other]) - set(hashes[base])
+        for name in sorted(only_base):
+            diff.append(f"PYTHONHASHSEED={other}: missing {name}")
+        for name in sorted(only_other):
+            diff.append(f"PYTHONHASHSEED={base}: missing {name}")
+        for name in sorted(set(hashes[base]) & set(hashes[other])):
+            if hashes[base][name] != hashes[other][name]:
+                diff.append(
+                    f"{name} @ PYTHONHASHSEED={other}: "
+                    f"{hashes[other][name][:12]} vs base {hashes[base][name][:12]}"
+                )
 
     assert not diff, (
-        f"{gen_spec.name}: bytes differ across PYTHONHASHSEED "
-        f"({a} vs {b}):\n  " + "\n  ".join(diff)
-        + f"\n\nrun_a={out_dirs[a]}\nrun_b={out_dirs[b]}"
+        f"{gen_spec.name}: bytes differ across PYTHONHASHSEED values "
+        f"{HASHSEEDS}:\n  " + "\n  ".join(diff)
+        + f"\n\nbase_run={out_dirs[base]}"
     )
 
-    # Cleanup both tmp roots.
+    # Cleanup all tmp roots.
     for hs in HASHSEEDS:
         shutil.rmtree(out_dirs[hs].parent.parent.parent.parent.parent,
                       ignore_errors=True)
