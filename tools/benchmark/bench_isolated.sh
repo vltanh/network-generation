@@ -46,16 +46,129 @@ CPU_LIST="${CPU_LIST:-0-3}"
 SAMPLE_INTERVAL_S="${SAMPLE_INTERVAL_S:-1}"
 SCOPE_NAME="nwbench-$(date +%Y%m%dT%H%M%S)-$$"
 SHIELD=0
+SKIP_PREFLIGHT=0
+NW_ENV_NAME="${NW_ENV_NAME:-nwbench}"
 
-# Pull --shield out of $@; everything else passes through to bench_gens.sh.
+# Resolve NW_ENV once, here, so preflight can interrogate it. Same chain
+# as bench_gens.sh; pulled here too to make `--check` work standalone.
+# A bin dir "works" if its python can import graph_tool (the canonical
+# sentinel for the nwbench env). Falls through to the next candidate
+# otherwise so an active base conda env doesn't shadow nwbench.
+_nw_env_works() {
+  [[ -n "$1" && -x "$1/python" ]] || return 1
+  "$1/python" -c "import graph_tool" 2>/dev/null
+}
+resolve_nw_env() {
+  if [[ -n "${NW_ENV:-}" ]] && _nw_env_works "$NW_ENV"; then
+    echo "$NW_ENV"; return
+  fi
+  if [[ -n "${CONDA_PREFIX:-}" ]] && _nw_env_works "$CONDA_PREFIX/bin"; then
+    echo "$CONDA_PREFIX/bin"; return
+  fi
+  if command -v conda >/dev/null 2>&1; then
+    local p
+    p=$(conda env list 2>/dev/null | awk -v n="$NW_ENV_NAME" '$1==n {print $NF}')
+    if [[ -n "$p" ]] && _nw_env_works "$p/bin"; then
+      echo "$p/bin"; return
+    fi
+  fi
+  echo ""
+}
+
+# Pull --shield, --check, --skip-preflight out of $@; everything else
+# passes through to bench_gens.sh. We need to know the gen list at
+# preflight time to pick which deps to verify, so we shadow --gens
+# without consuming it from PASS_ARGS.
 PASS_ARGS=()
+GENS_REQ=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --shield) SHIELD=1; shift ;;
+    --skip-preflight) SKIP_PREFLIGHT=1; shift ;;
+    --check) SKIP_PREFLIGHT=0; CHECK_ONLY=1; shift ;;
+    --gens) GENS_REQ="$2"; PASS_ARGS+=("$1" "$2"); shift 2 ;;
     *) PASS_ARGS+=("$1"); shift ;;
   esac
 done
 set -- "${PASS_ARGS[@]+"${PASS_ARGS[@]}"}"
+GENS_REQ="${GENS_REQ:-sbm,ec-sbm-v1,ec-sbm-v2,abcd,abcd+o,lfr,npso}"
+
+# ---------- Preflight ----------
+preflight_fail() {
+  echo "preflight FAIL: $1" >&2
+  echo "" >&2
+  echo "fix: see tools/benchmark/BENCHMARK.md" >&2
+  exit 3
+}
+
+preflight() {
+  local nw_env nw_npso_env
+  nw_env="$(NW_ENV="${NW_ENV:-}" CONDA_PREFIX="${CONDA_PREFIX:-}" \
+           NW_ENV_NAME="$NW_ENV_NAME" resolve_nw_env)"
+  if [[ -z "$nw_env" ]]; then
+    preflight_fail "could not resolve NW_ENV. set NW_ENV=/path/to/conda/env/bin or activate the '$NW_ENV_NAME' conda env"
+  fi
+  echo "[preflight] NW_ENV=$nw_env"
+  nw_npso_env="${NW_NPSO_ENV:-$nw_env}"
+
+  command -v systemd-run >/dev/null 2>&1 || preflight_fail "systemd-run not on PATH"
+  command -v taskset     >/dev/null 2>&1 || preflight_fail "taskset not on PATH"
+  command -v /usr/bin/time >/dev/null 2>&1 || preflight_fail "/usr/bin/time missing (apt install time)"
+
+  IFS=',' read -ra _GENS_ARR <<< "$GENS_REQ"
+  for g in "${_GENS_ARR[@]}"; do
+    case "$g" in
+      sbm)
+        "$nw_env/python" -c "import graph_tool, numpy, pandas, scipy" 2>/dev/null \
+          || preflight_fail "$g: $nw_env/python missing graph_tool/numpy/pandas/scipy"
+        ;;
+      ec-sbm-v1|ec-sbm-v2)
+        "$nw_env/python" -c "import graph_tool, numpy, pandas, pymincut" 2>/dev/null \
+          || preflight_fail "$g: $nw_env/python missing graph_tool/numpy/pandas/pymincut"
+        ;;
+      abcd|abcd+o)
+        command -v julia >/dev/null 2>&1 \
+          || preflight_fail "$g: julia binary not on PATH"
+        ;;
+      lfr)
+        local lfr_bin="$REPO_ROOT/externals/lfr/unweighted_undirected/benchmark"
+        [[ -x "$lfr_bin" ]] \
+          || preflight_fail "$g: LFR binary not built at $lfr_bin (cd externals/lfr/unweighted_undirected && make)"
+        ;;
+      npso)
+        "$nw_npso_env/python" -c "import networkit" 2>/dev/null \
+          || preflight_fail "$g: $nw_npso_env/python missing networkit"
+        # MATLAB engine OR matlab on PATH for subprocess fallback.
+        if ! "$nw_npso_env/python" -c "import matlab.engine" 2>/dev/null \
+            && ! command -v matlab >/dev/null 2>&1; then
+          preflight_fail "$g: neither matlab.engine in $nw_npso_env nor matlab on PATH"
+        fi
+        ;;
+      *)
+        preflight_fail "unknown gen '$g'"
+        ;;
+    esac
+    echo "[preflight] $g OK"
+  done
+
+  # Input fixture present.
+  [[ -f "$REPO_ROOT/examples/input/empirical_networks/networks/dnc/dnc.csv" ]] \
+    || preflight_fail "input edgelist missing under examples/input/empirical_networks/"
+  [[ -f "$REPO_ROOT/examples/input/reference_clusterings/clusterings/sbm-flat-best+cc/dnc/com.csv" ]] \
+    || preflight_fail "input clustering missing under examples/input/reference_clusterings/"
+
+  # Export resolved NW_ENV / NW_NPSO_ENV so bench_gens.sh inherits them.
+  export NW_ENV="$nw_env"
+  export NW_NPSO_ENV="$nw_npso_env"
+  echo "[preflight] all checks passed"
+}
+
+if [[ "$SKIP_PREFLIGHT" != "1" ]]; then
+  preflight
+fi
+if [[ "${CHECK_ONLY:-0}" == "1" ]]; then
+  exit 0
+fi
 
 HOST_SNAPSHOT="$OUT_DIR/host_snapshot.txt"
 MEM_TIMELINE="$OUT_DIR/memory_timeline.csv"
