@@ -3,6 +3,3 @@ __pycache__
 
 # Runtime artifacts
 complete.log
-
-# Benchmark output (reproducible via tools/benchmark/bench_gens.sh)
-examples/benchmark/
