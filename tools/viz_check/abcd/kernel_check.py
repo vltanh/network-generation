@@ -1,5 +1,21 @@
 """ABCD kernel cross-check.
 
+Two cross-checks per (fixture, seed) cell:
+
+1. **Structural invariants** on the canonical Julia sampler's output
+   (deg-exact, sizes-exact, simple, ξ within tol) — the original
+   contract from ``memory/gen_abcd.md``.
+2. **Faithful-replay byte-equality** between canonical Julia and a
+   Node JS replay:
+     - ``tools/viz_check/abcd/instrumented/instrumented.jl`` ports
+       ``populate_clusters`` + ``config_model`` with logging hooks at
+       every PRNG site, runs both canonical + instrumented in one
+       process, asserts the two agree, and emits the trace.
+     - ``tools/viz_check/abcd/kernel_check.mjs`` consumes the trace
+       and reproduces the canonical edge set deterministically.
+     - The harness asserts canonical edges == JS edges and that the
+       trace cursor was fully consumed.
+
 Drives the Julia ABCD sampler (the same `graph_sampler.jl` that
 `src/abcd/gen.py` invokes) on multiple fixtures and seeds, post-processes
 the result with the same `simplify_edges` + `drop_singleton_clusters`
@@ -40,6 +56,7 @@ from __future__ import annotations
 
 import argparse
 import io
+import json
 import logging
 import random
 import subprocess
@@ -55,6 +72,8 @@ import pandas as pd
 REPO_ROOT = Path(__file__).resolve().parents[3]
 ABCD_DIR = REPO_ROOT / "externals" / "abcd"
 ABCD_SAMPLER = ABCD_DIR / "utils" / "graph_sampler.jl"
+INSTRUMENTED_JL = Path(__file__).with_name("instrumented") / "instrumented.jl"
+JS_REPLAY = Path(__file__).with_name("kernel_check.mjs")
 SRC_DIR = REPO_ROOT / "src"
 sys.path.insert(0, str(SRC_DIR))
 
@@ -337,11 +356,102 @@ def _summarise_stderr(stderr: str) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Faithful-replay cross-check (instrumented Julia + JS replay)
+# ---------------------------------------------------------------------------
+
+
+def _run_instrumented(deg_path: Path, cs_path: Path, xi: float, seed: int,
+                      n_outliers: int) -> dict:
+    """Drive the instrumented Julia. Returns {canonical_edges, instr_edges,
+    match_canonical, trace} or {_error}."""
+    job = {
+        "deg_file": str(deg_path),
+        "cs_file": str(cs_path),
+        "xi": xi,
+        "seed": int(seed),
+        "n_outliers": int(n_outliers),
+    }
+    proc = subprocess.run(
+        ["julia", str(INSTRUMENTED_JL)],
+        input=json.dumps(job), capture_output=True, text=True,
+    )
+    if proc.returncode != 0:
+        return {"_error": (proc.stderr or proc.stdout)[:600]}
+    # Find the JSON line (Julia may emit warnings on stdout/stderr first).
+    payload_line = None
+    for line in proc.stdout.splitlines()[::-1]:
+        if line.startswith("{"):
+            payload_line = line
+            break
+    if payload_line is None:
+        return {"_error": "no JSON line in instrumented stdout"}
+    try:
+        return json.loads(payload_line)
+    except json.JSONDecodeError as exc:
+        return {"_error": f"json decode: {exc}"}
+
+
+def _run_js_replay(w: list[int], s: list[int], xi: float, n_outliers: int,
+                   trace: list) -> dict:
+    payload = {
+        "w": list(map(int, w)),
+        "s": list(map(int, s)),
+        "xi": xi,
+        "n_outliers": int(n_outliers),
+        "trace": trace,
+    }
+    proc = subprocess.run(
+        ["node", str(JS_REPLAY)],
+        input=json.dumps(payload), capture_output=True, text=True,
+    )
+    if proc.returncode != 0:
+        return {"_error": (proc.stderr or proc.stdout)[:600]}
+    try:
+        return json.loads(proc.stdout)
+    except json.JSONDecodeError as exc:
+        return {"_error": f"json decode: {exc}; stdout={proc.stdout[:300]}"}
+
+
+def _replay_check(fx: dict, deg_path: Path, cs_path: Path, xi: float,
+                  seed: int, n_outliers: int) -> dict:
+    """Returns {ok, msg} after instrumented Julia + JS replay."""
+    inst = _run_instrumented(deg_path, cs_path, xi, seed, n_outliers)
+    if "_error" in inst:
+        return {"ok": False, "msg": f"instrumented: {inst['_error']}"}
+    if not inst.get("match_canonical", False):
+        return {"ok": False, "msg": "instrumented edges != canonical edges"}
+    s_with_outliers = list(map(int, fx["cluster_sizes"]))
+    if n_outliers > 0:
+        s_with_outliers = [n_outliers] + s_with_outliers
+    js = _run_js_replay(fx["degree_seq"], s_with_outliers, xi, n_outliers,
+                        inst.get("trace", []))
+    if "_error" in js:
+        return {"ok": False, "msg": f"js: {js['_error']}"}
+    canon_edges = sorted(tuple(e) for e in inst["canonical_edges"])
+    js_edges = sorted(tuple(e) for e in js["edges"])
+    if canon_edges != js_edges:
+        only_c = sorted(set(canon_edges) - set(js_edges))[:3]
+        only_j = sorted(set(js_edges) - set(canon_edges))[:3]
+        return {"ok": False, "msg": (
+            f"edges differ: canon={len(canon_edges)} js={len(js_edges)} "
+            f"only_canon[:3]={only_c} only_js[:3]={only_j}"
+        )}
+    if js["trace_consumed"] != js["trace_length"]:
+        return {"ok": False, "msg": (
+            f"trace not fully consumed: {js['trace_consumed']}/{js['trace_length']}"
+        )}
+    return {"ok": True, "msg": (
+        f"edges={len(canon_edges)} trace={js['trace_consumed']}"
+    )}
+
+
+# ---------------------------------------------------------------------------
 # Per-row driver
 # ---------------------------------------------------------------------------
 
 
-def _run_one(fx: dict, seed: int, base_xi_tol: float, verbose: bool) -> bool:
+def _run_one(fx: dict, seed: int, base_xi_tol: float, verbose: bool,
+             do_replay: bool) -> bool:
     xi_tol = _xi_tol_for(fx, base_xi_tol)
     print(f"\n  fixture={fx['name']:<12s} seed={seed:>3d}  "
           f"N={len(fx['nodes'])} E={len(fx['edges_input'])} "
@@ -355,6 +465,11 @@ def _run_one(fx: dict, seed: int, base_xi_tol: float, verbose: bool) -> bool:
         edge_csv, com_csv = _post_process(edge_tsv, com_tsv, work / "out")
         ok, info = _check_invariants(fx, edge_csv, com_csv, xi_tol=xi_tol)
         flags = _summarise_stderr(stderr)
+        replay = None
+        if do_replay:
+            replay = _replay_check(fx, deg_path, cs_path, xi, seed, n_outliers=0)
+            if not replay["ok"]:
+                ok = False
         status = "PASS" if ok else "FAIL"
         print(f"    {status}: edges={info['edges']:>4d} "
               f"self_loops={info['self_loops']} parallels={info['parallels']}  "
@@ -363,6 +478,8 @@ def _run_one(fx: dict, seed: int, base_xi_tol: float, verbose: bool) -> bool:
               f"xi_measured={info['measured_xi']:.4f} "
               f"xi_delta={info['xi_delta']:.4f} -> xi_ok={info['xi_ok']}  "
               f"sampler_flags={flags}")
+        if replay is not None:
+            print(f"      replay: ok={replay['ok']} ({replay['msg']})")
         if not ok:
             if not info["deg_ok"]:
                 print(f"      degree mismatches: {info['n_deg_mismatches']} node(s); "
@@ -394,6 +511,8 @@ def main() -> None:
                          "fixtures with E>=100 (default: 0.05). E<100 uses 0.15.")
     ap.add_argument("--verbose", action="store_true",
                     help="Print Julia stderr for every row.")
+    ap.add_argument("--no-replay", action="store_true",
+                    help="Skip the faithful-replay byte-equality check (instrumented Julia + JS).")
     args = ap.parse_args()
 
     if not ABCD_SAMPLER.exists():
@@ -423,13 +542,18 @@ def main() -> None:
     for tag, needle in SAMPLER_FLAGS:
         print(f"  {tag:<12s} -> matches '{needle}'")
 
+    do_replay = (not args.no_replay) and INSTRUMENTED_JL.exists() and JS_REPLAY.exists()
+    print()
+    print(f"  replay check: {'ON' if do_replay else 'OFF'}  "
+          f"(instrumented={INSTRUMENTED_JL.name}, js={JS_REPLAY.name})")
+
     overall = True
     n_pass = 0
     n_total = 0
     for fx in fixtures:
         print(f"\n=== fixture: {fx['name']} ===")
         for seed in args.seeds:
-            ok = _run_one(fx, seed, args.xi_tol, args.verbose)
+            ok = _run_one(fx, seed, args.xi_tol, args.verbose, do_replay)
             n_total += 1
             n_pass += int(ok)
             overall = overall and ok
