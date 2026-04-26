@@ -5,6 +5,13 @@ ec-sbm) on a battery of fixtures and outlier-flag combinations, then
 re-derives the expected outputs from the in-Python fixture and compares
 them against the on-disk artifacts the profile stage actually wrote.
 
+A JS port (``tools/viz_check/profile/kernel_check.mjs``) also runs the
+profile pipeline pure-deterministically and the harness diffs its file
+outputs byte-for-byte against the canonical artifacts. The JS port covers
+the gen-agnostic outputs of sbm / abcd / abcd+o / lfr / npso; ec-sbm is
+skipped (pymincut required) and nPSO ``derived.txt`` is skipped
+(powerlaw.Fit + networkit numerics out of scope).
+
 Patterned after ``tools/sbm/kernel_check.py``: every cell is a
 (fixture, gen, outlier_mode, drop_oo) tuple. The harness computes the
 ground-truth side-by-side with the profile invocation and asserts byte
@@ -66,6 +73,7 @@ from __future__ import annotations
 
 import argparse
 import filecmp
+import json
 import os
 import random
 import shutil
@@ -76,6 +84,19 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 import pandas as pd
+
+
+JS_PORT = Path(__file__).with_name("kernel_check.mjs")
+JS_GENS = {"sbm", "abcd", "abcd+o", "lfr", "npso"}
+JS_FILES_PER_GEN = {
+    "sbm": {"node_id.csv", "cluster_id.csv", "assignment.csv",
+            "degree.csv", "edge_counts.csv"},
+    "abcd": {"degree.csv", "cluster_sizes.csv", "mixing_parameter.txt"},
+    "abcd+o": {"degree.csv", "cluster_sizes.csv",
+               "mixing_parameter.txt", "n_outliers.txt"},
+    "lfr": {"degree.csv", "cluster_sizes.csv", "mixing_parameter.txt"},
+    "npso": {"degree.csv", "cluster_sizes.csv"},
+}
 
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -793,6 +814,56 @@ def verify_cell(gen: str, fixture: dict, mode: str, drop_oo: bool,
 
 
 # ---------------------------------------------------------------------------
+# JS port cross-check
+# ---------------------------------------------------------------------------
+
+
+def js_payload(fixture: dict, gen: str, mode: str, drop_oo: bool) -> dict:
+    return {
+        "gen": gen,
+        "edgelist": [[u, v] for u, v in fixture["edges"]],
+        "clustering": [[k, v] for k, v in sorted(fixture["cluster_of"].items())],
+        "outlier_mode": mode,
+        "drop_oo": bool(drop_oo),
+    }
+
+
+def run_js(payload: dict) -> dict:
+    proc = subprocess.run(
+        ["node", str(JS_PORT)],
+        input=json.dumps(payload), capture_output=True, text=True,
+    )
+    if proc.returncode != 0:
+        raise RuntimeError(f"node exit {proc.returncode}: {proc.stderr}")
+    return json.loads(proc.stdout)
+
+
+def js_byte_diff(out_dir: Path, js_out: dict, gen: str) -> list:
+    """Return list of (fname, detail) where JS output != canonical file."""
+    diffs = []
+    files = js_out.get("files") or {}
+    for fname in sorted(JS_FILES_PER_GEN.get(gen, set())):
+        canon_path = out_dir / fname
+        if not canon_path.exists():
+            diffs.append((fname, "canonical missing"))
+            continue
+        canon_bytes = canon_path.read_bytes()
+        js_bytes = files.get(fname, "").encode("utf-8")
+        if canon_bytes != js_bytes:
+            # Pinpoint first byte mismatch for diagnostics.
+            for i in range(min(len(canon_bytes), len(js_bytes))):
+                if canon_bytes[i] != js_bytes[i]:
+                    a = canon_bytes[max(0, i - 8):i + 16]
+                    b = js_bytes[max(0, i - 8):i + 16]
+                    diffs.append((fname, f"byte {i}: canon={a!r} vs js={b!r}"))
+                    break
+            else:
+                diffs.append((fname,
+                              f"length canon={len(canon_bytes)} js={len(js_bytes)}"))
+    return diffs
+
+
+# ---------------------------------------------------------------------------
 # Determinism check
 # ---------------------------------------------------------------------------
 
@@ -838,6 +909,8 @@ def main() -> None:
                     choices=list(OUTLIER_MODES))
     ap.add_argument("--no-determinism", action="store_true",
                     help="Skip the second-run determinism diff.")
+    ap.add_argument("--no-js", action="store_true",
+                    help="Skip the JS-port byte-diff cross-check.")
     ap.add_argument("--pythonhashseed", default="0",
                     help="Value passed to PYTHONHASHSEED in subprocesses. "
                          "Default '0' matches every shipping pipeline.sh. "
@@ -904,6 +977,18 @@ def main() -> None:
                                 print(f"      stderr tail: {err[-400:]}")
                             continue
                         failures = verify_cell(gen, fx, mode, drop_oo, out_a)
+
+                        if not args.no_js and gen in JS_GENS:
+                            try:
+                                jsout = run_js(js_payload(fx, gen, mode, drop_oo))
+                                jsdiffs = js_byte_diff(out_a, jsout, gen)
+                            except Exception as exc:
+                                jsdiffs = [("__node_invocation__", str(exc))]
+                            if jsdiffs:
+                                failures.append((
+                                    "js_byte_diff", False,
+                                    "; ".join(f"{f}: {d}" for f, d in jsdiffs),
+                                ))
 
                         if not args.no_determinism:
                             out_b = fx_dir / gen / f"{mode}_drop{int(drop_oo)}_b"
