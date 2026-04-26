@@ -19,7 +19,7 @@ SEEDS_DEFAULT="1 2 3 4 5 6 7 8 9 10"
 RUNS=10
 WARMUP=2  # warmup runs are executed and recorded, but reported separately
 OUT_BASE="/tmp/bench_gens_out"
-RESULTS_FILE="$REPO_ROOT/examples/benchmark/results.csv"
+PER_GEN_DIR="$REPO_ROOT/examples/benchmark/per_gen"
 INPUT_EDGELIST="examples/input/empirical_networks/networks/dnc/dnc.csv"
 INPUT_CLUSTERING="examples/input/reference_clusterings/clusterings/sbm-flat-best+cc/dnc/com.csv"
 # Env bin dirs prepended to PATH inside the per-gen inner shell. Default to
@@ -67,40 +67,19 @@ while [[ $# -gt 0 ]]; do
     --runs) RUNS="$2"; shift 2 ;;
     --warmup) WARMUP="$2"; shift 2 ;;
     --out-base) OUT_BASE="$2"; shift 2 ;;
-    --results-file) RESULTS_FILE="$2"; shift 2 ;;
+    --per-gen-dir) PER_GEN_DIR="$2"; shift 2 ;;
     *) echo "unknown flag: $1" >&2; exit 2 ;;
   esac
 done
 
-mkdir -p "$OUT_BASE" "$(dirname "$RESULTS_FILE")"
-# Per-gen output isolation: each gen writes to its own results_<gen>.csv
-# under a per_gen/ subdirectory. The merged results.csv is rebuilt from
-# per-gen files after each gen finishes (and at the end). Effects:
+mkdir -p "$OUT_BASE" "$PER_GEN_DIR"
+# Each gen owns its own per_gen/results_<gen>.csv. No merged results.csv
+# is produced; consumers (extract_hash_manifest.py, plot_results.py)
+# read every per_gen/*.csv directly. Effects:
 #   - one gen failing or being killed never touches another gen's data
-#   - resume: rerun --gens <one> just refreshes that one file
-#   - manual edit of per_gen/ is straightforward
+#   - rerun --gens <one> only rewrites that one file
+#   - no aggregation step that could clobber other gens' rows
 RESULTS_HEADER="gen,seed,phase,run,time_s,peak_rss_kb,edge_sha256,com_sha256"
-RESULTS_DIR="$(dirname "$RESULTS_FILE")"
-PER_GEN_DIR="$RESULTS_DIR/per_gen"
-mkdir -p "$PER_GEN_DIR"
-
-merge_results() {
-  local out="$RESULTS_FILE.tmp.$$"
-  local trap_existing
-  trap_existing=$(trap -p EXIT)
-  trap 'rm -f "'"$out"'"' EXIT
-  echo "$RESULTS_HEADER" > "$out"
-  # Stable, alphabetic gen order in the merged file.
-  for f in $(ls -1 "$PER_GEN_DIR" 2>/dev/null | grep '^results_.*\.csv$' | sort); do
-    tail -n +2 "$PER_GEN_DIR/$f" >> "$out"
-  done
-  mv "$out" "$RESULTS_FILE"
-  if [[ -n "$trap_existing" ]]; then
-    eval "$trap_existing"
-  else
-    trap - EXIT
-  fi
-}
 
 # Run all (seed, run) combos for one gen inside a single shell so env init and
 # subprocess warmups are amortized.
@@ -180,29 +159,30 @@ ZSH
 }
 
 summarize() {
-  python3 - "$RESULTS_FILE" <<'PY'
-import csv, sys, math
+  python3 - "$PER_GEN_DIR" <<'PY'
+import csv, sys, math, glob, os
 from collections import defaultdict
 
-fp = sys.argv[1]
+per_gen_dir = sys.argv[1]
 warmup = defaultdict(list)  # (gen, seed) -> [time_s]
 kept = defaultdict(list)
 edge_hashes = defaultdict(set)
 com_hashes = defaultdict(set)
 
-with open(fp) as f:
-    for row in csv.DictReader(f):
-        key = (row["gen"], row["seed"])
-        if row["time_s"] == "FAIL":
-            print(f"FAIL: {key} phase={row['phase']} run={row['run']}")
-            continue
-        t = float(row["time_s"])
-        if row["phase"] == "warmup":
-            warmup[key].append(t)
-        else:
-            kept[key].append(t)
-        edge_hashes[key].add(row["edge_sha256"])
-        com_hashes[key].add(row["com_sha256"])
+for fp in sorted(glob.glob(os.path.join(per_gen_dir, "results_*.csv"))):
+    with open(fp) as f:
+        for row in csv.DictReader(f):
+            key = (row["gen"], row["seed"])
+            if row["time_s"] == "FAIL":
+                print(f"FAIL: {key} phase={row['phase']} run={row['run']}")
+                continue
+            t = float(row["time_s"])
+            if row["phase"] == "warmup":
+                warmup[key].append(t)
+            else:
+                kept[key].append(t)
+            edge_hashes[key].add(row["edge_sha256"])
+            com_hashes[key].add(row["com_sha256"])
 
 def stats(ts):
     if not ts:
@@ -260,15 +240,9 @@ for gen in "${GEN_ARR[@]}"; do
   echo "--- gen=$gen ---"
   echo "$gen" > "$GEN_MARKER" 2>/dev/null || true
   run_gen_block "$gen" || echo "WARN: gen=$gen block exited non-zero; continuing" >&2
-  # Roll the merged results.csv forward after each gen so the file always
-  # reflects the latest persisted state. A kill or crash on the next gen
-  # leaves results.csv pointing at the gens that already finished.
-  merge_results
 done
 # Reset marker so the prologue/epilogue rows in memory_timeline.csv read "_".
 echo "" > "$GEN_MARKER" 2>/dev/null || true
-# Final merge to be safe (no-op if the loop already wrote it).
-merge_results
 
 echo ""
 echo "=== summary (warmup=$WARMUP runs reported separately from kept=$RUNS) ==="

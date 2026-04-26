@@ -1,4 +1,4 @@
-"""Plot benchmark artifacts from results.csv + memory_timeline.csv.
+"""Plot benchmark artifacts from per_gen/results_*.csv + memory_timeline.csv.
 
 Outputs into ``examples/benchmark/plots/``:
 
@@ -26,26 +26,24 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def load_results(path: Path):
-    """Return (kept_times, edge_hashes, any_failure) per (gen, seed).
-
-    kept_times: {(gen, seed): [float, ...]}
-    edge_hashes: {(gen, seed): set[str]}
-    any_failure: {(gen, seed): bool}
+def load_results(per_gen_dir: Path):
+    """Read every per_gen/results_*.csv and return
+    (kept_times, edge_hashes, any_failure) per (gen, seed).
     """
     kept_times: dict = defaultdict(list)
     edge_hashes: dict = defaultdict(set)
     failed: dict = defaultdict(bool)
-    with open(path) as f:
-        for row in csv.DictReader(f):
-            key = (row["gen"], row["seed"])
-            if row["time_s"] == "FAIL":
-                failed[key] = True
-                continue
-            if row["phase"] == "kept":
-                kept_times[key].append(float(row["time_s"]))
-                if row["edge_sha256"]:
-                    edge_hashes[key].add(row["edge_sha256"])
+    for path in sorted(per_gen_dir.glob("results_*.csv")):
+        with open(path) as f:
+            for row in csv.DictReader(f):
+                key = (row["gen"], row["seed"])
+                if row["time_s"] == "FAIL":
+                    failed[key] = True
+                    continue
+                if row["phase"] == "kept":
+                    kept_times[key].append(float(row["time_s"]))
+                    if row["edge_sha256"]:
+                        edge_hashes[key].add(row["edge_sha256"])
     return kept_times, edge_hashes, failed
 
 
@@ -160,18 +158,18 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--bench-dir", type=Path,
                         default=Path(__file__).resolve().parents[2] / "examples" / "benchmark")
-    parser.add_argument("--results", type=Path, default=None)
+    parser.add_argument("--per-gen-dir", type=Path, default=None)
     parser.add_argument("--memory-timeline", type=Path, default=None)
     parser.add_argument("--out", type=Path, default=None)
     args = parser.parse_args()
 
     bench_dir: Path = args.bench_dir
-    results = args.results or (bench_dir / "results.csv")
+    per_gen_dir = args.per_gen_dir or (bench_dir / "per_gen")
     memory_timeline = args.memory_timeline or (bench_dir / "memory_timeline.csv")
     out_dir = args.out or (bench_dir / "plots")
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    kept, hashes, failed = load_results(results)
+    kept, hashes, failed = load_results(per_gen_dir)
     all_keys = set(kept) | set(hashes) | set(failed)
     plot_wallclock(kept, out_dir / "wallclock.png")
     plot_memory_timeline(memory_timeline, out_dir / "memory_timeline.png")

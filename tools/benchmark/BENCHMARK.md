@@ -37,22 +37,20 @@ Defaults: 7 gens (`sbm,ec-sbm-v1,ec-sbm-v2,abcd,abcd+o,lfr,npso`), seeds
 16 GiB memory cap, sample interval 1 s. Wall time on a quiet i9-12900HK:
 ~12-18 minutes.
 
-**Per-gen output isolation.** Each gen writes its own
-`per_gen/results_<gen>.csv` and the merged `results.csv` is rebuilt
-from those files after each gen finishes. Effects:
+**Per-gen output isolation.** Each gen owns its own
+`per_gen/results_<gen>.csv`. There is no merged `results.csv` —
+consumers (`extract_hash_manifest.py`, `plot_results.py`, the bench's
+own summary) read every `per_gen/*.csv` directly. Effects:
 - one gen failing or being killed never touches another gen's data,
-- `--gens npso` only refreshes `results_npso.csv`,
-- the merged file is regenerated after every gen, so the on-disk
-  state always reflects the gens that have actually finished.
-
-`per_gen/` is the source of truth on disk; `results.csv` is the merged
-view. Edit either; the next run will rebuild the merge.
+- `--gens npso` only rewrites `results_npso.csv`,
+- aggregation is opt-in per consumer rather than a write step that
+  could clobber other gens.
 
 Outputs land under `examples/benchmark/`:
 
 | File | What it carries |
 |---|---|
-| `results.csv` | per-run row: `gen,seed,phase,run,time_s,peak_rss_kb,edge_sha256,com_sha256` |
+| `per_gen/results_<gen>.csv` | per-gen run table: `gen,seed,phase,run,time_s,peak_rss_kb,edge_sha256,com_sha256`. One file per generator. |
 | `host_snapshot.txt` | host + toolchain at run start (CPU model, kernel, conda env, gen versions) |
 | `memory_timeline.csv` | per-second cgroup memory.current + peak, tagged with the active gen |
 | `memory_peak.txt` | last-observed cgroup memory.peak (whole run, all gens) |

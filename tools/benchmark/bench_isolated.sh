@@ -27,12 +27,12 @@
 #   NW_ENV=...               forwarded to bench_gens.sh (conda env bin dir).
 #   NW_NPSO_ENV=...          same, for the nPSO gen.
 #
-# Outputs (under examples/benchmark/, alongside results.csv):
+# Outputs (under examples/benchmark/):
 #   host_snapshot.txt        host + toolchain at run start.
 #   memory_timeline.csv      ts_s,rss_bytes,peak_bytes,gen per sample.
 #   memory_peak.txt          last-observed cgroup memory.peak in bytes.
 #   memory_peak_per_gen.csv  gen,peak_rss_bytes per generator block.
-#   results.csv              per-run time + RSS + hashes (produced by bench_gens.sh).
+#   per_gen/results_<gen>.csv  per-gen run table (time, RSS, hashes).
 #   plots/                   rendered plots (wallclock, memory timeline, byte-identity).
 set -euo pipefail
 
@@ -274,7 +274,7 @@ echo "Host snapshot:        $HOST_SNAPSHOT"
 echo "Memory timeline:      $MEM_TIMELINE"
 echo "Memory peak (bytes):  $(cat "$MEM_PEAK" 2>/dev/null)"
 echo "Memory per-gen peak:  $MEM_PER_GEN"
-echo "Results:              $OUT_DIR/results.csv"
+echo "Per-gen results:      $OUT_DIR/per_gen/results_*.csv"
 
 # Render plots (wallclock / memory timeline / byte-identity).
 if command -v python >/dev/null 2>&1; then
