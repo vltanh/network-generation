@@ -48,12 +48,15 @@ import numpy as np
 import pandas as pd
 
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
+REPO_ROOT = Path(__file__).resolve().parents[3]
 SRC_DIR = REPO_ROOT / "src"
 NPSO_DIR = REPO_ROOT / "externals" / "npso"
+INSTRUMENTED_DIR = Path(__file__).with_name("instrumented")
 
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
+if str(INSTRUMENTED_DIR) not in sys.path:
+    sys.path.insert(0, str(INSTRUMENTED_DIR))
 
 
 def small20_fixture() -> dict:
@@ -392,10 +395,79 @@ def matlab_subprocess_available() -> bool:
     return shutil.which("matlab") is not None
 
 
+# ---------------------------------------------------------------------------
+# Faithful MATLAB-replay cross-check.
+# ---------------------------------------------------------------------------
+
+
+def _matlab_replay_cell(eng, fx: dict, seed: int, T: float) -> dict:
+    """Drive instrumented_npso(...) for one (fixture, seed, T), then JS
+    replay; return {ok, msg}."""
+    import runner  # noqa: PLC0415  -- under tools/viz_check/npso/instrumented
+
+    job = {
+        "N": fx["N"],
+        "m": fx["m"],
+        "T": float(T),
+        "gamma": fx["gamma"],
+        "C": fx["c"],
+        "model": "nPSO2",
+        "weights": list(map(float, fx["mixing_proportions"])),
+        "seed": int(seed),
+        "npso_dir": str(NPSO_DIR),
+    }
+    try:
+        out = runner.run_one(eng, job)
+    except Exception as exc:  # MATLAB errors come through as Python exceptions
+        return {"ok": False, "msg": f"matlab: {type(exc).__name__}: {exc}"}
+    if not out.get("match", False):
+        return {"ok": False, "msg": "instrumented edges/comm != canonical"}
+
+    js_payload = {
+        "mode": "matlab_replay",
+        "N": int(out["N"]),
+        "m": int(out["m"]),
+        "T": float(out["T"]),
+        "gamma": float(out["gamma"]),
+        "C": int(out["C"]),
+        "mu": list(map(float, out["mu"])),
+        "trace": out["trace"],
+    }
+    js_mjs = Path(__file__).with_name("kernel_check.mjs")
+    proc = subprocess.run(
+        ["node", str(js_mjs)],
+        input=json.dumps(js_payload), capture_output=True, text=True,
+    )
+    if proc.returncode != 0:
+        return {"ok": False, "msg": f"js: {(proc.stderr or proc.stdout)[:300]}"}
+    try:
+        js = json.loads(proc.stdout)
+    except json.JSONDecodeError as exc:
+        return {"ok": False, "msg": f"js json decode: {exc}"}
+
+    canon_edges = sorted(tuple(map(int, e)) for e in out["canonical_edges"])
+    js_edges = sorted(tuple(map(int, e)) for e in js["edges"])
+    if canon_edges != js_edges:
+        return {"ok": False, "msg": (
+            f"edges differ: canon={len(canon_edges)} js={len(js_edges)}"
+        )}
+    canon_comm = list(map(int, out["canonical_comm"]))
+    js_comm = list(map(int, js["comm"]))
+    if canon_comm != js_comm:
+        return {"ok": False, "msg": "comm differ"}
+    if js["picks_consumed"] != js["picks_total"]:
+        return {"ok": False, "msg": (
+            f"trace not fully consumed: {js['picks_consumed']}/{js['picks_total']}"
+        )}
+    return {"ok": True, "msg": (
+        f"edges={len(canon_edges)} picks={js['picks_consumed']}"
+    )}
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--seeds", type=int, nargs="*", default=[1, 2, 3, 4, 5])
-    ap.add_argument("--js-mjs", default=str(Path(__file__).with_name("npso_kernel_check.mjs")))
+    ap.add_argument("--js-mjs", default=str(Path(__file__).with_name("kernel_check.mjs")))
     ap.add_argument("--max-iters", type=int, default=30,
                     help="Max secant/midpoint iters per nPSO run (small20 normally"
                          " converges in ~5-15).")
@@ -585,6 +657,37 @@ def main():
                     f"           cluster_count: expected c={cc_check['expected']} "
                     f"actual_unique={cc_check['actual']} {tag}"
                 )
+
+    # ── Faithful MATLAB-replay cross-check ──
+    # Drives the instrumented MATLAB nPSO_model port, then JS replay.
+    # Asserts canonical edges + comm == JS replay output. Picks T from
+    # the actual generator's converged best_T when available, else 0.3.
+    if matlab_engine_available():
+        print(f"\n{bar}")
+        print("Faithful MATLAB-replay byte-equality")
+        print(bar)
+        import matlab.engine  # noqa: PLC0415
+        eng = matlab.engine.start_matlab(
+            "-singleCompThread -nodisplay -nosplash -nodesktop"
+        )
+        try:
+            for fx in fixtures:
+                print(
+                    f"\n--- fixture {fx['name']}: N={fx['N']} m={fx['m']} "
+                    f"gamma={fx['gamma']:.3f} c={fx['c']} ---"
+                )
+                T_use = 0.3
+                for seed in args.seeds:
+                    res = _matlab_replay_cell(eng, fx, seed, T_use)
+                    overall_ok = overall_ok and res["ok"]
+                    tag = "OK" if res["ok"] else "FAIL"
+                    print(f"  seed={seed} T={T_use}: {tag}  ({res['msg']})")
+        finally:
+            eng.exit()
+    else:
+        print(f"\n{bar}")
+        print("Faithful MATLAB-replay skipped: matlab.engine not available.")
+        print(bar)
 
     print(f"\n{bar}")
     print("OVERALL: " + ("PASS" if overall_ok else "FAIL"))
