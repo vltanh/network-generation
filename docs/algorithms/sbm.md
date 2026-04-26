@@ -170,7 +170,7 @@ disables reproducibility. The default everywhere in this repo is `--seed 1`.
 
 ## Cost
 
-Measured via [`benchmark/bench_isolated.sh`](../../benchmark/bench_isolated.sh)
+Measured via [`tools/benchmark/bench_isolated.sh`](../../tools/benchmark/bench_isolated.sh)
 on an isolated cgroup (4 cores, 16 GiB cap), 10 seeds x 10 kept runs per seed:
 
 - kept mean: 1.65 s

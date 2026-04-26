@@ -8,7 +8,7 @@ Also emits summary stats (mean / std / min / max) per (gen, seed) and
 per gen (aggregated over seeds) for time and peak RSS.
 
 Usage:
-  python benchmark/extract_hash_manifest.py \
+  python tools/benchmark/extract_hash_manifest.py \
       --results benchmark/results.csv \
       --out-manifest benchmark/hash_manifest.csv \
       --out-summary benchmark/summary.csv

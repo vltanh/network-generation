@@ -6,8 +6,8 @@
 # (MATLAB engine, graph-tool import, etc.) get amortized across runs.
 #
 # Usage:
-#   benchmark/bench_gens.sh
-#   benchmark/bench_gens.sh --gens sbm,lfr --seeds "1 42" --runs 5 --warmup 1
+#   tools/benchmark/bench_gens.sh
+#   tools/benchmark/bench_gens.sh --gens sbm,lfr --seeds "1 42" --runs 5 --warmup 1
 
 set -euo pipefail
 
