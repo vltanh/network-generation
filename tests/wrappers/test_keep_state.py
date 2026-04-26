@@ -80,13 +80,16 @@ def _invoke_wrapper(repo: Path, gen: str, extra: list[str] | None = None) -> sub
         "--input-clustering", str(repo / "com.csv"),
         "--output-dir", str(out_dir),
     ]
-    # Wrapper-required external-dir flags.
+    # Wrapper-required external-dir flags. Wrappers use the short
+    # pipeline-layer names: --package-dir for abcd/abcd+o/npso, --binary
+    # for lfr. The dispatcher-level --abcd-dir / --lfr-binary / --npso-dir
+    # flags are translated into these by configs/*.sh.
     if gen in ("abcd", "abcd+o"):
-        cmd.extend(["--abcd-dir", str(repo / "ext" / "abcd")])
+        cmd.extend(["--package-dir", str(repo / "ext" / "abcd")])
     elif gen == "lfr":
-        cmd.extend(["--lfr-binary", str(repo / "ext" / "lfr" / "benchmark")])
+        cmd.extend(["--binary", str(repo / "ext" / "lfr" / "benchmark")])
     elif gen == "npso":
-        cmd.extend(["--npso-dir", str(repo / "ext" / "npso")])
+        cmd.extend(["--package-dir", str(repo / "ext" / "npso")])
 
     if extra:
         cmd.extend(extra)
