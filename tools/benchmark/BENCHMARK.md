@@ -37,10 +37,16 @@ Defaults: 7 gens (`sbm,ec-sbm-v1,ec-sbm-v2,abcd,abcd+o,lfr,npso`), seeds
 16 GiB memory cap, sample interval 1 s. Wall time on a quiet i9-12900HK:
 ~12-18 minutes.
 
-`results.csv` is written via temp-file + atomic rename and only the
-requested gens' rows are replaced; a partial `--gens npso` run preserves
-the other gens' previous numbers. A Ctrl-C / kill mid-bench leaves the
-prior file intact.
+**Per-gen output isolation.** Each gen writes its own
+`per_gen/results_<gen>.csv` and the merged `results.csv` is rebuilt
+from those files after each gen finishes. Effects:
+- one gen failing or being killed never touches another gen's data,
+- `--gens npso` only refreshes `results_npso.csv`,
+- the merged file is regenerated after every gen, so the on-disk
+  state always reflects the gens that have actually finished.
+
+`per_gen/` is the source of truth on disk; `results.csv` is the merged
+view. Edit either; the next run will rebuild the merge.
 
 Outputs land under `examples/benchmark/`:
 
