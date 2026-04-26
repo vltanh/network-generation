@@ -1,4 +1,4 @@
-"""Post-process bench_gens.sh's results.csv into a compact hash manifest.
+"""Post-process per_gen/results_*.csv into a compact hash manifest.
 
 For each (gen, seed) we record the edge.csv + com.csv sha256 seen across
 all kept runs. Byte-identity is asserted: if any kept run differs from
@@ -9,21 +9,23 @@ per gen (aggregated over seeds) for time and peak RSS.
 
 Usage:
   python tools/benchmark/extract_hash_manifest.py \
-      --results benchmark/results.csv \
-      --out-manifest benchmark/hash_manifest.csv \
-      --out-summary benchmark/summary.csv
+      --per-gen-dir examples/benchmark/per_gen \
+      --out-manifest examples/benchmark/hash_manifest.csv \
+      --out-summary examples/benchmark/summary.csv
 """
 from __future__ import annotations
 
 import argparse
 import csv
+import glob
 import math
+import os
 from collections import defaultdict
 
 
 def parse_args():
     p = argparse.ArgumentParser()
-    p.add_argument("--results", required=True)
+    p.add_argument("--per-gen-dir", required=True)
     p.add_argument("--out-manifest", required=True)
     p.add_argument("--out-summary", required=True)
     return p.parse_args()
@@ -49,23 +51,24 @@ def main():
     com_hashes = defaultdict(set)
     fail_rows = []
 
-    with open(args.results) as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            key = (row["gen"], row["seed"])
-            if row.get("time_s") == "FAIL":
-                fail_rows.append(row)
-                continue
-            if row["phase"] != "kept":
-                continue
-            times[key].append(float(row["time_s"]))
-            if row.get("peak_rss_kb"):
-                try:
-                    rss[key].append(int(row["peak_rss_kb"]))
-                except ValueError:
-                    pass
-            edge_hashes[key].add(row.get("edge_sha256", ""))
-            com_hashes[key].add(row.get("com_sha256", ""))
+    for path in sorted(glob.glob(os.path.join(args.per_gen_dir, "results_*.csv"))):
+        with open(path) as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                key = (row["gen"], row["seed"])
+                if row.get("time_s") == "FAIL":
+                    fail_rows.append(row)
+                    continue
+                if row["phase"] != "kept":
+                    continue
+                times[key].append(float(row["time_s"]))
+                if row.get("peak_rss_kb"):
+                    try:
+                        rss[key].append(int(row["peak_rss_kb"]))
+                    except ValueError:
+                        pass
+                edge_hashes[key].add(row.get("edge_sha256", ""))
+                com_hashes[key].add(row.get("com_sha256", ""))
 
     # Manifest: one row per (gen, seed) with the canonical hashes.
     with open(args.out_manifest, "w", newline="") as f:
@@ -128,7 +131,7 @@ def main():
     print(f"Wrote {args.out_manifest} ({sum(1 for _ in open(args.out_manifest)) - 1} rows)")
     print(f"Wrote {args.out_summary}")
     if fail_rows:
-        print(f"WARN: {len(fail_rows)} FAILed runs (see results.csv).")
+        print(f"WARN: {len(fail_rows)} FAILed runs (see per_gen/results_*.csv).")
 
 
 if __name__ == "__main__":
