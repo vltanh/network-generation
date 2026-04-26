@@ -73,23 +73,34 @@ while [[ $# -gt 0 ]]; do
 done
 
 mkdir -p "$OUT_BASE" "$(dirname "$RESULTS_FILE")"
-# Preserve rows for gens not in this run. Atomic via temp + rename so a
-# Ctrl-C / kill mid-bench leaves the previous results.csv intact.
+# Per-gen output isolation: each gen writes to its own results_<gen>.csv
+# under a per_gen/ subdirectory. The merged results.csv is rebuilt from
+# per-gen files after each gen finishes (and at the end). Effects:
+#   - one gen failing or being killed never touches another gen's data
+#   - resume: rerun --gens <one> just refreshes that one file
+#   - manual edit of per_gen/ is straightforward
 RESULTS_HEADER="gen,seed,phase,run,time_s,peak_rss_kb,edge_sha256,com_sha256"
-RESULTS_TMP="$RESULTS_FILE.tmp.$$"
-trap 'rm -f "$RESULTS_TMP"' EXIT
-if [[ -f "$RESULTS_FILE" ]]; then
-  # Drop only the rows whose gen is requested for this run; keep the rest.
-  awk -F, -v gens="$GENS" '
-    BEGIN { n = split(gens, a, ","); for (i=1; i<=n; i++) keep[a[i]] = 1 }
-    NR == 1 { print; next }
-    !($1 in keep) { print }
-  ' "$RESULTS_FILE" > "$RESULTS_TMP"
-else
-  echo "$RESULTS_HEADER" > "$RESULTS_TMP"
-fi
-mv "$RESULTS_TMP" "$RESULTS_FILE"
-trap - EXIT
+RESULTS_DIR="$(dirname "$RESULTS_FILE")"
+PER_GEN_DIR="$RESULTS_DIR/per_gen"
+mkdir -p "$PER_GEN_DIR"
+
+merge_results() {
+  local out="$RESULTS_FILE.tmp.$$"
+  local trap_existing
+  trap_existing=$(trap -p EXIT)
+  trap 'rm -f "'"$out"'"' EXIT
+  echo "$RESULTS_HEADER" > "$out"
+  # Stable, alphabetic gen order in the merged file.
+  for f in $(ls -1 "$PER_GEN_DIR" 2>/dev/null | grep '^results_.*\.csv$' | sort); do
+    tail -n +2 "$PER_GEN_DIR/$f" >> "$out"
+  done
+  mv "$out" "$RESULTS_FILE"
+  if [[ -n "$trap_existing" ]]; then
+    eval "$trap_existing"
+  else
+    trap - EXIT
+  fi
+}
 
 # Run all (seed, run) combos for one gen inside a single shell so env init and
 # subprocess warmups are amortized.
@@ -104,6 +115,11 @@ run_gen_block() {
     matlab_setup='command -v module >/dev/null 2>&1 && module load matlab/R2024a >/dev/null 2>&1; unset LD_PRELOAD; unset LD_LIBRARY_PATH'
   fi
 
+  # Per-gen results file: own header, own rows. Merged into results.csv
+  # at the end of the gen block + at the end of the whole run.
+  local gen_csv="$PER_GEN_DIR/results_$gen.csv"
+  echo "$RESULTS_HEADER" > "$gen_csv"
+
   zsh -l <<ZSH
 set -u
 cd "$REPO_ROOT"
@@ -112,6 +128,7 @@ export PATH="$env_path:\$PATH"
 export OMP_NUM_THREADS=1
 export PYTHONHASHSEED=0
 
+GEN_CSV="$gen_csv"
 TOTAL=\$(( $WARMUP + $RUNS ))
 for seed in $SEEDS; do
   for r in \$(seq 1 \$TOTAL); do
@@ -147,14 +164,14 @@ for seed in $SEEDS; do
     edge="\$out_dir/networks/$gen/sbm-flat-best+cc/dnc/0/edge.csv"
     com="\$out_dir/networks/$gen/sbm-flat-best+cc/dnc/0/com.csv"
     if [[ \$rc -ne 0 || ! -f "\$edge" ]]; then
-      echo "$gen,\$seed,\$phase,\$r,FAIL,\$peak_rss_kb,," >> "$RESULTS_FILE"
+      echo "$gen,\$seed,\$phase,\$r,FAIL,\$peak_rss_kb,," >> "\$GEN_CSV"
       echo "FAIL: gen=$gen seed=\$seed phase=\$phase run=\$r rc=\$rc" >&2
       tail -20 /tmp/bench_last.log >&2
       continue
     fi
     edge_h=\$(sha256sum "\$edge" | awk '{print \$1}')
     com_h=\$(sha256sum "\$com" | awk '{print \$1}')
-    echo "$gen,\$seed,\$phase,\$r,\$elapsed,\$peak_rss_kb,\$edge_h,\$com_h" >> "$RESULTS_FILE"
+    echo "$gen,\$seed,\$phase,\$r,\$elapsed,\$peak_rss_kb,\$edge_h,\$com_h" >> "\$GEN_CSV"
     printf "%s\tseed=%s\t%s\trun=%d\ttime=%s\trss=%sK\tedge=%s\tcom=%s\n" \
       "$gen" "\$seed" "\$phase" "\$r" "\$elapsed" "\$peak_rss_kb" "\${edge_h:0:12}" "\${com_h:0:12}"
   done
@@ -242,10 +259,16 @@ GEN_MARKER="${NW_BENCH_GEN_MARKER:-/dev/null}"
 for gen in "${GEN_ARR[@]}"; do
   echo "--- gen=$gen ---"
   echo "$gen" > "$GEN_MARKER" 2>/dev/null || true
-  run_gen_block "$gen"
+  run_gen_block "$gen" || echo "WARN: gen=$gen block exited non-zero; continuing" >&2
+  # Roll the merged results.csv forward after each gen so the file always
+  # reflects the latest persisted state. A kill or crash on the next gen
+  # leaves results.csv pointing at the gens that already finished.
+  merge_results
 done
 # Reset marker so the prologue/epilogue rows in memory_timeline.csv read "_".
 echo "" > "$GEN_MARKER" 2>/dev/null || true
+# Final merge to be safe (no-op if the loop already wrote it).
+merge_results
 
 echo ""
 echo "=== summary (warmup=$WARMUP runs reported separately from kept=$RUNS) ==="
