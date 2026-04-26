@@ -51,6 +51,7 @@ from the on-disk artifacts.
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import shutil
 import subprocess
@@ -67,6 +68,8 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 PIPELINE = REPO_ROOT / "src" / "ec-sbm" / "pipeline.sh"
 EC_SBM_PACKAGE = REPO_ROOT / "externals" / "ec-sbm"
 EC_SBM_PY = EC_SBM_PACKAGE / "src"
+INSTRUMENTED = Path(__file__).resolve().parent / "instrumented" / "runner.py"
+JS_REPLAY = Path(__file__).resolve().parent / "kernel_check.mjs"
 
 
 # ---------------------------------------------------------------------------
@@ -517,6 +520,108 @@ def check_v2_rewire_block_preserving(state_dir: Path, fx: dict,
 # Per-fixture-per-seed runner
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# Faithful-replay byte-equality cross-check (gen_kec_core / stage 2)
+# ---------------------------------------------------------------------------
+
+def run_canonical_instrumented(profile_dir: Path, seed: int) -> dict:
+    """Drive the instrumented gen_kec_core runner; return {edges, trace, deg_final}.
+
+    PYTHONHASHSEED=0 must mirror pipeline.sh; canonical relies on
+    set-iteration order which is hash-seed dependent.
+    """
+    job = {"profile_dir": str(profile_dir), "seed": int(seed)}
+    env = os.environ.copy()
+    env["PYTHONHASHSEED"] = "0"
+    env["PYTHONPATH"] = (
+        f"{EC_SBM_PY}{os.pathsep}{REPO_ROOT/'src'}"
+        + (os.pathsep + env["PYTHONPATH"] if env.get("PYTHONPATH") else "")
+    )
+    proc = subprocess.run(
+        ["python", str(INSTRUMENTED)],
+        input=json.dumps(job), capture_output=True, text=True, env=env,
+    )
+    if proc.returncode != 0:
+        return {"_error": (proc.stderr or proc.stdout)[-800:].strip()}
+    return json.loads(proc.stdout)
+
+
+def run_js_replay(profile_dir: Path, seed: int, trace: list) -> dict:
+    job = {
+        "mode": "replay",
+        "profile_dir": str(profile_dir),
+        "seed": int(seed),
+        "trace": trace,
+    }
+    proc = subprocess.run(
+        ["node", str(JS_REPLAY)],
+        input=json.dumps(job), capture_output=True, text=True,
+    )
+    if proc.returncode != 0:
+        return {"_error": (proc.stderr or proc.stdout)[-800:].strip()}
+    return json.loads(proc.stdout)
+
+
+def kec_replay_check(state_dir: Path, seed: int) -> tuple[bool, str]:
+    """Stage-2 byte-equality: instrumented canonical → JS replay; assert
+    edge sets + final deg vector match.
+
+    Bar applies only to v2 (--no-sbm-overlay). v1 layers a gt.generate_sbm
+    sample on top of cores; that draw is out of scope for this stage's
+    JS replay (same caveat as the sbm port — bar is js-replay-vs-cpp,
+    not js-replay-vs-gt).
+    """
+    profile_dir = state_dir / "profile"
+    canonical_edges_csv = state_dir / "gen_clustered" / "edge.csv"
+    if not profile_dir.exists() or not canonical_edges_csv.exists():
+        return False, "profile or gen_clustered artifacts missing"
+
+    canonical = run_canonical_instrumented(profile_dir, seed)
+    if "_error" in canonical:
+        return False, f"instrumented runner: {canonical['_error']}"
+
+    # Cross-check: instrumented output must match the actual stage-2 edges
+    # written by canonical pipeline.sh. This pins the instrumented runner
+    # as a faithful re-execution rather than a sibling implementation.
+    nodes_df = pd.read_csv(profile_dir / "node_id.csv", header=None, dtype=str)
+    id_to_iid = {nid: i for i, nid in enumerate(nodes_df[0].tolist())}
+    canonical_edges_df = pd.read_csv(canonical_edges_csv, dtype=str)
+    canon_pipeline_edges = sorted(
+        tuple(sorted((id_to_iid[u], id_to_iid[v])))
+        for u, v in zip(canonical_edges_df["source"], canonical_edges_df["target"])
+    )
+    instr_edges = sorted(tuple(e) for e in canonical["edges"])
+    if canon_pipeline_edges != instr_edges:
+        return False, (
+            f"instrumented diverges from pipeline stage-2: "
+            f"pipeline={len(canon_pipeline_edges)} instr={len(instr_edges)}"
+        )
+
+    js = run_js_replay(profile_dir, seed, canonical.get("trace", []))
+    if "_error" in js:
+        return False, f"js replay: {js['_error']}"
+
+    canon_edges = sorted(tuple(e) for e in canonical["edges"])
+    js_edges = sorted(tuple(e) for e in js["edges"])
+    if canon_edges != js_edges:
+        only_canon = sorted(set(canon_edges) - set(js_edges))[:3]
+        only_js = sorted(set(js_edges) - set(canon_edges))[:3]
+        return False, (
+            f"edge-set differs canon={len(canon_edges)} js={len(js_edges)} "
+            f"only_canon[:3]={only_canon} only_js[:3]={only_js}"
+        )
+    if canonical["deg_final"] != js["deg_final"]:
+        diffs = [
+            (i, a, b) for i, (a, b)
+            in enumerate(zip(canonical["deg_final"], js["deg_final"]))
+            if a != b
+        ][:3]
+        return False, f"deg_final diverges first3={diffs}"
+    return True, (
+        f"edges={len(canon_edges)} trace_len={len(canonical['trace'])}"
+    )
+
+
 def run_one(version: str, fx: dict, seed: int, work_root: Path,
             verbose: bool, keep_tmp: bool = False) -> dict:
     """Run pipeline.sh for one (version, fixture, seed). Returns a dict with
@@ -621,6 +726,14 @@ def run_one(version: str, fx: dict, seed: int, work_root: Path,
             res["v2_rewire_ok"] = False
             res["v2_rewire_diag"] = f"check raised {type(exc).__name__}: {exc}"
 
+        try:
+            kec_ok, kec_msg = kec_replay_check(state_dir, seed)
+            res["kec_replay_ok"] = kec_ok
+            res["kec_replay_diag"] = kec_msg
+        except Exception as exc:
+            res["kec_replay_ok"] = False
+            res["kec_replay_diag"] = f"check raised {type(exc).__name__}: {exc}"
+
     if verbose:
         print(f"\n   [{res['name']}] proc returncode={proc.returncode}")
         print(f"     edges_out={res['n_edges_out']} nodes_out={res['n_nodes_out']}")
@@ -698,12 +811,16 @@ def main():
                         print(fmt_check("v2 rewire block-preserving",
                                         res["v2_rewire_ok"],
                                         res["v2_rewire_diag"]))
+                        print(fmt_check("kec js-replay byte-eq",
+                                        res["kec_replay_ok"],
+                                        res["kec_replay_diag"]))
 
                     seed_ok = (
                         res["simple_ok"] and res["cluster_ok"]
                         and res["kconnect_ok"] and res["kclique_ok"]
                         and (res.get("v1_match_deficit_ok", True))
                         and (res.get("v2_rewire_ok", True))
+                        and (res.get("kec_replay_ok", True))
                     )
                     overall = overall and seed_ok
 
@@ -716,6 +833,7 @@ def main():
         and r.get("kconnect_ok") and r.get("kclique_ok")
         and r.get("v1_match_deficit_ok", True)
         and r.get("v2_rewire_ok", True)
+        and r.get("kec_replay_ok", True)
     )
     print(f"runs: {n_runs}, pipeline-ok: {n_pipeline_ok}, all-checks-ok: {n_all_ok}")
     print("OVERALL: " + ("PASS" if overall else "FAIL"))
