@@ -11,7 +11,7 @@
 
 set -euo pipefail
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$REPO_ROOT"
 
 GENS_DEFAULT="sbm,ec-sbm-v1,ec-sbm-v2,abcd,abcd+o,lfr,npso"
@@ -191,10 +191,17 @@ PY
 
 echo "=== benchmark: gens=[$GENS] seeds=[$SEEDS] runs=$RUNS warmup=$WARMUP ==="
 IFS=',' read -ra GEN_ARR <<< "$GENS"
+# bench_isolated.sh sets NW_BENCH_GEN_MARKER so the cgroup sampler can tag
+# each timeline row with the active gen. Direct invocations of bench_gens.sh
+# get a stub marker that does nothing useful.
+GEN_MARKER="${NW_BENCH_GEN_MARKER:-/dev/null}"
 for gen in "${GEN_ARR[@]}"; do
   echo "--- gen=$gen ---"
+  echo "$gen" > "$GEN_MARKER" 2>/dev/null || true
   run_gen_block "$gen"
 done
+# Reset marker so the prologue/epilogue rows in memory_timeline.csv read "_".
+echo "" > "$GEN_MARKER" 2>/dev/null || true
 
 echo ""
 echo "=== summary (warmup=$WARMUP runs reported separately from kept=$RUNS) ==="

@@ -77,9 +77,11 @@ def plot_wallclock(kept_times, out_path: Path):
 
 
 def plot_memory_timeline(mem_path: Path, out_path: Path):
+    """Plot the cgroup memory timeline. If the timeline carries a `gen`
+    column, colour-code each segment by gen and add a per-gen legend."""
     if not mem_path.is_file():
         return
-    ts, rss, peak = [], [], []
+    ts, rss, peak, gens = [], [], [], []
     with open(mem_path) as f:
         reader = csv.DictReader(f)
         for row in reader:
@@ -87,6 +89,7 @@ def plot_memory_timeline(mem_path: Path, out_path: Path):
                 ts.append(float(row["ts_s"]))
                 rss.append(int(row["rss_bytes"]))
                 peak.append(int(row["peak_bytes"]))
+                gens.append(row.get("gen", "_") or "_")
             except (KeyError, ValueError):
                 continue
     if not ts:
@@ -96,13 +99,24 @@ def plot_memory_timeline(mem_path: Path, out_path: Path):
     rss_mb = np.array(rss) / (1024 ** 2)
     peak_mb = np.array(peak) / (1024 ** 2)
 
-    fig, ax = plt.subplots(figsize=(7.2, 3.2))
-    ax.plot(ts_arr, rss_mb, label="memory.current", color="#4c72b0", linewidth=1.2)
-    ax.plot(ts_arr, peak_mb, label="memory.peak", color="#dd8452", linewidth=1.0, linestyle="--")
+    fig, ax = plt.subplots(figsize=(7.6, 3.4))
+    unique_gens = [g for g in dict.fromkeys(gens) if g not in ("", "_")]
+    if unique_gens:
+        palette = plt.colormaps.get_cmap("tab10")
+        ax.plot(ts_arr, rss_mb, color="#bbbbbb", linewidth=0.8, alpha=0.8)
+        for i, g in enumerate(unique_gens):
+            mask = np.array([gg == g for gg in gens])
+            if mask.any():
+                ax.plot(ts_arr[mask], rss_mb[mask], color=palette(i % 10),
+                        linewidth=1.6, label=g)
+        ax.legend(frameon=False, loc="upper left", ncol=2, fontsize=8)
+    else:
+        ax.plot(ts_arr, rss_mb, label="memory.current", color="#4c72b0", linewidth=1.2)
+        ax.plot(ts_arr, peak_mb, label="memory.peak", color="#dd8452", linewidth=1.0, linestyle="--")
+        ax.legend(frameon=False, loc="upper left")
     ax.set_xlabel("elapsed (s)")
     ax.set_ylabel("RSS (MiB)")
-    ax.set_title("cgroup memory over run")
-    ax.legend(frameon=False, loc="upper left")
+    ax.set_title("cgroup memory over run, segmented by gen")
     ax.spines[["top", "right"]].set_visible(False)
     fig.tight_layout()
     fig.savefig(out_path, dpi=150)
