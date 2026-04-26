@@ -1,25 +1,25 @@
-2026-04-25 21:16:51,517 - INFO - --- Starting Degree Matching (HYBRID mode) ---
-2026-04-25 21:16:51,531 - INFO - Loaded reference topologies elapsed: 0.0139 seconds
-2026-04-25 21:16:51,539 - INFO - Subtracted existing edges elapsed: 0.0082 seconds
-2026-04-25 21:16:51,539 - INFO - Starting Hybrid (Rewire -> True Greedy) matching algorithm...
-2026-04-25 21:16:51,539 - INFO - Starting Rewire (Configuration Model) matching algorithm...
-2026-04-25 21:16:51,539 - INFO - Total missing stubs to pair: 1740 (Target edges: 870)
-2026-04-25 21:16:51,540 - INFO - Initial pairing complete -> Valid edges: 393 | Bad edges to rewire: 477
-2026-04-25 21:16:51,547 - INFO - After attempt 1: 118 bad edges remain.
-2026-04-25 21:16:51,548 - INFO - After attempt 2: 116 bad edges remain.
-2026-04-25 21:16:51,548 - INFO - After attempt 3: 116 bad edges remain.
-2026-04-25 21:16:51,548 - INFO - After attempt 4: 116 bad edges remain.
-2026-04-25 21:16:51,548 - INFO - After attempt 5: 114 bad edges remain.
-2026-04-25 21:16:51,548 - INFO - After attempt 6: 110 bad edges remain.
-2026-04-25 21:16:51,548 - INFO - After attempt 7: 110 bad edges remain.
-2026-04-25 21:16:51,549 - INFO - After attempt 8: 109 bad edges remain.
-2026-04-25 21:16:51,549 - INFO - After attempt 9: 107 bad edges remain.
-2026-04-25 21:16:51,549 - INFO - After attempt 10: 107 bad edges remain.
-2026-04-25 21:16:51,549 - WARNING - Finished 10 retries. 107 bad edges remain unresolved.
-2026-04-25 21:16:51,549 - INFO - Hybrid transition: Passing 107 gridlocked edges (214 stubs) to True Greedy deterministic fallback.
-2026-04-25 21:16:51,549 - INFO - Starting True Dynamic Greedy matching algorithm...
-2026-04-25 21:16:51,549 - INFO - Initial missing stubs: 214 (Target edges: 107)
-2026-04-25 21:16:51,549 - WARNING - Finished with 26 gridlocked nodes.
-2026-04-25 21:16:51,549 - INFO - Added 781 edges
-2026-04-25 21:16:51,549 - INFO - Degree matching elapsed: 0.0104 seconds
-2026-04-25 21:16:51,551 - INFO - Exported edgelist elapsed: 0.0015 seconds
+2026-04-26 14:58:28,032 - INFO - --- Starting Degree Matching (HYBRID mode) ---
+2026-04-26 14:58:28,047 - INFO - Loaded reference topologies elapsed: 0.0153 seconds
+2026-04-26 14:58:28,057 - INFO - Subtracted existing edges elapsed: 0.0092 seconds
+2026-04-26 14:58:28,057 - INFO - Starting Hybrid (Rewire -> True Greedy) matching algorithm...
+2026-04-26 14:58:28,057 - INFO - Starting Rewire (Configuration Model) matching algorithm...
+2026-04-26 14:58:28,057 - INFO - Total missing stubs to pair: 1740 (Target edges: 870)
+2026-04-26 14:58:28,058 - INFO - Initial pairing complete -> Valid edges: 393 | Bad edges to rewire: 477
+2026-04-26 14:58:28,066 - INFO - After attempt 1: 118 bad edges remain.
+2026-04-26 14:58:28,066 - INFO - After attempt 2: 116 bad edges remain.
+2026-04-26 14:58:28,066 - INFO - After attempt 3: 116 bad edges remain.
+2026-04-26 14:58:28,067 - INFO - After attempt 4: 116 bad edges remain.
+2026-04-26 14:58:28,067 - INFO - After attempt 5: 114 bad edges remain.
+2026-04-26 14:58:28,067 - INFO - After attempt 6: 110 bad edges remain.
+2026-04-26 14:58:28,067 - INFO - After attempt 7: 110 bad edges remain.
+2026-04-26 14:58:28,068 - INFO - After attempt 8: 109 bad edges remain.
+2026-04-26 14:58:28,068 - INFO - After attempt 9: 107 bad edges remain.
+2026-04-26 14:58:28,068 - INFO - After attempt 10: 107 bad edges remain.
+2026-04-26 14:58:28,068 - WARNING - Finished 10 retries. 107 bad edges remain unresolved.
+2026-04-26 14:58:28,068 - INFO - Hybrid transition: Passing 107 gridlocked edges (214 stubs) to True Greedy deterministic fallback.
+2026-04-26 14:58:28,068 - INFO - Starting True Dynamic Greedy matching algorithm...
+2026-04-26 14:58:28,068 - INFO - Initial missing stubs: 214 (Target edges: 107)
+2026-04-26 14:58:28,068 - WARNING - Finished with 26 gridlocked nodes.
+2026-04-26 14:58:28,068 - INFO - Added 781 edges
+2026-04-26 14:58:28,068 - INFO - Degree matching elapsed: 0.0116 seconds
+2026-04-26 14:58:28,070 - INFO - Exported edgelist elapsed: 0.0017 seconds
