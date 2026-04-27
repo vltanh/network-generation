@@ -2,12 +2,6 @@
 
 [← back to index](../algorithms.md)
 
-v2 is the cleanup of [EC-SBM v1](./ec-sbm-v1.md). The pipeline shape is the
-same (four stages, same names, same K_{k+1} constructive core), but the
-bookkeeping is more principled, the outlier handling is unified, and the
-degree-matching stage exposes a menu of algorithms instead of one silent
-greedy.
-
 ## What changes from v1
 
 **1. Stage 2 is constructive-only.** v1's `gen_clustered` built the
@@ -110,30 +104,6 @@ residual stubs. Algorithms:
 - **`hybrid`**: run `rewire` first, then `true_greedy` on whatever rewire
   could not place. Rewire handles the bulk unbiased, greedy handles the
   stuck tail deterministically.
-
-## Why there is one SBM, not two
-
-If you've read the [v1 post](./ec-sbm-v1.md), v1 runs two separate SBM
-samplers: one for the clustered phase, one for outliers. v2 collapses
-these into one.
-
-Two reasons.
-
-**Singleton outlier clusters do nothing.** A cluster of size 1 has no
-internal edges (no partner), so the constructive phase is a no-op, the
-K_{k+1} core is empty, and phase 2 has nothing to process. Assigning each
-outlier to its own block is algorithmically equivalent to folding them all
-into one block: same subgraph either way. The real design question is
-whether we want outliers to have community structure at all, or to be
-uniform background.
-
-v2's answer: fold outliers into one combined block (`--gen-outlier-mode
-combined`). Clean accounting, one SBM call.
-
-**One SBM is simpler than two.** With outliers in a single combined block,
-the residual SBM over all blocks (real clusters + one outlier block)
-subsumes what v1 needed two SBM calls to express. Fewer SBM calls means
-less double-sampling drift and faster runtime.
 
 ## What you get on the shipped example
 
