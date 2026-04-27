@@ -132,13 +132,10 @@ the answer is "no, because LFR does not know what cluster 7 is".
 
 ## Cost
 
-10 seeds x 10 kept runs on 4 cores, 16 GiB cgroup cap:
-
-- kept mean: 1.77 s
-- kept std: 0.05 s
-
-Cold cost (not shown in the steady-state) is slightly higher because
-`powerlaw.Fit` imports scipy on first call.
+Cold cost is slightly higher than steady-state because `powerlaw.Fit`
+imports scipy on first call. Concrete numbers live in
+`examples/benchmark/summary.csv`, refreshed by
+[`tools/benchmark/bench_isolated.sh`](../../tools/benchmark/bench_isolated.sh).
 
 ## CLI flags
 

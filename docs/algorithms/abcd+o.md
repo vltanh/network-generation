@@ -65,12 +65,9 @@ seed because the Julia sampler's stderr is deterministic.
 
 ## Cost
 
-10 seeds x 10 kept runs on 4 cores, 16 GiB cgroup cap:
-
-- kept mean: 3.85 s
-- kept std: 0.05 s
-
 Adding outliers does not meaningfully change runtime vs plain ABCD.
+Concrete numbers live in `examples/benchmark/summary.csv`, refreshed by
+[`tools/benchmark/bench_isolated.sh`](../../tools/benchmark/bench_isolated.sh).
 
 ## CLI flags
 

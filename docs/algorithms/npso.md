@@ -197,16 +197,12 @@ parameters skip the search and reuse the converged `T`.
 
 ## Cost
 
-10 seeds × 10 kept runs on isolated cgroup (4 cores, 16 GiB cap) via
-[`tools/benchmark/bench_isolated.sh`](../../tools/benchmark/bench_isolated.sh):
-
-- kept mean: 6.17 s
-- kept std: 0.56 s
-
-nPSO is the slowest of the seven generators. Cold cost (first run in
-fresh shell) is dominated by MATLAB engine startup. Warm cost is
-the 100-iter temperature search itself; each iter runs `nPSO_model`
-on `N` nodes (`O(N²)` for pairwise hyperbolic distances).
+nPSO is the slowest of the seven generators. Cold cost (first run in a
+fresh shell) is dominated by MATLAB engine startup. Warm cost is the
+100-iter temperature search itself; each iter runs `nPSO_model` on `N`
+nodes (`O(N²)` for pairwise hyperbolic distances). Concrete numbers
+live in `examples/benchmark/summary.csv`, refreshed by
+[`tools/benchmark/bench_isolated.sh`](../../tools/benchmark/bench_isolated.sh).
 
 ## Where to look next
 

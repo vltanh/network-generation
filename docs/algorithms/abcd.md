@@ -110,13 +110,10 @@ default is `--seed 1` regardless.
 
 ## Cost
 
-10 seeds x 10 kept runs on 4 cores, 16 GiB cgroup cap:
-
-- kept mean: 3.75 s
-- kept std: 0.10 s
-
-The Julia interpreter boots in 2-3 s every run. Batching many seeds in one
-shell does not amortise startup the way it does with graph-tool.
+The Julia interpreter boots in 2-3 s every run. Batching many seeds in
+one shell does not amortise startup the way it does with graph-tool.
+Concrete numbers live in `examples/benchmark/summary.csv`, refreshed by
+[`tools/benchmark/bench_isolated.sh`](../../tools/benchmark/bench_isolated.sh).
 
 ## CLI flags
 
