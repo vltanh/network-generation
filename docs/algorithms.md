@@ -78,21 +78,17 @@ sbm-flat-best+cc, `--seed 1`, on the current host) are:
 | Gen        | `edge.csv` (sha256[:12]) | `com.csv` (sha256[:12]) |
 | ---------- | ------------------------ | ----------------------- |
 | sbm        | `3f8356d4236f`           | `e240ae23f3ea`          |
-| ec-sbm-v1  | `e2b5a6914b12`           | `e240ae23f3ea`          |
-| ec-sbm-v2  | `f46e7d8b94c9`           | `e240ae23f3ea`          |
+| ec-sbm-v1  | `e4e3b6cf1b68`           | `5a5afc352f13`          |
+| ec-sbm-v2  | `e0d6d1d7feb5`           | `5a5afc352f13`          |
 | abcd       | `057a8ef26ebc`           | `55c19725f859`          |
 | abcd+o     | `be419667a464`           | `1151780594fc`          |
 | lfr        | `ea9b42120eb3`           | `2db4f5ab80be`          |
-| npso       | `90e5f99dc8b7`           | `b5854b5f88c7`          |
+| npso       | `5dc2b4ee3023`           | `e7e3a6a047b8`          |
 
-The first three share `com.csv` because SBM-family gens pass through the
-input clustering after dropping singletons; the last four emit their own
-cluster assignment each run.
-
-Byte-identity holds across hosts when the toolchain versions match.
-Cross-host differences (graph-tool version, Julia minor version, MATLAB
-patch level) can produce different hashes while preserving the
-distributional guarantees in the table above.
+`sbm` passes the input clustering through after dropping singletons;
+ec-sbm-v1 and ec-sbm-v2 share `com.csv` (same set of node→cluster pairs
+re-ordered by `match_degree`); the last four emit their own cluster
+assignment each run.
 
 **Trap:** `--seed 0` silently disables graph-tool's PRNG (documented as
 "entropy source") and breaks byte-reproducibility for `sbm` and `ec-sbm`.
@@ -125,43 +121,13 @@ the model's achievable range with these derived parameters does not
 include the target. See the [nPSO page](./algorithms/npso.md) for the
 trajectory.
 
-### Runtime (dnc network, isolated cgroup, 4 cores, 16 GiB cap)
+### Runtime ordering
 
-Measured via
-[`tools/benchmark/bench_isolated.sh`](../tools/benchmark/bench_isolated.sh):
-per generator, 2 warmup + 10 kept runs per seed across seeds 1-10. All
-100 kept runs per generator produce byte-identical `edge.csv` within
-each (gen, seed).
-
-| Generator   | kept mean (s) | kept std (s) | min (s) | max (s) | peak RSS (MB) |
-| ----------- | ------------: | -----------: | ------: | ------: | ------------: |
-| sbm         |      1.65     |     0.03     |  1.62   |  1.73   |    267        |
-| lfr         |      1.77     |     0.05     |  1.67   |  1.89   |    146        |
-| ec-sbm-v2   |      2.39     |     0.10     |  2.30   |  3.02   |    268        |
-| ec-sbm-v1   |      2.83     |     0.05     |  2.77   |  2.98   |    265        |
-| abcd        |      3.75     |     0.10     |  3.61   |  4.25   |    499        |
-| abcd+o      |      3.85     |     0.05     |  3.75   |  3.98   |    508        |
-| npso        |      6.17     |     0.56     |  5.52   | 10.81   |    298        |
-
-**Host:** Pop!_OS 22.04 LTS, i9-12900HK (20 threads, pinned to 4 via
-taskset), 62 GiB RAM, 16 GiB memory cap via systemd-run cgroup v2.
-Python 3.11.15, graph-tool 2.98, Julia 1.12.6, MATLAB R2024a. Absolute
-wall-clock has noise from background processes; ordering and
-byte-identity are the load-independent signals.
-
-Takeaways: SBM is the fastest and nPSO is the slowest. ec-sbm-v2 is
+SBM is the fastest stage-2 sampler and nPSO the slowest. ec-sbm-v2 is
 faster than v1 (one `gt.generate_sbm` call vs v1's two). ABCD/ABCD+o are
 external-process bound and pay Julia's ~2 s startup every run. LFR's C++
-binary is the fastest stage-2 sampler, but the powerlaw fits at profile
-add cost. nPSO's 100-iter search dominates.
+binary is itself the fastest sampler, but the powerlaw fits at profile
+time add cost. nPSO's 100-iter temperature search dominates.
 
-### Host-sensitive numbers
-
-The measurements above reflect a specific toolchain. Prior measurements
-on an RHEL 9.6 / AMD EPYC / Python 3.14 / graph-tool 2.98 host gave a
-different ordering (SBM and LFR swapped places, ec-sbm-v1 and v2
-swapped, nPSO was slower in wall-clock because of a slower MATLAB
-startup). The byte-identity guarantee is per-toolchain: the same host,
-same seed, same toolchain versions produce the same output; different
-toolchains may produce different outputs while preserving the
-distributional guarantees listed above.
+Concrete numbers live in `examples/benchmark/summary.csv`, refreshed by
+[`tools/benchmark/bench_isolated.sh`](../tools/benchmark/bench_isolated.sh).

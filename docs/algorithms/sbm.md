@@ -146,16 +146,9 @@ which disables reproducibility. Default everywhere in this repo is
 
 ## Cost
 
-Measured via
-[`tools/benchmark/bench_isolated.sh`](../../tools/benchmark/bench_isolated.sh)
-on an isolated cgroup (4 cores, 16 GiB cap), 10 seeds × 10 kept runs
-per seed:
-
-- kept mean: 1.65 s
-- kept std: 0.03 s
-
-See the [index](../algorithms.md) for the full per-generator table.
-SBM is the fastest of the seven at this input size.
+SBM is the fastest of the seven generators at this input size. Concrete
+numbers live in `examples/benchmark/summary.csv`, refreshed by
+[`tools/benchmark/bench_isolated.sh`](../../tools/benchmark/bench_isolated.sh).
 
 ## Where to look next
 

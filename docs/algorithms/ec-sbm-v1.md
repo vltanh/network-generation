@@ -160,10 +160,10 @@ Three RNGs seeded per stage (`random`, `numpy`, `graph-tool`) with offsets
 
 ## Cost
 
-10 seeds x 10 kept runs on 4 cores, 16 GiB cgroup cap:
-
-- kept mean: 2.83 s
-- kept std: 0.05 s
+Slower than v2 because v1 runs two `gt.generate_sbm` calls (cluster SBM
++ outlier SBM) where v2 runs one. Concrete numbers live in
+`examples/benchmark/summary.csv`, refreshed by
+[`tools/benchmark/bench_isolated.sh`](../../tools/benchmark/bench_isolated.sh).
 
 ## v1 vs v2
 

@@ -141,13 +141,10 @@ loop, and `current_degrees` dict iteration in `true_greedy`'s
 
 ## Cost
 
-10 seeds x 10 kept runs on 4 cores, 16 GiB cgroup cap:
-
-- kept mean: 2.39 s
-- kept std: 0.10 s
-
-Faster than v1 (2.83 s) because v1 runs two `gt.generate_sbm` calls and
-v2 runs one.
+Faster than v1 because v1 runs two `gt.generate_sbm` calls (cluster SBM
++ outlier SBM) and v2 runs one. Concrete numbers live in
+`examples/benchmark/summary.csv`, refreshed by
+[`tools/benchmark/bench_isolated.sh`](../../tools/benchmark/bench_isolated.sh).
 
 ## Provenance bands
 
