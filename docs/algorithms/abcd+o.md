@@ -2,11 +2,6 @@
 
 [← back to index](../algorithms.md)
 
-Real networks often include nodes that do not belong to any community:
-bots, isolated users, sensor noise, one-off visitors. [Plain ABCD](./abcd.md)
-folds them into singletons which get filtered out. ABCD+o is the
-outlier-aware variant that models them as a first-class background block.
-
 ## What changes from ABCD
 
 Three things:
@@ -22,30 +17,6 @@ Three things:
 Everything else (degree sequence, global ξ, configuration-model hybrid,
 rewiring) is the same.
 
-## Why the outlier count is a separate file
-
-`cluster_sizes.csv` is the list of *real* cluster sizes.
-`n_outliers.txt` is the count of background nodes. Keeping them separate
-means:
-
-- Cluster statistics can be computed without accidentally counting the
-  outlier block.
-- The sampler distinguishes "normal cluster of size N" from "outlier
-  block of size N": it applies different constraints internally.
-
-The wrapper in [`src/abcd+o/gen.py`](../../src/abcd+o/gen.py) rejoins them
-only at the moment it shells out:
-
-```python
-cs_rows = []
-if n_outliers > 0:
-    cs_rows.append([n_outliers])
-cs_rows.extend([[s] for s in cluster_sizes])
-```
-
-After the prepend, cluster_id=1 in the Julia sampler's world is the
-outlier block.
-
 ## The `drop_outlier_outlier_edges` default
 
 ABCD+o is the one generator where `drop_outlier_outlier_edges` defaults to
@@ -60,38 +31,6 @@ would drift.
 
 Dropping OO edges at profile time makes the stage-1 numbers achievable by
 the stage-2 sampler.
-
-## The "outliers form a community" warning
-
-At low ξ (say 0.1 or below) with a large outlier block, the global
-external mechanism ends up wiring outliers densely enough that the
-outlier block has internal cohesion comparable to a real cluster. The
-Julia sampler notices and emits a warning to stderr:
-
-```
-outlier nodes form a community
-```
-
-The wrapper catches this:
-
-```python
-OUTLIER_LIFT_WARNING = "outlier nodes form a community"
-outliers_lifted = bool(re.search(OUTLIER_LIFT_WARNING, proc.stderr, re.IGNORECASE))
-if n_outliers > 0 and not outliers_lifted:
-    com_df = com_df[com_df["cluster_id"] != 1]
-```
-
-Behaviour depends on whether the warning fires:
-
-- **Warning fires**: cluster_id=1 stays in `com.csv`. The outlier block is
-  treated as a real community in the output.
-- **Warning silent**: cluster_id=1 is filtered from `com.csv`. Outlier
-  nodes are still in `edge.csv` (they have edges, after all), but
-  unclustered.
-
-Visualizations of ABCD+o output should show the warning status: otherwise
-it is ambiguous whether an outlier node with no cluster_id is "an outlier
-by design" or "an outlier that got lifted and you forgot to check".
 
 ## What you get on the shipped example
 
@@ -132,14 +71,6 @@ seed because the Julia sampler's stderr is deterministic.
 - kept std: 0.05 s
 
 Adding outliers does not meaningfully change runtime vs plain ABCD.
-
-## When to use
-
-- **Yes**: your empirical graph has genuine background nodes and you want
-  them preserved.
-- **Maybe**: [ABCD](./abcd.md) if your graph has no outlier concept.
-- **Consider**: [nPSO](./npso.md) if you want a clustering-coefficient
-  target.
 
 ## CLI flags
 

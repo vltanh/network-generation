@@ -2,25 +2,9 @@
 
 [← back to index](../algorithms.md)
 
-Plain SBM can produce clusters that are structurally weaker than the input:
-the sampler is free to concentrate intra-block edges on a few pairs, leaving
-the cluster vulnerable to a small edge cut. For downstream work on robustness
-or minimum-cut attacks that matters.
-
 EC-SBM (edge-connected SBM) adds a constraint: the output cluster's
 edge-connectivity is at least as high as the input's. v1 is the first
 implementation; v2 is the cleanup.
-
-## What "k-edge-connected" means here
-
-For a cluster C, k(C) is the minimum number of edges you would remove from
-the *input's* induced subgraph on C to disconnect it. EC-SBM promises that
-the output's cluster C has edge-connectivity at least k(C). The "at least"
-is because the construction only adds edges, never removes them.
-
-k(C) is measured at profile time by
-[`pymincut`](https://github.com/llekha/pymincut)'s Nagamochi-Ibaraki algorithm
-(the `"noi"` method with `"bqueue"`). Singleton clusters get k=0 by definition.
 
 ## The four stages
 

@@ -2,29 +2,6 @@
 
 [← back to index](../algorithms.md)
 
-ABCD (Artificial Benchmark for Community Detection) is the current
-community-detection benchmark of choice in a few labs. It accepts the
-empirical degree sequence and cluster sizes as-is and enforces a global
-mixing fraction ξ. If you care about "synthesize a graph whose degrees and
-cluster sizes match this specific input", ABCD is a reasonable first choice.
-If you care about block-edge-count matrices or triangle density, pick
-something else.
-
-## The model
-
-A configuration-model hybrid:
-
-1. Inside each cluster, run a configuration model on the internal
-   half-edges.
-2. Globally across clusters, run a configuration model on the external
-   half-edges.
-3. Rewire any self-loops or multi-edges.
-
-The split between internal and external half-edges is controlled by one
-scalar, ξ (xi), the fraction of each node's stubs that reach outside its
-cluster. At ξ = 0, every edge is intra-cluster; at ξ = 1, every edge is
-inter-cluster.
-
 ## Stage 1: three numbers
 
 [`src/abcd/profile.py`](../../src/abcd/profile.py) extracts:
@@ -140,16 +117,6 @@ default is `--seed 1` regardless.
 
 The Julia interpreter boots in 2-3 s every run. Batching many seeds in one
 shell does not amortise startup the way it does with graph-tool.
-
-## When to use
-
-- **Yes**: you want a benchmark-style synthetic that uses your empirical
-  degrees and cluster sizes directly, and you care about global ξ.
-- **Maybe**: [ABCD+o](./abcd+o.md) if your graph has genuine outliers.
-- **No**: [LFR](./lfr.md) if you want a power-law parametrisation rather
-  than the raw empirical sequences.
-- **No**: [SBM](./sbm.md) or [EC-SBM v2](./ec-sbm-v2.md) if you need the
-  block-pair edge-count matrix preserved.
 
 ## CLI flags
 

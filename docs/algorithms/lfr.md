@@ -2,32 +2,7 @@
 
 [← back to index](../algorithms.md)
 
-LFR (Lancichinetti-Fortunato-Radicchi) is the oldest and most-cited
-benchmark in community detection. Unlike [ABCD](./abcd.md), LFR does not
-take your degree sequence and cluster sizes as-is; it fits power laws to
-them and resamples. That makes LFR good for "produce a realistic graph
-with these broad stats" and the wrong choice for "reproduce this specific
-graph".
-
 Know which question you are asking before you pick LFR.
-
-## What LFR wants
-
-Eight numbers, fed to the C++ binary:
-
-| Param | Meaning |
-| --- | --- |
-| N | Number of nodes |
-| k | Mean degree |
-| maxk | Max degree |
-| minc | Min cluster size (floored at 3) |
-| maxc | Max cluster size |
-| μ | Mean per-node mixing fraction |
-| t1 | Power-law exponent for degree distribution |
-| t2 | Power-law exponent for cluster-size distribution |
-
-Stage 1 extracts three things (degrees, cluster sizes, mean μ) and stage 2
-computes the other five by aggregating and fitting.
 
 ## Stage 1: three numbers, a subtle mean
 
@@ -164,18 +139,6 @@ the answer is "no, because LFR does not know what cluster 7 is".
 
 Cold cost (not shown in the steady-state) is slightly higher because
 `powerlaw.Fit` imports scipy on first call.
-
-## When to use
-
-- **Yes**: you want a benchmark-style synthetic with parametric control
-  over degree and cluster-size distributions and you are reporting
-  results comparable to other LFR-using papers.
-- **Maybe**: [ABCD](./abcd.md) or [ABCD+o](./abcd+o.md) if you want
-  degree/size sequences preserved exactly (and you are OK with breaking
-  from LFR-tradition comparison).
-- **No**: [SBM](./sbm.md) or [EC-SBM v2](./ec-sbm-v2.md) if you need the
-  input's block structure and inter-block edge counts preserved.
-- **No**: [nPSO](./npso.md) if you need high clustering coefficient.
 
 ## CLI flags
 

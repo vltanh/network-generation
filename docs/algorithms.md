@@ -1,19 +1,9 @@
-# Network generators: what they preserve, what they don't
+# Network generators: technical reference
 
-This repo wraps seven synthetic-network generators under a single two-stage
-pipeline. Stage 1 (`profile.py`) reads a real network plus a reference
-clustering and extracts a small statistical profile. Stage 2 (`gen.py`)
-consumes that profile and samples a synthetic network from a parametric
-model. The two stages are intentionally decoupled: the same profile can be
-consumed by different generators, and the same generator can be pointed at
-different profiles.
-
-The question each generator's page answers: **given an empirical network
-G, what does that generator's output G' guarantee to look like?** We use
-"guarantee" loosely. Some statistics are exact matches (number of nodes,
-block structure), some are distributional (degree distribution in
-expectation), and some are only *targeted* via a search that may or may
-not converge.
+Algorithm walkthroughs (with interactive viz) live at
+[https://vltanh.me/netgen/](https://vltanh.me/netgen/). This page collects
+the per-toolchain technical details: pipeline contract, output guarantees,
+determinism + reproducibility, runtime cost, and CLI flags.
 
 ## The seven generators at a glance
 
@@ -28,31 +18,8 @@ not converge.
 | [`npso`](./algorithms/npso.md) | Non-uniform popularity-similarity optimisation    | `nPSO_model` (MATLAB), wrapped in a secant search over temperature    |
 
 All seven consume the same inputs at the repo boundary: an undirected edge
-list and a reference clustering (node_id → cluster_id, not necessarily a
-partition). They diverge at stage 1 on *what summary they extract* and at
-stage 2 on *how they sample*.
-
-Each generator has its own page (linked from the table above) that walks
-through profile extraction, stage-2 sampling, guarantees, non-guarantees,
-determinism traps, and cost. Each page also links to an interactive
-static-HTML GUI that animates the algorithm step by step on a small
-synthetic example.
-
-## Interactive GUIs
-
-Each algorithm page has a matching static HTML GUI that walks through the
-default-settings algorithm on a small (~25 node) synthetic example so that
-every step (K_{k+1} core, constructive attachments, SBM dedup, ξ split,
-temperature search, etc.) is visible. They are self-contained (no build
-step, no framework; vanilla JS + SVG) and work offline.
-
-- [sbm.html](https://vltanh.me/netgen/sbm.html)
-- [ec-sbm-v1.html](https://vltanh.me/netgen/ec-sbm-v1.html)
-- [ec-sbm-v2.html](https://vltanh.me/netgen/ec-sbm-v2.html)
-- [abcd.html](https://vltanh.me/netgen/abcd.html)
-- [abcd+o.html](https://vltanh.me/netgen/abcd+o.html)
-- [lfr.html](https://vltanh.me/netgen/lfr.html)
-- [npso.html](https://vltanh.me/netgen/npso.html)
+list and a reference clustering (`node_id → cluster_id`, not necessarily a
+partition). Stage 1 extracts a per-gen profile; stage 2 samples from it.
 
 ## Summary: who guarantees what
 
@@ -89,31 +56,6 @@ for a concrete non-convergence case on dnc).
 Rows reflect each generator's *default* flags. `ec-sbm` defaults to
 `excluded`, which drops outliers. `abcd+o`'s cluster-size list includes a
 prepended outlier block of size n_outliers.
-
-## Which generator should I use?
-
-A few rules of thumb. The per-gen pages expand on these.
-
-- **Exact empirical block structure and degrees**: [`sbm`](./algorithms/sbm.md).
-  That is what the degree-corrected micro-SBM is for.
-- **Each cluster edge-connected**: [`ec-sbm-v2`](./algorithms/ec-sbm-v2.md)
-  with `--algorithm hybrid`.
-- **Benchmark-style synthetic with only aggregate mixing**:
-  [`abcd`](./algorithms/abcd.md), [`abcd+o`](./algorithms/abcd+o.md), or
-  [`lfr`](./algorithms/lfr.md). ABCD/ABCD+o converge faster and preserve
-  degree + cluster sizes exactly; LFR is the incumbent benchmark and
-  uses power-law parametrisation.
-- **High clustering coefficient / triangle density**:
-  [`npso`](./algorithms/npso.md). The only generator here that targets
-  it; but on inputs whose clustering exceeds the model's achievable
-  range, nPSO returns the best-so-far rather than a match.
-
-No generator guarantees *both* exact degree sequence *and* high triangle
-count. The degree-corrected SBM family produces nearly-tree-like graphs
-even when the input is highly clustered; nPSO's hyperbolic geometry gets
-triangles but resamples degrees from a power law. Bridging the two is
-active research territory; ec-sbm's constructive first stage is one
-attempt.
 
 ## Self-loops and parallel edges
 
