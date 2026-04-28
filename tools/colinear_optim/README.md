@@ -39,6 +39,19 @@ radius 13 + a small safety margin).
 
 ## Run
 
+C++ build (~50-100x faster than the JS reference):
+
+```
+g++ -O3 -std=c++17 optim_positions.cpp -o optim_positions
+./optim_positions input.json > output.json
+```
+
+The C++ build needs `nlohmann/json` as a single header (`json.hpp`)
+in the same directory; fetch from
+https://github.com/nlohmann/json/releases.
+
+JS fallback (no compile, easy to tweak):
+
 ```
 node optim_positions.mjs input.json > output.json
 ```
@@ -52,9 +65,16 @@ node optim_positions.mjs input.json > output.json
   "minPair": 58,
   "maxDisplace": 70,
   "restarts": 60,
-  "iters": 200000
+  "iters": 200000,
+  "clusters": [["1","2","3","4","5","6","7","8"], ["9","10","11","12","13","14"]],
+  "clusterMaxDiameter": 320
 }
 ```
+
+`clusters` (optional) groups node ids into clusters; the maximum
+pairwise distance inside each group is capped at
+`clusterMaxDiameter` so members read as a coherent cluster. C++ build
+only — the JS port doesn't yet implement this constraint.
 
 Output prints the best config found plus `score.worst` (the worst
 near-colinear distance) and `score.minPair` (the minimum pairwise
