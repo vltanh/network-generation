@@ -98,25 +98,26 @@ behaviour, use `1` and move on.
 ### Achieved vs target statistics (dnc + sbm-flat-best+cc, seed=1)
 
 Input: 906 nodes, 10429 edges, mean degree 23.02, global ccoeff 0.548,
-local ccoeff 0.494, mean k-core 15.99, 42 clusters.
+local ccoeff 0.494, mean k-core 15.99, 87 clusters.
 
 | Gen        | N    | Edges | Mean deg | Global ccf | Local ccf | Clusters |
 | ---------- | ---- | ----: | -------: | ---------: | --------: | -------: |
-| input      | 906  | 10429 | 23.02    | 0.548      | 0.494     | 42       |
-| sbm        | 902  |  7438 | 16.49    | 0.341      | 0.216     | 42       |
-| ec-sbm-v1  | 906  | 10422 | 23.01    | 0.424      | 0.327     | 42       |
-| ec-sbm-v2  | 906  | 10346 | 23.03    | 0.513      | 0.350     | 42       |
-| abcd       | 906  | 10150 | 22.41    | 0.307      | 0.234     | 42       |
-| abcd+o     | 673* | 10070 | 29.93    | 0.307      | 0.339     | 42       |
-| lfr        | 906  | 10370 | 22.89    | 0.252      | 0.732     | 51       |
-| npso       | 906  | 10794 | 23.83    | 0.099**    | 0.811     | 42       |
+| input      | 906  | 10429 | 23.02    | 0.548      | 0.494     | 87       |
+| sbm        | 902  |  7438 | 16.49    | 0.341      | 0.216     | 87       |
+| ec-sbm-v1  | 906  | 10425 | 23.01    | 0.424      | 0.321     | 87       |
+| ec-sbm-v2  | 906  | 10342 | 22.83    | 0.501      | 0.342     | 87       |
+| abcd       | 906  | 10150 | 22.41    | 0.307      | 0.234     | 87       |
+| abcd+o     | 673* | 10070 | 29.93    | 0.307      | 0.339     | 87       |
+| lfr        | 906  | 10370 | 22.89    | 0.252      | 0.732     | 10       |
+| npso       | 906  | 10794 | 23.83    | 0.098**    | 0.558     | 161      |
 
-&ast; abcd+o's `com.csv` drops the 355-node outlier block (no "outliers
-form a community" warning on this input). All 906 nodes remain in
-`edge.csv`.
+&ast; abcd+o's `edge.csv` carries 673 distinct endpoints; the remaining
+profile-declared outliers (n_outliers = 355) end up edgeless and drop
+out of the materialised edge list. `com.csv` covers 551 of those
+endpoints under the 87 real clusters; the rest are surviving outliers.
 
 &ast;&ast; nPSO did not converge on this input. Target was 0.548, best
-achieved was 0.099 at T=0.0625. The search exhausted its 100-iter budget;
+achieved was 0.098 at T=0.0625. The search exhausted its 100-iter budget;
 the model's achievable range with these derived parameters does not
 include the target. See the [nPSO page](./algorithms/npso.md) for the
 trajectory.

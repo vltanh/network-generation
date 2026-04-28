@@ -39,21 +39,25 @@ outliers at the `singleton + drop_oo=true` setting:
 
 | Stat | Input | ABCD+o output | Note |
 | --- | --- | --- | --- |
-| N | 906 | 673 | 355 outliers stripped from com.csv (warning did not fire) |
+| N (distinct endpoints in edge.csv) | 906 | 673 | outliers that ended up edgeless drop out of the materialised edge list |
 | Edges | 10429 | 10070 | within 3.4% |
 | Mean degree | 23.02 | 29.93 | higher because the denominator is non-outlier nodes |
 | Global clustering coeff. | 0.548 | 0.307 | not targeted |
-| Num clusters | 42 | 42 | exact |
+| Num clusters | 87 | 87 | exact |
 
-The output `edge.csv` still contains all 906 nodes (the 355 outliers have
-their incident edges); it is only `com.csv` that drops the outlier block
-in the no-warning branch.
+`edge.csv` carries 673 distinct endpoints; 551 of those land in `com.csv`
+under the 87 real clusters, the rest are surviving outliers (no
+"outliers form a community" warning on this input, so cluster_id=1 is
+stripped).
 
 ## Output guarantees
 
 Everything [ABCD](./abcd.md) guarantees, plus:
 
-- Exactly `n_outliers` background nodes appear in `edge.csv`.
+- Outlier endpoints in `edge.csv` ≤ `n_outliers`. Strict equality is
+  aspirational: the Julia sampler rewires self-loops + multi-edges, and
+  isolated outliers can end up with zero stubs and drop out of the
+  materialised edge list.
 - Zero outlier-outlier edges by sampler construction.
 - `com.csv` contains or excludes cluster_id=1 depending on the warning
   heuristic.

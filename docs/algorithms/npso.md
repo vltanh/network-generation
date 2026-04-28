@@ -62,7 +62,7 @@ the input network + clustering into the scalar contract below.
 | `m` | `round(mean(degrees) / 2)` | Half mean degree, controls per-arrival attachments |
 | `γ` | `_fit_gamma(degrees)` at [`profile.py:56`](../../src/npso/profile.py#L56) | `powerlaw.Fit(...).power_law.alpha`, floored at `≥ 2` |
 | `C` | `len(cluster_id.csv)` | Mixture component count (under `singleton` mode each outlier is its own component) |
-| `C_G` | `_compute_global_ccoeff(...)` at [`profile.py:47`](../../src/npso/profile.py#L47) | networkit's `exactGlobal` clustering coefficient — Stage 4's target |
+| `C_G` | `_compute_global_ccoeff(...)` at [`profile.py:47`](../../src/npso/profile.py#L47) | networkit's `exactGlobal` clustering coefficient: Stage 4's target |
 | `ρ_k` | `_mixing_proportions(...)` at [`profile.py:62`](../../src/npso/profile.py#L62) | size-proportional weights `size_k / N`, one per component (nPSO2 only) |
 
 Outputs written by `_export_derived(...)` at
@@ -179,6 +179,23 @@ by `_input_hash(...)` at
 [`gen.py:400`](../../src/npso/gen.py#L400)) lets reruns at the same
 parameters skip the search and reuse the converged `T`.
 
+## Output guarantees
+
+- **N** exact (CLI arg).
+- **Edge count** `m(m+1)/2 + (N - m - 1) · m` exact (implementation 3 places exactly `m` edges per arrival).
+- **Degree distribution** matches a power law with the fitted `γ` in
+  expectation; per-node degrees are not preserved.
+- **Global clustering coefficient** targeted via the secant T-search;
+  on inputs whose target falls outside the model's achievable range,
+  convergence is only to the best-so-far and the search exhausts its
+  100-iter budget.
+- **Cluster count.** Profile sets `C` (mixture components / angular
+  sectors), but `com.csv` carries cluster ids beyond `[1..C]`: MATLAB's
+  `gmdistribution` posterior occasionally assigns to degenerate mixture
+  components, so the emitted `comm` vector spans more labels than the
+  input `C`. On dnc with profile `c=442`, output `com.csv` has 161 unique
+  cluster ids.
+
 ## Determinism
 
 - Single MATLAB RNG: `rng(seed)` at the top of
@@ -206,10 +223,10 @@ live in `examples/benchmark/summary.csv`, refreshed by
 
 ## Where to look next
 
-- [`src/npso/gen.py`](../../src/npso/gen.py) — main wrapper + secant search
-- [`src/npso/profile.py`](../../src/npso/profile.py) — profile entrypoint
-- [`src/npso/matlab/run_npso.m`](../../src/npso/matlab/run_npso.m) — MATLAB driver
-- [`externals/npso/nPSO_model.m`](../../externals/npso/nPSO_model.m) — upstream sampler
+- [`src/npso/gen.py`](../../src/npso/gen.py): main wrapper + secant search
+- [`src/npso/profile.py`](../../src/npso/profile.py): profile entrypoint
+- [`src/npso/matlab/run_npso.m`](../../src/npso/matlab/run_npso.m): MATLAB driver
+- [`externals/npso/nPSO_model.m`](../../externals/npso/nPSO_model.m): upstream sampler
 - [Upstream: nPSO_model on GitHub](https://github.com/biomedical-cybernetics/nPSO_model)
 - [Interactive walkthrough: vltanh.me/netgen/npso.html](https://vltanh.me/netgen/npso.html)
 - [ABCD+o](./abcd+o.md), [LFR](./lfr.md) (same `powerlaw.Fit` for degrees)

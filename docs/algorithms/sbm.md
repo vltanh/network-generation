@@ -135,7 +135,7 @@ gt.openmp_set_num_threads(n_threads)
 ```
 
 `PYTHONHASHSEED=0` is exported from
-[`src/sbm/pipeline.sh`](../../src/sbm/pipeline.sh) — load-bearing.
+[`src/sbm/pipeline.sh`](../../src/sbm/pipeline.sh): load-bearing.
 `gt.generate_sbm` is sensitive to Python set/dict iteration order in
 some code paths; without a pinned hash seed, reruns at the same
 `--seed` diverge.
@@ -152,9 +152,9 @@ numbers live in `examples/benchmark/summary.csv`, refreshed by
 
 ## Where to look next
 
-- [`src/sbm/gen.py`](../../src/sbm/gen.py) — generation entrypoint
-- [`src/sbm/profile.py`](../../src/sbm/profile.py) — profile entrypoint
-- [`src/sbm/pipeline.sh`](../../src/sbm/pipeline.sh) — dispatcher script
+- [`src/sbm/gen.py`](../../src/sbm/gen.py): generation entrypoint
+- [`src/sbm/profile.py`](../../src/sbm/profile.py): profile entrypoint
+- [`src/sbm/pipeline.sh`](../../src/sbm/pipeline.sh): dispatcher script
 - [graph-tool's `generate_sbm` docs](https://graph-tool.skewed.de/static/doc/generation.html#graph_tool.generation.generate_sbm)
 - [Interactive walkthrough: vltanh.me/netgen/sbm.html](https://vltanh.me/netgen/sbm.html)
 - [Index of all generators](../algorithms.md)

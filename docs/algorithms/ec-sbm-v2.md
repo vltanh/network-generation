@@ -113,10 +113,10 @@ Default run on dnc + sbm-flat-best+cc at `--seed 1` with the pipeline's
 | Stat | Input | v2 output | Note |
 | --- | --- | --- | --- |
 | N | 906 | 906 | exact |
-| Edges | 10429 | 10346 | within 0.8% |
-| Mean degree | 23.02 | 23.03 | |
-| Global clustering coeff. | 0.548 | 0.513 | highest of the SBM family here |
-| Mean k-core | 15.99 | 14.74 | |
+| Edges | 10429 | 10342 | within 0.8% |
+| Mean degree | 23.02 | 22.83 | |
+| Global clustering coeff. | 0.548 | 0.501 | highest of the SBM family here |
+| Mean k-core | 15.99 | 14.30 | |
 
 ## Output guarantees
 

@@ -94,17 +94,21 @@ Default run on dnc + sbm-flat-best+cc at `--seed 1`:
 | Mean degree | 23.02 | 22.89 | tracks k argument |
 | Global clustering coeff. | 0.548 | 0.252 | not targeted |
 | Local clustering coeff. | 0.494 | 0.732 | |
-| Num clusters | 42 | 51 | resampled from the fitted cluster-size power law |
+| Num clusters | 87 | 10 | resampled from the fitted cluster-size power law |
 
 Notice the cluster count difference: LFR resampled the cluster-size
 distribution, so the number of clusters is not preserved. The input has
-42 clusters, the output has 51.
+87 clusters, the output has 10.
 
 ## Output guarantees
 
 - **N** exact (CLI arg).
 - **Mean degree at k, max degree at maxk** (power-law truncation).
-- **Cluster sizes in `[minc, maxc]`**.
+- **Cluster sizes ≥ `minc`**. The `maxc` upper bound is a soft target:
+  on inputs whose `cs` distribution has a poor power-law fit (few unique
+  cluster sizes), the C++ binary's internal `-maxc` enforcement drifts.
+  Empirically on dnc, `-maxc 52` produced output cluster sizes spanning
+  67-116.
 - **Degree distribution at power-law(t1)** in expectation.
 - **Cluster-size distribution at power-law(t2)** in expectation.
 - **Mean per-node μ at target** in expectation.
