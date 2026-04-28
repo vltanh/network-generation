@@ -17,7 +17,7 @@ DROP_OO_BOOL="false"
 # match_degree is opt-in for users who want per-node degree top-up.
 REMAP_ENABLE=0
 MATCH_DEGREE_ENABLE=0
-MATCH_DEGREE_ALGORITHM="hybrid"
+MATCH_DEGREE_ALGORITHM="true_greedy"
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in

@@ -15,7 +15,7 @@ invocation):
 | `--outlier-mode <excluded\|singleton\|combined>` | `combined` | how `profile.py` folds outliers (drop / one cluster each / single `__outliers__` block) |
 | `--drop-outlier-outlier-edges` / `--keep-outlier-outlier-edges` | keep | strip OO edges from the input edgelist before profiling |
 | `--match-degree` / `--no-match-degree` | off | optional Stage-4 degree rewire pass |
-| `--match-degree-algorithm <greedy\|true_greedy\|random_greedy\|rewire\|hybrid>` | `hybrid` | only effective with `--match-degree` |
+| `--match-degree-algorithm <greedy\|true_greedy\|random_greedy\|rewire\|hybrid>` | `true_greedy` | only effective with `--match-degree` |
 | `--remap` / `--no-remap` | off | remap output node IDs (SBM passes input IDs through by default) |
 
 See [../advanced-usage.md](../advanced-usage.md) for the

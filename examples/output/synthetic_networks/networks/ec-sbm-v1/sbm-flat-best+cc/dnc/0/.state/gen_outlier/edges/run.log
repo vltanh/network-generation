@@ -1,5 +1,5 @@
-2026-04-26 15:28:41,681 - INFO - Starting EC-SBM outlier generation (scope=outlier-incident, outlier_mode=singleton, edge_correction=none)...
-2026-04-26 15:28:41,739 - INFO - Setup elapsed: 0.0572 seconds
-2026-04-26 15:28:41,741 - INFO - SBM synthesis elapsed: 0.0023 seconds
-2026-04-26 15:28:41,743 - INFO - Export elapsed: 0.0019 seconds
-2026-04-26 15:28:41,743 - INFO - Outlier generation complete.
+2026-04-28 17:30:36,500 - INFO - Starting EC-SBM outlier generation (scope=outlier-incident, outlier_mode=singleton, edge_correction=none)...
+2026-04-28 17:30:36,562 - INFO - Setup elapsed: 0.0617 seconds
+2026-04-28 17:30:36,564 - INFO - SBM synthesis elapsed: 0.0022 seconds
+2026-04-28 17:30:36,566 - INFO - Export elapsed: 0.0017 seconds
+2026-04-28 17:30:36,566 - INFO - Outlier generation complete.

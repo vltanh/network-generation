@@ -155,7 +155,7 @@ Pipeline (`./src/lfr/pipeline.sh`):
 - `--outlier-mode <excluded|singleton|combined>`: default `singleton`.
 - `--drop-outlier-outlier-edges` / `--keep-outlier-outlier-edges`: default keep.
 - `--match-degree` / `--no-match-degree`: default off.
-- `--match-degree-algorithm <greedy|true_greedy|random_greedy|rewire|hybrid>`: default `hybrid`.
+- `--match-degree-algorithm <greedy|true_greedy|random_greedy|rewire|hybrid>`: default `true_greedy`.
 - `--remap` / `--no-remap`: default on (C++ binary emits fresh 1..N IDs).
 
 See [../advanced-usage.md](../advanced-usage.md).

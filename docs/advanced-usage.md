@@ -41,13 +41,13 @@ at both layers.
 
 | Generator | `--outlier-mode` | OO edges | match-degree | algorithm | remap |
 | --- | --- | --- | --- | --- | --- |
-| `sbm` | `combined` | keep | off | `hybrid` | off |
+| `sbm` | `combined` | keep | off | `true_greedy` | off |
 | `ec-sbm-v1` | `excluded` (fixed) | keep | on (fixed) | `greedy` (fixed) | n/a |
-| `ec-sbm-v2` | `excluded` | keep | on (fixed) | `hybrid` (dispatcher) | n/a |
-| `abcd` | `singleton` | keep | off | `hybrid` | on |
-| `abcd+o` | `singleton` | **drop** | off | `hybrid` | on |
-| `lfr` | `singleton` | keep | off | `hybrid` | on |
-| `npso` | `singleton` | keep | off | `hybrid` | on |
+| `ec-sbm-v2` | `excluded` | keep | on (fixed) | `true_greedy` (dispatcher) | n/a |
+| `abcd` | `singleton` | keep | off | `true_greedy` | on |
+| `abcd+o` | `singleton` | **drop** | off | `true_greedy` | on |
+| `lfr` | `singleton` | keep | off | `true_greedy` | on |
+| `npso` | `singleton` | keep | off | `true_greedy` | on |
 
 ## Generator-unique flags
 

@@ -64,7 +64,7 @@ case "${VERSION}" in
         : "${SCOPE:=all}"
         : "${GEN_OUTLIER_MODE:=combined}"
         : "${EDGE_CORRECTION:=rewire}"
-        : "${ALGORITHM:=hybrid}"
+        : "${ALGORITHM:=true_greedy}"
         ;;
     "") ;;
     *) echo "Error: --version must be v1 or v2 (got '${VERSION}')." >&2; exit 1 ;;
@@ -75,7 +75,7 @@ esac
 : "${SCOPE:=all}"
 : "${GEN_OUTLIER_MODE:=combined}"
 : "${EDGE_CORRECTION:=rewire}"
-: "${ALGORITHM:=hybrid}"
+: "${ALGORITHM:=true_greedy}"
 
 if [ -z "${PACKAGE_DIR}" ]; then
     echo "Error: --package-dir is required (path to externals/ec-sbm)." >&2
@@ -193,7 +193,7 @@ write_params_file "${STG_GEN_CLUSTERED_PARAMS}" \
     "sbm_overlay=${SBM_OVERLAY_BOOL}"
 
 IN_GEN_CLUSTERED="${OUT_PROFILE} ${STG_GEN_CLUSTERED_PARAMS}"
-OUT_GEN_CLUSTERED="${STG_GEN_CLUSTERED_DIR}/edge.csv"
+OUT_GEN_CLUSTERED="${STG_GEN_CLUSTERED_DIR}/edge.csv ${STG_GEN_CLUSTERED_DIR}/sources.json"
 
 if [ "${SBM_OVERLAY_BOOL}" = "true" ]; then
     GEN_CLUSTERED_OVERLAY_FLAG=(--sbm-overlay)
@@ -240,7 +240,7 @@ if [ "${SCOPE}" = "all" ]; then
 fi
 
 IN_GEN_OUTLIER="${INPUT_EDGELIST} ${INPUT_CLUSTERING} ${STG_GEN_CLUSTERED_DIR}/edge.csv ${STG_GEN_OUTLIER_EDGES_PARAMS}"
-OUT_GEN_OUTLIER="${STG_GEN_OUTLIER_EDGES_DIR}/edge_outlier.csv"
+OUT_GEN_OUTLIER="${STG_GEN_OUTLIER_EDGES_DIR}/edge_outlier.csv ${STG_GEN_OUTLIER_EDGES_DIR}/sources.json"
 
 if ! is_step_done "${STG_GEN_OUTLIER_EDGES_DIR}/done" "${OUT_GEN_OUTLIER}"; then
     run_stage "${STG_GEN_OUTLIER_EDGES_DIR}/time_and_err.log" \
@@ -260,16 +260,16 @@ else
 fi
 
 # 3b. Combine Clustered + Outliers (pure concat; no params.txt).
-IN_GEN_OUTLIER_COMBINE="${STG_GEN_CLUSTERED_DIR}/edge.csv ${STG_GEN_OUTLIER_EDGES_DIR}/edge_outlier.csv"
+IN_GEN_OUTLIER_COMBINE="${STG_GEN_CLUSTERED_DIR}/edge.csv ${STG_GEN_CLUSTERED_DIR}/sources.json ${STG_GEN_OUTLIER_EDGES_DIR}/edge_outlier.csv ${STG_GEN_OUTLIER_EDGES_DIR}/sources.json"
 OUT_GEN_OUTLIER_COMBINE="${STG_GEN_OUTLIER_DIR}/edge.csv ${STG_GEN_OUTLIER_DIR}/sources.json"
 
 if ! is_step_done "${STG_GEN_OUTLIER_DIR}/done" "${OUT_GEN_OUTLIER_COMBINE}"; then
     run_stage "${STG_GEN_OUTLIER_DIR}/time_and_err.log" \
         python "${SRC_DIR}/combine_edgelists.py" \
         --edgelist-1 "${STG_GEN_CLUSTERED_DIR}/edge.csv" \
-        --name-1 "clustered" \
+        --json-1 "${STG_GEN_CLUSTERED_DIR}/sources.json" \
         --edgelist-2 "${STG_GEN_OUTLIER_EDGES_DIR}/edge_outlier.csv" \
-        --name-2 "outlier" \
+        --json-2 "${STG_GEN_OUTLIER_EDGES_DIR}/sources.json" \
         --output-folder "${STG_GEN_OUTLIER_DIR}" \
         --output-filename "edge.csv"
     mark_done "${STG_GEN_OUTLIER_DIR}/done" "Stage 3b (gen_outlier/combine)" "${IN_GEN_OUTLIER_COMBINE}" "${OUT_GEN_OUTLIER_COMBINE}"
@@ -290,7 +290,7 @@ write_params_file "${STG_MATCH_DEGREE_EDGES_PARAMS}" \
     "algorithm=${ALGORITHM}"
 
 IN_MATCH_DEGREE="${STG_GEN_OUTLIER_DIR}/edge.csv ${INPUT_EDGELIST} ${INPUT_CLUSTERING} ${STG_MATCH_DEGREE_EDGES_PARAMS}"
-OUT_MATCH_DEGREE="${STG_MATCH_DEGREE_EDGES_DIR}/degree_matching_edge.csv"
+OUT_MATCH_DEGREE="${STG_MATCH_DEGREE_EDGES_DIR}/degree_matching_edge.csv ${STG_MATCH_DEGREE_EDGES_DIR}/sources.json"
 
 if ! is_step_done "${STG_MATCH_DEGREE_EDGES_DIR}/done" "${OUT_MATCH_DEGREE}"; then
     run_stage "${STG_MATCH_DEGREE_EDGES_DIR}/time_and_err.log" \
@@ -307,7 +307,7 @@ else
 fi
 
 # 4b. Final Combination (com.csv is a Stage-1 passthrough; moved separately).
-IN_MATCH_DEGREE_COMBINE="${STG_GEN_OUTLIER_DIR}/edge.csv ${STG_GEN_OUTLIER_DIR}/sources.json ${STG_MATCH_DEGREE_EDGES_DIR}/degree_matching_edge.csv"
+IN_MATCH_DEGREE_COMBINE="${STG_GEN_OUTLIER_DIR}/edge.csv ${STG_GEN_OUTLIER_DIR}/sources.json ${STG_MATCH_DEGREE_EDGES_DIR}/degree_matching_edge.csv ${STG_MATCH_DEGREE_EDGES_DIR}/sources.json"
 OUT_MATCH_DEGREE_COMBINE="${OUTPUT_DIR}/edge.csv ${OUTPUT_DIR}/sources.json"
 
 if ! is_step_done "${STG_MATCH_DEGREE_DIR}/done" "${OUT_MATCH_DEGREE_COMBINE}"; then
@@ -316,7 +316,7 @@ if ! is_step_done "${STG_MATCH_DEGREE_DIR}/done" "${OUT_MATCH_DEGREE_COMBINE}"; 
         --edgelist-1 "${STG_GEN_OUTLIER_DIR}/edge.csv" \
         --json-1 "${STG_GEN_OUTLIER_DIR}/sources.json" \
         --edgelist-2 "${STG_MATCH_DEGREE_EDGES_DIR}/degree_matching_edge.csv" \
-        --name-2 "match_degree" \
+        --json-2 "${STG_MATCH_DEGREE_EDGES_DIR}/sources.json" \
         --output-folder "${STG_MATCH_DEGREE_DIR}" \
         --output-filename "edge.csv"
     # Copy (not move) so hashes in stage done-files stay valid on rerun.

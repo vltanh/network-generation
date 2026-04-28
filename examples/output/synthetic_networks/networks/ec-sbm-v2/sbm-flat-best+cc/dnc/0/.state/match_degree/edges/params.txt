@@ -1,2 +1,2 @@
-algorithm=hybrid
+algorithm=true_greedy
 seed=3

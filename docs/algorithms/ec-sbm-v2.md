@@ -20,8 +20,9 @@ just outlier-touching ones.
 dropped stuck stubs. v2 exposes five algorithms via `--algorithm`
 (`greedy`, `true_greedy`, `random_greedy`, `rewire`, `hybrid`). Most log
 gridlock instead of hiding it. The registry default in
-[`configs/ec-sbm-v2.sh`](../../configs/ec-sbm-v2.sh) is `hybrid`,
-though `hybrid` is usually the more robust choice.
+[`configs/ec-sbm-v2.sh`](../../configs/ec-sbm-v2.sh) is `true_greedy`
+(dynamic-heap greedy with no gridlock under typical residual loads);
+`hybrid` is the randomized-pairing fallback for ablations.
 
 ## The K_{k+1} core
 
@@ -124,7 +125,9 @@ Default run on dnc + sbm-flat-best+cc at `--seed 1` with the pipeline's
 - **k-edge-connectivity at least k(C) per cluster** by construction.
 - **Block structure** exact.
 - **Degree sequence** targeted; tracks more tightly than v1 because of
-  the residual accounting. `hybrid` minimizes drop.
+  the residual accounting. `true_greedy` closes nearly the entire
+  residual deterministically; `hybrid` trades a small under-fill for
+  randomized pairing.
 - **Inter-cluster edge counts** closer to the profile than v1 because
   stage 3a builds probs from the original edges minus stage-2
   contributions.
@@ -148,19 +151,18 @@ Faster than v1 because v1 runs two `gt.generate_sbm` calls (cluster SBM
 
 ## Provenance bands
 
-Every `OUTPUT_DIR/edge.csv` carries a `sources.json` that maps three
+Every `OUTPUT_DIR/edge.csv` carries a `sources.json` that maps stage-level
 provenance labels to inclusive 1-based row ranges:
 
-```json
-{
-  "clustered":    [1, 42],
-  "outlier":      [43, 100],
-  "match_degree": [101, 120]
-}
-```
+- `clustered_kec_clique` — phase 1 of `gen_kec_core` (K_{k+1} on top-(k+1) by residual degree)
+- `clustered_kec_attach` — phase 2 attach-by-degree (greedy + weighted-random fallback)
+- `clustered_sbm_overlay` — only when `--sbm-overlay`; SBM-overlay edges that survived dedup against the kec core
+- `outlier_sbm` — `gen_outlier`'s SBM-sampled edges that survived untouched
+- `outlier_rewire` — only when `--edge-correction rewire`; edges introduced by the 2-opt block-preserving swap
+- `match_degree_<algo>` — non-hybrid algos
+- `match_degree_hybrid_rewire` + `match_degree_hybrid_true_greedy` — hybrid splits its rewire phase from the true-greedy fallback on gridlocked stubs
 
-Stage 2 wrote rows 1-42, stage 3a's residual SBM wrote 43-100, stage 4a's
-matcher added 101-120. Colour edges by provenance to see what each stage
+Empty bands are omitted. Colour edges by band to see what each stage
 placed.
 
 ## CLI flags
@@ -170,7 +172,7 @@ Dispatcher (`run_generator.sh`):
 - `--ec-sbm-dir <p>`: path to the ec-sbm submodule (default `externals/ec-sbm`). Forwarded to the pipeline wrapper as `--package-dir`.
 
 The dispatcher also hardcodes `--edge-correction rewire` and
-`--match-degree-algorithm hybrid`; override by direct pipeline invocation.
+`--match-degree-algorithm true_greedy`; override by direct pipeline invocation.
 
 Pipeline (`./src/ec-sbm/pipeline.sh`):
 

@@ -1,21 +1,21 @@
-=== 2026-04-26T20:28:44Z | pid=1935664 | host=nah-popos | EXECUTED ===
+=== 2026-04-28T23:00:31Z | pid=3013057 | host=nah-popos | EXECUTED ===
 	Command being timed: "python /home/vltanh/Documents/network-generation/externals/ec-sbm/src/profile.py --edgelist examples/input/empirical_networks/networks/dnc/dnc.csv --clustering examples/input/reference_clusterings/clusterings/sbm-flat-best+cc/dnc/com.csv --output-folder examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/profile --params-file examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/profile/params.txt"
-	User time (seconds): 0.21
-	System time (seconds): 0.03
-	Percent of CPU this job got: 99%
-	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:00.25
+	User time (seconds): 0.20
+	System time (seconds): 0.02
+	Percent of CPU this job got: 97%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:00.23
 	Average shared text size (kbytes): 0
 	Average unshared data size (kbytes): 0
 	Average stack size (kbytes): 0
 	Average total size (kbytes): 0
-	Maximum resident set size (kbytes): 88368
+	Maximum resident set size (kbytes): 87696
 	Average resident set size (kbytes): 0
-	Major (requiring I/O) page faults: 0
-	Minor (reclaiming a frame) page faults: 14268
-	Voluntary context switches: 22
-	Involuntary context switches: 56
+	Major (requiring I/O) page faults: 5
+	Minor (reclaiming a frame) page faults: 14257
+	Voluntary context switches: 27
+	Involuntary context switches: 66
 	Swaps: 0
-	File system inputs: 0
+	File system inputs: 40
 	File system outputs: 72
 	Socket messages sent: 0
 	Socket messages received: 0

@@ -127,7 +127,7 @@ Pipeline (`./src/abcd/pipeline.sh`):
 - `--outlier-mode <excluded|singleton|combined>`: default `singleton`.
 - `--drop-outlier-outlier-edges` / `--keep-outlier-outlier-edges`: default keep.
 - `--match-degree` / `--no-match-degree`: default off.
-- `--match-degree-algorithm <greedy|true_greedy|random_greedy|rewire|hybrid>`: default `hybrid`.
+- `--match-degree-algorithm <greedy|true_greedy|random_greedy|rewire|hybrid>`: default `true_greedy`.
 - `--remap` / `--no-remap`: default on (ABCD emits fresh 1..N IDs; rank-pair to reference for match-degree targets).
 
 See [../advanced-usage.md](../advanced-usage.md).

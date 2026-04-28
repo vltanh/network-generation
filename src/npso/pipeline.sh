@@ -24,7 +24,7 @@ SEARCH_T_MIN=0.0005
 # when match_degree runs, --remap pairs by descending-degree rank.
 REMAP_ENABLE=1
 MATCH_DEGREE_ENABLE=0
-MATCH_DEGREE_ALGORITHM="hybrid"
+MATCH_DEGREE_ALGORITHM="true_greedy"
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in

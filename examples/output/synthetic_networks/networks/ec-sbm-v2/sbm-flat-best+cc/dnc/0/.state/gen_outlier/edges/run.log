@@ -1,17 +1,17 @@
-2026-04-26 15:28:46,306 - INFO - Starting EC-SBM outlier generation (scope=all, outlier_mode=combined, edge_correction=rewire)...
-2026-04-26 15:28:46,464 - INFO - Setup elapsed: 0.1576 seconds
-2026-04-26 15:28:46,475 - INFO - Initial bad edges before rewiring: 2186
-2026-04-26 15:28:46,550 - INFO - After attempt 1: 812 bad edges remain.
-2026-04-26 15:28:46,552 - INFO - After attempt 2: 811 bad edges remain.
-2026-04-26 15:28:46,564 - INFO - After attempt 3: 793 bad edges remain.
-2026-04-26 15:28:46,568 - INFO - After attempt 4: 791 bad edges remain.
-2026-04-26 15:28:46,572 - INFO - After attempt 5: 787 bad edges remain.
-2026-04-26 15:28:46,574 - INFO - After attempt 6: 786 bad edges remain.
-2026-04-26 15:28:46,578 - INFO - After attempt 7: 783 bad edges remain.
-2026-04-26 15:28:46,581 - INFO - After attempt 8: 782 bad edges remain.
-2026-04-26 15:28:46,582 - INFO - After attempt 9: 782 bad edges remain.
-2026-04-26 15:28:46,587 - INFO - After attempt 10: 776 bad edges remain.
-2026-04-26 15:28:46,587 - WARNING - Finished 10 retries. 776 bad edges remain unresolved and will be dropped.
-2026-04-26 15:28:46,598 - INFO - SBM synthesis elapsed: 0.1343 seconds
-2026-04-26 15:28:46,602 - INFO - Export elapsed: 0.0039 seconds
-2026-04-26 15:28:46,602 - INFO - Outlier generation complete.
+2026-04-28 18:00:33,416 - INFO - Starting EC-SBM outlier generation (scope=all, outlier_mode=combined, edge_correction=rewire)...
+2026-04-28 18:00:33,563 - INFO - Setup elapsed: 0.1468 seconds
+2026-04-28 18:00:33,574 - INFO - Initial bad edges before rewiring: 2186
+2026-04-28 18:00:33,645 - INFO - After attempt 1: 812 bad edges remain.
+2026-04-28 18:00:33,648 - INFO - After attempt 2: 811 bad edges remain.
+2026-04-28 18:00:33,659 - INFO - After attempt 3: 793 bad edges remain.
+2026-04-28 18:00:33,663 - INFO - After attempt 4: 791 bad edges remain.
+2026-04-28 18:00:33,667 - INFO - After attempt 5: 787 bad edges remain.
+2026-04-28 18:00:33,669 - INFO - After attempt 6: 786 bad edges remain.
+2026-04-28 18:00:33,673 - INFO - After attempt 7: 783 bad edges remain.
+2026-04-28 18:00:33,675 - INFO - After attempt 8: 782 bad edges remain.
+2026-04-28 18:00:33,677 - INFO - After attempt 9: 782 bad edges remain.
+2026-04-28 18:00:33,681 - INFO - After attempt 10: 776 bad edges remain.
+2026-04-28 18:00:33,681 - WARNING - Finished 10 retries. 776 bad edges remain unresolved and will be dropped.
+2026-04-28 18:00:33,698 - INFO - SBM synthesis elapsed: 0.1352 seconds
+2026-04-28 18:00:33,703 - INFO - Export elapsed: 0.0042 seconds
+2026-04-28 18:00:33,703 - INFO - Outlier generation complete.

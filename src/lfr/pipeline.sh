@@ -18,7 +18,7 @@ DROP_OO_BOOL="false"
 # descending-degree rank.
 REMAP_ENABLE=1
 MATCH_DEGREE_ENABLE=0
-MATCH_DEGREE_ALGORITHM="hybrid"
+MATCH_DEGREE_ALGORITHM="true_greedy"
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
