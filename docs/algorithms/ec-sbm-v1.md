@@ -132,10 +132,10 @@ Default run on dnc + sbm-flat-best+cc at `--seed 1`:
 | Stat | Input | v1 output | Note |
 | --- | --- | --- | --- |
 | N | 906 | 906 | exact |
-| Edges | 10429 | 10422 | within 0.07% (match-degree fills most of the dedup loss) |
+| Edges | 10429 | 10425 | within 0.04% (match-degree fills most of the dedup loss) |
 | Mean degree | 23.02 | 23.01 | tracks the edge count |
 | Global clustering coeff. | 0.548 | 0.424 | higher than plain SBM (0.341) thanks to K_{k+1} cores |
-| Mean k-core | 15.99 | 13.84 | |
+| Mean k-core | 15.99 | 13.85 | |
 
 `com.csv` is a stage-1 passthrough with singleton clusters dropped, so the
 block structure matches the input exactly.

@@ -75,7 +75,7 @@ Default run on dnc + sbm-flat-best+cc at `--seed 1`:
 | Mean degree | 23.02 | 22.41 | very close |
 | Global clustering coeff. | 0.548 | 0.307 | not targeted |
 | Mean k-core | 15.99 | 13.44 | |
-| Num clusters | 42 | 42 | exact |
+| Num clusters | 87 | 87 | exact |
 
 The degrees and cluster sizes are exact by construction (before rewiring);
 the small edge-count drift is the rewiring pass. The global ξ tracks the
