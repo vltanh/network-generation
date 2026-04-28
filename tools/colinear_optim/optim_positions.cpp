@@ -62,6 +62,12 @@ struct Opts {
     // members read as a coherent cluster.
     std::vector<std::vector<int>> clusters;  // indices into ids
     double clusterMaxDiameter = 0.0;         // 0 = disabled
+    double minCross = 0.0;                   // hard floor on triple distance; 0 = disabled
+    // Per-node cluster id (-1 = not in any cluster). Triples whose
+    // three nodes share a cluster id are weighted by intraWeight in
+    // the penalty sum, so intra-cluster colinearities cost more.
+    std::vector<int> clusterOf;              // size == ids.size()
+    double intraWeight = 3.0;
 };
 
 struct Score {
@@ -72,7 +78,8 @@ struct Score {
 };
 
 static Score scorePos(const std::vector<double>& X, const std::vector<double>& Y,
-                      double target, double tLo, double tHi) {
+                      double target, double tLo, double tHi,
+                      const std::vector<int>& clusterOf, double intraWeight) {
     Score s;
     const int N = (int)X.size();
     for (int i = 0; i < N; i++) for (int j = i + 1; j < N; j++) {
@@ -80,12 +87,15 @@ static Score scorePos(const std::vector<double>& X, const std::vector<double>& Y
         double d = std::hypot(dx, dy);
         if (d < s.minPair) s.minPair = d;
     }
+    bool useCluster = !clusterOf.empty();
     for (int i = 0; i < N; i++) for (int j = i + 1; j < N; j++) {
         double ax = X[i], ay = Y[i], bx = X[j], by = Y[j];
         double dx = bx - ax, dy = by - ay;
         double L2 = dx * dx + dy * dy;
         if (L2 < 1.0) continue;
         double L = std::sqrt(L2);
+        int ci = useCluster ? clusterOf[i] : -2;
+        int cj = useCluster ? clusterOf[j] : -2;
         for (int k = 0; k < N; k++) {
             if (k == i || k == j) continue;
             double cx = X[k], cy = Y[k];
@@ -94,12 +104,28 @@ static Score scorePos(const std::vector<double>& X, const std::vector<double>& Y
             if (t > tLo && t < tHi) {
                 if (cross < s.worst) s.worst = cross;
                 if (cross < target) s.count++;
-                // Diverging penalty as cross → 0 makes the SA strongly
-                // avoid near-colinear configurations even when pushing
-                // every triple above target is impossible.
-                if (cross < target * 2.5) {
-                    double inv = 1.0 / (cross + 0.5);
-                    s.penalty += inv * inv * inv;
+                // Penalty: max(target - cross, 0)^2 sums over every
+                // triple, so the optimizer chases the average +
+                // worst together. Intra-cluster triples (all three
+                // share the same cluster id) get a higher weight so
+                // members of one cluster don't read as colinear among
+                // themselves.
+                double w = 1.0;
+                if (useCluster && intraWeight > 1.0) {
+                    int ck = clusterOf[k];
+                    if (ci >= 0 && ci == cj && ci == ck) w = intraWeight;
+                }
+                // Combined cost. Quadratic deficit drives the average
+                // colinearity down; a 1/cross^4 divergence below half
+                // of target makes near-zero perpendicular distances
+                // catastrophic so the SA refuses to leave a high-worst
+                // attractor.
+                double dft = target - cross;
+                if (dft > 0) s.penalty += w * dft * dft;
+                if (cross < target * 0.5) {
+                    double inv = 1.0 / (cross + 0.3);
+                    double iv2 = inv * inv;
+                    s.penalty += w * iv2 * iv2 * 1000.0;
                 }
             }
         }
@@ -146,17 +172,24 @@ static Opts parseInput(const std::string& path) {
     if (j.contains("clusters")) {
         std::map<std::string, int> idIndex;
         for (int i = 0; i < (int)o.ids.size(); i++) idIndex[o.ids[i]] = i;
+        o.clusterOf.assign(o.ids.size(), -1);
+        int gid = 0;
         for (const auto& g : j["clusters"]) {
             std::vector<int> idxs;
             for (const auto& nid : g) {
                 std::string s = nid.get<std::string>();
                 auto it = idIndex.find(s);
-                if (it != idIndex.end()) idxs.push_back(it->second);
+                if (it != idIndex.end()) {
+                    idxs.push_back(it->second);
+                    o.clusterOf[it->second] = gid;
+                }
             }
-            if (!idxs.empty()) o.clusters.push_back(idxs);
+            if (!idxs.empty()) { o.clusters.push_back(idxs); gid++; }
         }
     }
     if (j.contains("clusterMaxDiameter")) o.clusterMaxDiameter = j["clusterMaxDiameter"].get<double>();
+    if (j.contains("intraWeight")) o.intraWeight = j["intraWeight"].get<double>();
+    if (j.contains("minCross")) o.minCross = j["minCross"].get<double>();
     return o;
 }
 
@@ -198,7 +231,7 @@ int main(int argc, char** argv) {
             }
         }
         // Push to feasibility on the seed if it isn't.
-        Score curScore = scorePos(X, Y, opts.target, opts.tLo, opts.tHi);
+        Score curScore = scorePos(X, Y, opts.target, opts.tLo, opts.tHi, opts.clusterOf, opts.intraWeight);
         for (int attempt = 0; attempt < 300 && curScore.minPair < opts.minPair; attempt++) {
             int id = nodeIdx(rng);
             double tx = std::round(X[id] + uni(rng) * 18);
@@ -209,7 +242,7 @@ int main(int argc, char** argv) {
                 std::swap(X[id], tx); std::swap(Y[id], ty);
                 continue;
             }
-            Score s = scorePos(X, Y, opts.target, opts.tLo, opts.tHi);
+            Score s = scorePos(X, Y, opts.target, opts.tLo, opts.tHi, opts.clusterOf, opts.intraWeight);
             if (s.minPair > curScore.minPair) curScore = s;
             else { std::swap(X[id], tx); std::swap(Y[id], ty); }
         }
@@ -231,19 +264,17 @@ int main(int argc, char** argv) {
                       && clusterDiameterOK(X, Y, opts);
             Score s;
             if (ok) {
-                s = scorePos(X, Y, opts.target, opts.tLo, opts.tHi);
+                s = scorePos(X, Y, opts.target, opts.tLo, opts.tHi, opts.clusterOf, opts.intraWeight);
                 if (s.minPair < opts.minPair) ok = false;
+                if (opts.minCross > 0 && s.worst < opts.minCross) ok = false;
             }
             bool accept = false;
             if (ok) {
-                // Energy is the negative worst-case perpendicular
-                // distance plus a small penalty tiebreaker. SA chases
-                // higher worst; the inverse-cube penalty acts as a
-                // gradient when many triples cluster near the same
-                // worst.
-                double curE = -curScore.worst * 100.0 + curScore.penalty * 0.01;
-                double newE = -s.worst * 100.0 + s.penalty * 0.01;
-                double dE = newE - curE;
+                // Energy = the squared-deficit penalty summed over
+                // every triple (intra-cluster triples weighted heavier
+                // — see scorePos). Reducing it pushes both the worst
+                // case and the count of near-colinear triples down.
+                double dE = s.penalty - curScore.penalty;
                 if (dE < 0 || u01(rng) < std::exp(-dE / temp)) accept = true;
             }
             if (accept) {
