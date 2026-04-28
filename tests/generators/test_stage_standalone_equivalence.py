@@ -52,7 +52,7 @@ VERSION_FLAGS = {
         "scope": "all",
         "gen_outlier_mode": "combined",
         "edge_correction": "rewire",
-        "algorithm": "hybrid",
+        "algorithm": "true_greedy",
     },
 }
 

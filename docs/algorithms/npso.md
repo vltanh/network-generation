@@ -22,7 +22,7 @@ Pipeline ([`src/npso/pipeline.sh`](../../src/npso/pipeline.sh)):
 | `--outlier-mode <excluded\|singleton\|combined>` | `singleton` | how `profile.py` folds outliers |
 | `--drop-outlier-outlier-edges` / `--keep-outlier-outlier-edges` | keep | strip OO edges from input edgelist |
 | `--match-degree` / `--no-match-degree` | off | optional Stage-4 degree rewire |
-| `--match-degree-algorithm <greedy\|true_greedy\|random_greedy\|rewire\|hybrid>` | `hybrid` | only with `--match-degree` |
+| `--match-degree-algorithm <greedy\|true_greedy\|random_greedy\|rewire\|hybrid>` | `true_greedy` | only with `--match-degree` |
 | `--remap` / `--no-remap` | on | MATLAB sampler emits fresh `1..N` IDs |
 
 Standalone `gen.py` (runs without Stage 1 if caller has fit the

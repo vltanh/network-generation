@@ -85,7 +85,7 @@ Pipeline (`./src/abcd+o/pipeline.sh`):
 - `--outlier-mode <excluded|singleton|combined>`: default `singleton`.
 - `--drop-outlier-outlier-edges` / `--keep-outlier-outlier-edges`: **default drop** (Julia sampler cannot produce OO edges).
 - `--match-degree` / `--no-match-degree`: default off.
-- `--match-degree-algorithm <greedy|true_greedy|random_greedy|rewire|hybrid>`: default `hybrid`.
+- `--match-degree-algorithm <greedy|true_greedy|random_greedy|rewire|hybrid>`: default `true_greedy`.
 - `--remap` / `--no-remap`: default on.
 
 See [../advanced-usage.md](../advanced-usage.md).

@@ -10,7 +10,7 @@
 # Optional: GEN_PROFILE_CLI_ARGS, GEN_EXTRA_STAGE2_INPUTS,
 #   GEN_TOPLEVEL_PARAMS / GEN_PROFILE_PARAMS / GEN_STAGE2_PARAMS (key=value lists),
 #   GEN_MATCH_DEGREE_ENABLE (0|1, default 0; add post-gen match_degree + combine stages),
-#   GEN_MATCH_DEGREE_ALGORITHM (greedy|true_greedy|random_greedy|rewire|hybrid, default hybrid).
+#   GEN_MATCH_DEGREE_ALGORITHM (greedy|true_greedy|random_greedy|rewire|hybrid, default true_greedy).
 
 set -u
 
@@ -27,7 +27,7 @@ fi
 : "${KEEP_STATE:=0}"
 : "${GEN_EXTRA_STAGE2_INPUTS:=}"
 : "${GEN_MATCH_DEGREE_ENABLE:=0}"
-: "${GEN_MATCH_DEGREE_ALGORITHM:=hybrid}"
+: "${GEN_MATCH_DEGREE_ALGORITHM:=true_greedy}"
 : "${GEN_MATCH_DEGREE_USE_REMAP:=0}"
 
 if ! declare -p GEN_PROFILE_CLI_ARGS >/dev/null 2>&1; then
