@@ -113,7 +113,7 @@ def test_resolve_m_capped_at_n_minus_1(gen_v3):
 
 
 def test_bayesian_search_runs_and_logs_iters(gen_v3):
-    pytest.importorskip("skopt")
+    pytest.importorskip("optuna")
     cluster_nodes_iid = list(range(40))
     best_T, best_cc, edges, recs, m = gen_v3._search_T_for_cluster(
         cluster_nodes_iid=cluster_nodes_iid, k=2, gamma=2.0,

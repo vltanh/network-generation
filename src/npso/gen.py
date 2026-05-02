@@ -386,7 +386,18 @@ def run_npso_generation(
                 # step_tol gates as the secant strategy. We pass
                 # n_startup_trials small (default 3) so the surrogate
                 # takes over quickly on the small budgets typical here.
-                import optuna
+                # Optuna is an opt-in dependency; raise a clear error if
+                # the user picked --search-strategy bayesian without
+                # installing it. The default 'secant' path never imports
+                # optuna.
+                try:
+                    import optuna
+                except ImportError as exc:
+                    raise SystemExit(
+                        "--search-strategy bayesian requires optuna "
+                        "(pip install optuna). Either install optuna or "
+                        "use --search-strategy secant (the default)."
+                    ) from exc
                 optuna.logging.set_verbosity(optuna.logging.WARNING)
 
                 tpe_n_startup = max(1, min(search_initial_points, max_iters))
