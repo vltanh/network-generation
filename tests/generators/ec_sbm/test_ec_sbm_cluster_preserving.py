@@ -26,7 +26,7 @@ INP_COM = (
 EC_SBM_DIR = REPO_ROOT / "externals" / "ec-sbm"
 
 
-@pytest.fixture(params=["ec-sbm-v1", "ec-sbm-v2"])
+@pytest.fixture(params=["ec-sbm-v1", "ec-sbm-v2", "ec-sbm-v3"])
 def gen_name(request):
     if not EC_SBM_DIR.exists():
         pytest.skip("ec-sbm submodule missing")

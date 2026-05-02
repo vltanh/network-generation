@@ -1,4 +1,4 @@
-"""EC-SBM v1 / v2 guarantees (see ``docs/algorithms/ec-sbm-v1.md`` + v2).
+"""EC-SBM v1 / v2 / v3 guarantees (see ``docs/algorithms/ec-sbm-v1.md`` + v2 + v3).
 
 The headline guarantee: **every cluster C's induced subgraph in the
 output is k(C)-edge-connected**, where k(C) is the input's per-cluster

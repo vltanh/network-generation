@@ -8,7 +8,7 @@ argv, and exercise the dispatcher to verify:
   * Each pipeline gets the common --input-edgelist/--input-clustering/
     --output-dir flags.
   * Generator-specific flags (seed, threads, abcd-dir, lfr-binary,
-    npso-dir, ec-sbm-v2 algorithm trio) are forwarded only where they
+    npso-dir, ec-sbm-v{1,2,3} flags) are forwarded only where they
     apply — and absent where they don't.
   * The unsupported-generator branch still rejects.
 
