@@ -22,6 +22,16 @@ SCOPE=""
 GEN_OUTLIER_MODE=""
 EDGE_CORRECTION=""
 ALGORITHM=""
+# v3-only PSO knobs.
+PSO_GAMMA=""
+PSO_M_POLICY=""
+PSO_M_FLOOR=""
+PSO_SEARCH_MAX_ITERS=""
+PSO_SEARCH_DIFF_TOL=""
+PSO_SEARCH_STEP_TOL=""
+PSO_SEARCH_T_MIN=""
+PSO_SEARCH_T_MAX=""
+PSO_INITIAL_T=""
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -38,6 +48,15 @@ while [[ "$#" -gt 0 ]]; do
         --gen-outlier-mode) GEN_OUTLIER_MODE="$2"; shift ;;
         --edge-correction) EDGE_CORRECTION="$2"; shift ;;
         --match-degree-algorithm) ALGORITHM="$2"; shift ;;
+        --pso-gamma) PSO_GAMMA="$2"; shift ;;
+        --pso-m-policy) PSO_M_POLICY="$2"; shift ;;
+        --pso-m-floor) PSO_M_FLOOR="$2"; shift ;;
+        --pso-search-max-iters) PSO_SEARCH_MAX_ITERS="$2"; shift ;;
+        --pso-search-diff-tol) PSO_SEARCH_DIFF_TOL="$2"; shift ;;
+        --pso-search-step-tol) PSO_SEARCH_STEP_TOL="$2"; shift ;;
+        --pso-search-t-min) PSO_SEARCH_T_MIN="$2"; shift ;;
+        --pso-search-t-max) PSO_SEARCH_T_MAX="$2"; shift ;;
+        --pso-initial-t) PSO_INITIAL_T="$2"; shift ;;
         --timeout) TIMEOUT="$2"; shift ;;
         --n-threads) N_THREADS="$2"; shift ;;
         --keep-state) KEEP_STATE=1 ;;
@@ -66,8 +85,24 @@ case "${VERSION}" in
         : "${EDGE_CORRECTION:=rewire}"
         : "${ALGORITHM:=true_greedy}"
         ;;
+    v3)
+        : "${SBM_OVERLAY_BOOL:=false}"  # stage 2 of v3 ignores this; kept for params.txt
+        : "${SCOPE:=all}"
+        : "${GEN_OUTLIER_MODE:=combined}"
+        : "${EDGE_CORRECTION:=rewire}"
+        : "${ALGORITHM:=true_greedy}"
+        : "${PSO_GAMMA:=3.0}"
+        : "${PSO_M_POLICY:=auto}"
+        : "${PSO_M_FLOOR:=1}"
+        : "${PSO_SEARCH_MAX_ITERS:=30}"
+        : "${PSO_SEARCH_DIFF_TOL:=0.01}"
+        : "${PSO_SEARCH_STEP_TOL:=0.0001}"
+        : "${PSO_SEARCH_T_MIN:=0.01}"
+        : "${PSO_SEARCH_T_MAX:=0.99}"
+        : "${PSO_INITIAL_T:=0.5}"
+        ;;
     "") ;;
-    *) echo "Error: --version must be v1 or v2 (got '${VERSION}')." >&2; exit 1 ;;
+    *) echo "Error: --version must be v1, v2, or v3 (got '${VERSION}')." >&2; exit 1 ;;
 esac
 
 # Defaults if neither --version nor explicit flag set them.
@@ -187,10 +222,26 @@ fi
 echo "=== Starting Stage 2: Generate Clustered ==="
 
 STG_GEN_CLUSTERED_PARAMS="${STG_GEN_CLUSTERED_DIR}/params.txt"
-write_params_file "${STG_GEN_CLUSTERED_PARAMS}" \
-    "seed=${SEED}" \
-    "n_threads=${N_THREADS}" \
-    "sbm_overlay=${SBM_OVERLAY_BOOL}"
+if [ "${VERSION}" = "v3" ]; then
+    write_params_file "${STG_GEN_CLUSTERED_PARAMS}" \
+        "seed=${SEED}" \
+        "n_threads=${N_THREADS}" \
+        "version=v3" \
+        "pso_gamma=${PSO_GAMMA}" \
+        "pso_m_policy=${PSO_M_POLICY}" \
+        "pso_m_floor=${PSO_M_FLOOR}" \
+        "pso_search_max_iters=${PSO_SEARCH_MAX_ITERS}" \
+        "pso_search_diff_tol=${PSO_SEARCH_DIFF_TOL}" \
+        "pso_search_step_tol=${PSO_SEARCH_STEP_TOL}" \
+        "pso_search_t_min=${PSO_SEARCH_T_MIN}" \
+        "pso_search_t_max=${PSO_SEARCH_T_MAX}" \
+        "pso_initial_t=${PSO_INITIAL_T}"
+else
+    write_params_file "${STG_GEN_CLUSTERED_PARAMS}" \
+        "seed=${SEED}" \
+        "n_threads=${N_THREADS}" \
+        "sbm_overlay=${SBM_OVERLAY_BOOL}"
+fi
 
 IN_GEN_CLUSTERED="${OUT_PROFILE} ${STG_GEN_CLUSTERED_PARAMS}"
 OUT_GEN_CLUSTERED="${STG_GEN_CLUSTERED_DIR}/edge.csv ${STG_GEN_CLUSTERED_DIR}/sources.json"
@@ -202,17 +253,41 @@ else
 fi
 
 if ! is_step_done "${STG_GEN_CLUSTERED_DIR}/done" "${OUT_GEN_CLUSTERED}"; then
-    run_stage "${STG_GEN_CLUSTERED_DIR}/time_and_err.log" \
-        python "${PACKAGE_PY_DIR}/gen_clustered.py" \
-        --node-id "${STG_PROFILE_DIR}/node_id.csv" \
-        --cluster-id "${STG_PROFILE_DIR}/cluster_id.csv" \
-        --assignment "${STG_PROFILE_DIR}/assignment.csv" \
-        --degree "${STG_PROFILE_DIR}/degree.csv" \
-        --mincut "${STG_PROFILE_DIR}/mincut.csv" \
-        --edge-counts "${STG_PROFILE_DIR}/edge_counts.csv" \
-        --output-folder "${STG_GEN_CLUSTERED_DIR}" \
-        --seed "${SEED}" \
-        "${GEN_CLUSTERED_OVERLAY_FLAG[@]}"
+    if [ "${VERSION}" = "v3" ]; then
+        run_stage "${STG_GEN_CLUSTERED_DIR}/time_and_err.log" \
+            python "${PACKAGE_PY_DIR}/gen_clustered_v3.py" \
+            --node-id "${STG_PROFILE_DIR}/node_id.csv" \
+            --cluster-id "${STG_PROFILE_DIR}/cluster_id.csv" \
+            --assignment "${STG_PROFILE_DIR}/assignment.csv" \
+            --degree "${STG_PROFILE_DIR}/degree.csv" \
+            --mincut "${STG_PROFILE_DIR}/mincut.csv" \
+            --edge-counts "${STG_PROFILE_DIR}/edge_counts.csv" \
+            --orig-edgelist "${INPUT_EDGELIST}" \
+            --orig-clustering "${INPUT_CLUSTERING}" \
+            --output-folder "${STG_GEN_CLUSTERED_DIR}" \
+            --seed "${SEED}" \
+            --pso-gamma "${PSO_GAMMA}" \
+            --pso-m-policy "${PSO_M_POLICY}" \
+            --pso-m-floor "${PSO_M_FLOOR}" \
+            --pso-search-max-iters "${PSO_SEARCH_MAX_ITERS}" \
+            --pso-search-diff-tol "${PSO_SEARCH_DIFF_TOL}" \
+            --pso-search-step-tol "${PSO_SEARCH_STEP_TOL}" \
+            --pso-search-t-min "${PSO_SEARCH_T_MIN}" \
+            --pso-search-t-max "${PSO_SEARCH_T_MAX}" \
+            --pso-initial-t "${PSO_INITIAL_T}"
+    else
+        run_stage "${STG_GEN_CLUSTERED_DIR}/time_and_err.log" \
+            python "${PACKAGE_PY_DIR}/gen_clustered.py" \
+            --node-id "${STG_PROFILE_DIR}/node_id.csv" \
+            --cluster-id "${STG_PROFILE_DIR}/cluster_id.csv" \
+            --assignment "${STG_PROFILE_DIR}/assignment.csv" \
+            --degree "${STG_PROFILE_DIR}/degree.csv" \
+            --mincut "${STG_PROFILE_DIR}/mincut.csv" \
+            --edge-counts "${STG_PROFILE_DIR}/edge_counts.csv" \
+            --output-folder "${STG_GEN_CLUSTERED_DIR}" \
+            --seed "${SEED}" \
+            "${GEN_CLUSTERED_OVERLAY_FLAG[@]}"
+    fi
     mark_done "${STG_GEN_CLUSTERED_DIR}/done" "Stage 2 (gen_clustered)" "${IN_GEN_CLUSTERED}" "${OUT_GEN_CLUSTERED}"
 else
     note_stage_skipped "${STG_GEN_CLUSTERED_DIR}/time_and_err.log"
