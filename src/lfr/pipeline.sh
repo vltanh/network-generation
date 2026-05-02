@@ -19,6 +19,7 @@ DROP_OO_BOOL="false"
 REMAP_ENABLE=1
 MATCH_DEGREE_ENABLE=0
 MATCH_DEGREE_ALGORITHM="true_greedy"
+MATCH_DEGREE_MODE="global"
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -37,6 +38,7 @@ while [[ "$#" -gt 0 ]]; do
         --match-degree) MATCH_DEGREE_ENABLE=1 ;;
         --no-match-degree) MATCH_DEGREE_ENABLE=0 ;;
         --match-degree-algorithm) MATCH_DEGREE_ALGORITHM="$2"; shift ;;
+        --match-degree-mode) MATCH_DEGREE_MODE="$2"; shift ;;
         *) echo "Unknown parameter passed: $1"; exit 1 ;;
     esac
     shift
@@ -71,6 +73,8 @@ GEN_CLI_ARGS=(
 GEN_MATCH_DEGREE_ENABLE="${MATCH_DEGREE_ENABLE}"
 GEN_MATCH_DEGREE_ALGORITHM="${MATCH_DEGREE_ALGORITHM}"
 GEN_MATCH_DEGREE_USE_REMAP="${REMAP_ENABLE}"
+GEN_MATCH_DEGREE_MODE="${MATCH_DEGREE_MODE}"
+GEN_MATCH_DEGREE_OUTLIER_MODE="${OUTLIER_MODE}"
 
 # shellcheck disable=SC2034
 GEN_TOPLEVEL_PARAMS=(
@@ -80,6 +84,7 @@ GEN_TOPLEVEL_PARAMS=(
     "drop_outlier_outlier_edges=${DROP_OO_BOOL}"
     "match_degree_enable=${MATCH_DEGREE_ENABLE}"
     "match_degree_algorithm=${MATCH_DEGREE_ALGORITHM}"
+    "match_degree_mode=${MATCH_DEGREE_MODE}"
     "match_degree_use_remap=${REMAP_ENABLE}"
 )
 # shellcheck disable=SC2034

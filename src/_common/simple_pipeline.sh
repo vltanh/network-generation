@@ -29,6 +29,8 @@ fi
 : "${GEN_MATCH_DEGREE_ENABLE:=0}"
 : "${GEN_MATCH_DEGREE_ALGORITHM:=true_greedy}"
 : "${GEN_MATCH_DEGREE_USE_REMAP:=0}"
+: "${GEN_MATCH_DEGREE_MODE:=global}"
+: "${GEN_MATCH_DEGREE_OUTLIER_MODE:=combined}"
 
 if ! declare -p GEN_PROFILE_CLI_ARGS >/dev/null 2>&1; then
     GEN_PROFILE_CLI_ARGS=()
@@ -175,6 +177,7 @@ if [ "${GEN_MATCH_DEGREE_ENABLE}" = "1" ]; then
     write_params_file "${STG3_PARAMS}" \
         "seed=$((SEED + 1))" \
         "match_degree_algorithm=${GEN_MATCH_DEGREE_ALGORITHM}" \
+        "match_degree_mode=${GEN_MATCH_DEGREE_MODE}" \
         "use_remap=${GEN_MATCH_DEGREE_USE_REMAP}"
 
     IN_3="${STG2_DIR}/edge.csv ${INPUT_EDGELIST} ${INPUT_CLUSTERING} ${STG3_PARAMS}"
@@ -185,6 +188,19 @@ if [ "${GEN_MATCH_DEGREE_ENABLE}" = "1" ]; then
         STG3_REMAP_FLAG=(--remap)
     fi
 
+    # Cluster-preserving mode hands the gen's own com.csv as input
+    # clustering and the user's reference clustering as ref clustering.
+    # Direct mode (--no-remap) demands shared IDs between the two; remap
+    # mode (rank-pair) handles disjoint ID spaces.
+    STG3_CP_FLAGS=()
+    if [ "${GEN_MATCH_DEGREE_MODE}" = "cluster_preserving" ]; then
+        STG3_CP_FLAGS=(
+            --input-clustering "${STG2_DIR}/com.csv"
+            --ref-clustering   "${INPUT_CLUSTERING}"
+            --outlier-mode     "${GEN_MATCH_DEGREE_OUTLIER_MODE}"
+        )
+    fi
+
     if ! is_step_done "${STG3_EDGES_DIR}/done" "${OUT_3}"; then
         run_stage "${STG3_EDGES_DIR}/time_and_err.log" \
             python "${SRC_DIR}/match_degree.py" \
@@ -192,6 +208,7 @@ if [ "${GEN_MATCH_DEGREE_ENABLE}" = "1" ]; then
             --ref-edgelist   "${INPUT_EDGELIST}" \
             --match-degree-algorithm "${GEN_MATCH_DEGREE_ALGORITHM}" \
             "${STG3_REMAP_FLAG[@]}" \
+            "${STG3_CP_FLAGS[@]}" \
             --output-folder  "${STG3_EDGES_DIR}" \
             --seed           "$((SEED + 1))"
         mark_done "${STG3_EDGES_DIR}/done" "Stage 3 (match_degree)" "${IN_3}" "${OUT_3}"
