@@ -12,6 +12,7 @@ determinism + reproducibility, runtime cost, and CLI flags.
 | [`sbm`](./algorithms/sbm.md) | Degree-corrected stochastic block model             | `graph_tool.generate_sbm`                                             |
 | [`ec-sbm-v1`](./algorithms/ec-sbm-v1.md) | SBM + edge-connectivity guarantee + outlier SBM | Constructive K_{k+1} core + full-SBM overlay + separate outlier SBM + heap-greedy matcher |
 | [`ec-sbm-v2`](./algorithms/ec-sbm-v2.md) | SBM + edge-connectivity guarantee + residual-SBM outliers | Constructive core + residual SBM with block-preserving rewire + five-way matcher          |
+| [`ec-sbm-v3`](./algorithms/ec-sbm-v3.md) | EC-SBM with per-cluster PSO + ccoeff-targeted T search | PSO per cluster (m >= k) + bisection-secant T search + v2 residual SBM + match_degree     |
 | [`abcd`](./algorithms/abcd.md) | Artificial benchmark for community detection      | `ABCDGraphGenerator.jl`                                              |
 | [`abcd+o`](./algorithms/abcd+o.md) | ABCD with explicit outliers                     | `ABCDGraphGenerator.jl` (n_outliers > 0)                              |
 | [`lfr`](./algorithms/lfr.md) | Lancichinetti-Fortunato-Radicchi benchmark          | `unweighted_undirected/benchmark` (C++)                               |
@@ -98,18 +99,18 @@ behaviour, use `1` and move on.
 ### Achieved vs target statistics (dnc + sbm-flat-best+cc, seed=1)
 
 Input: 906 nodes, 10429 edges, mean degree 23.02, global ccoeff 0.548,
-local ccoeff 0.494, mean k-core 15.99, 87 clusters.
+mean k-core 15.99, char-time 40.41, pseudo-diameter 8, 87 clusters.
 
-| Gen        | N    | Edges | Mean deg | Global ccf | Local ccf | Clusters |
-| ---------- | ---- | ----: | -------: | ---------: | --------: | -------: |
-| input      | 906  | 10429 | 23.02    | 0.548      | 0.494     | 87       |
-| sbm        | 902  |  7438 | 16.49    | 0.341      | 0.216     | 87       |
-| ec-sbm-v1  | 906  | 10425 | 23.01    | 0.424      | 0.321     | 87       |
-| ec-sbm-v2  | 906  | 10342 | 22.83    | 0.501      | 0.342     | 87       |
-| abcd       | 906  | 10150 | 22.41    | 0.307      | 0.234     | 87       |
-| abcd+o     | 673* | 10070 | 29.93    | 0.307      | 0.339     | 87       |
-| lfr        | 906  | 10370 | 22.89    | 0.252      | 0.732     | 10       |
-| npso       | 906  | 10794 | 23.83    | 0.098**    | 0.558     | 161      |
+| Gen        | N    | Edges | Mean deg | Global ccf | Char time | Pseudo-diam | Clusters |
+| ---------- | ---- | ----: | -------: | ---------: | --------: | ----------: | -------: |
+| input      | 906  | 10429 | 23.02    | 0.548      |     40.41 |           8 | 87       |
+| sbm        | 906  | 10429 | 23.02    | 0.422      |     11.49 |           8 | 87       |
+| ec-sbm-v1  | 906  | 10425 | 23.01    | 0.424      |     22.38 |           7 | 87       |
+| ec-sbm-v2  | 906  | 10342 | 22.83    | 0.501      |     22.24 |           7 | 87       |
+| abcd       | 906  | 10150 | 22.41    | 0.307      |      1.95 |           5 | 87       |
+| abcd+o     | 673* | 10070 | 29.93    | 0.307      |      2.92 |           6 | 87       |
+| lfr        | 906  | 10370 | 22.89    | 0.252      |      1.38 |           4 | 10       |
+| npso       | 906  | 10794 | 23.83    | 0.098**    |      6.14 |           3 | 161      |
 
 &ast; abcd+o's `edge.csv` carries 673 distinct endpoints; the remaining
 profile-declared outliers (n_outliers = 355) end up edgeless and drop

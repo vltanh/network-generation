@@ -1,0 +1,170 @@
+# EC-SBM v3
+
+[← back to index](../algorithms.md)
+
+## What changes from v2
+
+**Stage 2 is a per-cluster PSO sample, not a constructive K_{k+1} core.**
+v2 builds the clique-and-attach skeleton in
+[`gen_kec_core.py`](../../externals/ec-sbm/src/gen_kec_core.py); v3
+calls a Python port of the
+[Popularity-Similarity-Optimization](https://www.nature.com/articles/nature11459)
+model in [`gen_pso_core.py`](../../externals/ec-sbm/src/gen_pso_core.py)
+once per cluster, with the cluster's mincut `k` doubling as PSO's `m`
+parameter (capped at `n-1` and floored at 1).
+
+Stages 1, 3, 4 are unchanged from v2. The residual SBM still runs over
+all blocks with the same `--scope all --gen-outlier-mode combined
+--edge-correction rewire` defaults, and `match_degree` still defaults to
+`true_greedy`.
+
+## Why PSO
+
+The constructive core was tuned for k-edge-connectivity, not for
+clustering coefficient. Empirical communities sit on a hyperbolic
+manifold: hubs are central, peripheral nodes attach by similarity, and
+triangle density drops smoothly with hyperbolic temperature `T`. PSO
+captures both popularity (radial coordinate, ~ degree distribution
+power-law) and similarity (angular coordinate). With `T = 0` it acts
+deterministically on the closest `m` neighbors and saturates the
+clustering coefficient; with `T → 1` it draws partners almost uniformly
+and triangles disappear. So PSO ships a single dial that lets each
+cluster's intra-cluster ccoeff move toward its empirical target without
+giving up the k-edge-connectivity guarantee.
+
+## The PSO call
+
+For each cluster:
+
+1. Sort nodes by descending residual degree (tiebreak iid asc). The
+   highest-degree survivor plays PSO's "node 1" role: oldest in the
+   growth process, most central radially.
+2. Pick `m = max(k, m_floor, round(empirical_mean_intra_deg / 2))`.
+   Capped at `n - 1`. With `--pso-m-policy auto` (default) the lift
+   above `k` reflects PSO's literal "m = half mean degree" interpretation
+   when the empirical cluster is denser than its mincut alone implies.
+   `--pso-m-policy floor` skips the empirical lift.
+3. Sample angular coordinates `theta_i ~ Uniform[0, 2pi)`.
+4. Grow the graph node by node from `t = 2 ... n`. Update radial
+   coordinates `r_i(t) = beta * 2 ln(i) + (1 - beta) * 2 ln(t)`,
+   `beta = 1 / (gamma - 1)`. New node connects to `m` existing nodes,
+   sampled without replacement with weight
+   `p_i = 1 / (1 + exp((d_i - R_t) / 2T))`, where `d_i` is the
+   hyperbolic distance and `R_t` is the curvature-corrected radius
+   from the PSO paper. `T = 0` short-circuits to the `m` closest
+   neighbors deterministically.
+
+`m >= k` plus the K_{m+1} sub-clique built by the "connect to all
+existing" branch when `t - 1 <= m` keeps the per-cluster mincut at
+exactly `m` (and therefore at least `k`). The k-edge-connectivity
+guarantee inherited from v1 is unchanged.
+
+## The T search
+
+The cluster's target is the empirical global clustering coefficient
+on its intra-cluster induced subgraph (`3 * triangles / triplets`,
+matching the [`networkit` exactGlobal](https://networkit.github.io/) and
+nPSO conventions). The simulated ccoeff is monotone decreasing in `T`,
+so `f(T) = ccoeff(T) - target` is a 1-D root with a sign-change
+guarantee on `[t_min, t_max]`.
+
+The search is the same secant-over-bisection scheme used by
+[`src/npso/gen.py`](../../src/npso/gen.py): bracket on
+`[t_min, t_max]`, midpoint when only one endpoint residual is known,
+secant otherwise (with a 5%-margin guard that falls back to midpoint
+when the secant guess sits too close to a bracket end). Each iteration
+re-seeds PSO so that different `T` values get different draws but the
+same `T` re-runs deterministically. Stops on
+`|ccoeff - target| < diff_tol`, on
+`|ccoeff(t_i) - ccoeff(t_{i-1})| < step_tol`, or after
+`pso_search_max_iters` iterations.
+
+`stage/gen_clustered/pso_search_log.json` keeps the per-cluster trace
+(every `(T, ccoeff, diff)` it tried, plus the final `(best_T,
+best_ccoeff, m_used, empirical_mean_intra_deg)`).
+
+## Skip cases
+
+- `n <= m + 1`: PSO reduces to the complete graph. No T search; one
+  call at `--pso-initial-t` is logged with the `note: complete_graph`
+  marker.
+- `k == 0` or `n <= 1`: no edges placed, no log entry beyond the
+  `n_iters: 0` skeleton.
+
+## Output guarantees
+
+Inherits everything from v2 plus a per-cluster ccoeff target:
+
+- **N** exact after the outlier transform.
+- **k-edge-connectivity at least k(C)** per cluster by construction.
+- **Block structure** exact.
+- **Degree sequence** targeted; the residual stages spend whatever
+  PSO did not consume.
+- **Per-cluster clustering coefficient** within `pso_search_diff_tol`
+  of empirical, subject to the `m` floor (high-target clusters with
+  small `n` and `k=1` saturate around `cc(K_3) = 1`; low-target
+  clusters with `n=3` and an empirical zero-cc force `m=1`, which is a
+  tree).
+
+On the [dnc](../../examples/input/empirical_networks/networks/dnc/)
+fixture (552 clustered nodes, 87 clusters), seed 1, 25 search iters:
+mean per-cluster final ccoeff |diff| ≈ 0.025, median 0.0, worst ≈ 0.37.
+Zero k-edge-connectivity violations across all 87 shared clusters.
+
+## Determinism
+
+Three RNGs as in v2 (`random`, `numpy`, `graph-tool`), each seeded
+per stage with `seed` / `seed+1` / `seed+2`. PSO uses
+`np.random.default_rng(seed_iter)` where
+`seed_iter = (cluster_seed * 1_000_003 + iter_idx) & 0xFFFFFFFF` and
+`cluster_seed = (global_seed * 9_999_991 + cluster_iid) & 0xFFFFFFFF`.
+Per-iter re-seeding lets a re-run at the same `T` reproduce its own
+output without locking the search into a single draw at `T_0`.
+
+`PYTHONHASHSEED=0` still required for stages 3a + 4a's set-iteration
+sites.
+
+## Provenance bands
+
+`stage/gen_clustered/sources.json` holds a single band:
+
+- `clustered_pso_core` — every per-cluster PSO edge, sorted globally.
+
+Stage 3a + 4a bands are inherited from v2 (`outlier_sbm`,
+`outlier_rewire`, `match_degree_<algo>`).
+
+## CLI flags
+
+Dispatcher (`run_generator.sh`):
+
+- `--ec-sbm-dir <p>`: path to the ec-sbm submodule. Same as v2.
+
+Pipeline (`./src/ec-sbm/pipeline.sh --version v3 ...`) and standalone
+(`./externals/ec-sbm/scripts/run_ecsbm.sh --version v3 ...`):
+
+- `--pso-gamma F`: power-law exponent (default `3.0`).
+- `--pso-m-policy {auto|floor}`: how to derive m. `auto` lifts to the
+  empirical mean intra-cluster degree (default), `floor` keeps it at
+  `max(k, --pso-m-floor)`.
+- `--pso-m-floor N`: hard lower bound on m (default `1`).
+- `--pso-search-max-iters N`: T-search iter cap (default `30`).
+- `--pso-search-diff-tol F`: stop when `|cc - target| < this`.
+- `--pso-search-step-tol F`: stop when successive ccoeffs differ
+  by less than this.
+- `--pso-search-t-min F`, `--pso-search-t-max F`: search bracket.
+- `--pso-initial-t F`: T used for the complete-graph regime
+  (default `0.5`).
+
+The other v2 flags (`--scope`, `--gen-outlier-mode`,
+`--edge-correction`, `--match-degree-algorithm`) still apply to
+stages 3a / 4a; v3's preset bundle copies v2's defaults there.
+
+## Where to look next
+
+- [Source: `externals/ec-sbm/src/gen_clustered_v3.py`](../../externals/ec-sbm/src/gen_clustered_v3.py) (per-cluster T-search driver)
+- [Source: `externals/ec-sbm/src/gen_pso_core.py`](../../externals/ec-sbm/src/gen_pso_core.py) (Python port of `nPSO_model.m` PSO branch)
+- [Source: `externals/ec-sbm/src/gen_outlier.py`](../../externals/ec-sbm/src/gen_outlier.py) (residual SBM, unchanged from v2)
+- [Source: `src/match_degree.py`](../../src/match_degree.py)
+- [nPSO post](./npso.md) (the multi-cluster cousin; v3 uses the single-cluster degenerate case per ec-sbm cluster)
+- [EC-SBM v2 post](./ec-sbm-v2.md)
+- [Index of all generators](../algorithms.md)
