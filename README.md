@@ -4,10 +4,10 @@ Generate a synthetic network that mirrors an empirical input (edge list +
 reference clustering), then optionally compute statistics and compare
 against the original.
 
-Seven generators: `sbm`, `ec-sbm-v1`, `ec-sbm-v2`, `abcd`, `abcd+o`,
-`lfr`, `npso`. See [docs/algorithms.md](docs/algorithms.md) for what
-each preserves (degrees, block structure, mixing parameter, clustering
-coefficient) and the determinism / cost trade-offs.
+Eight generators: `sbm`, `ec-sbm-v1`, `ec-sbm-v2`, `ec-sbm-v3`, `abcd`,
+`abcd+o`, `lfr`, `npso`. See [docs/algorithms.md](docs/algorithms.md) for
+what each preserves (degrees, block structure, mixing parameter,
+clustering coefficient) and the determinism / cost trade-offs.
 
 ## Install
 
@@ -43,7 +43,7 @@ Auto-resolves paths from the standard `data/` tree.
 
 | Argument | Custom | Macro | Description |
 | --- | :---: | :---: | --- |
-| `--generator <gen>` | ✓ | ✓ | One of `sbm`, `ec-sbm-v1`, `ec-sbm-v2`, `abcd`, `abcd+o`, `lfr`, `npso`. |
+| `--generator <gen>` | ✓ | ✓ | One of `sbm`, `ec-sbm-v1`, `ec-sbm-v2`, `ec-sbm-v3`, `abcd`, `abcd+o`, `lfr`, `npso`. |
 | `--run-id <id>` | ✓ | ✓ | Numerical run identifier. |
 | `--macro` |   | ✓ | Enable macro mode. |
 | `--input-edgelist <p>` | ✓ |   | Empirical edge list CSV (header `source,target`). |
@@ -87,7 +87,7 @@ Auto-resolves paths from the standard `data/` tree.
 Notes:
 
 - `--seed 0` silently disables byte-reproducibility in graph-tool-backed
-  generators (`sbm`, `ec-sbm-v1`, `ec-sbm-v2`).
+  generators (`sbm`, `ec-sbm-v1`, `ec-sbm-v2`, `ec-sbm-v3`).
 - `--n-threads > 1` is untested and may break determinism. Leave at `1`
   unless you have a reason to change it. `lfr` is single-threaded and
   ignores this flag.
@@ -100,8 +100,7 @@ the pipeline-layer knobs (reachable via `src/<gen>/pipeline.sh` direct
 invocation) are documented on the per-generator page:
 
 - [`sbm`](docs/algorithms/sbm.md)
-- [`ec-sbm-v1`](docs/algorithms/ec-sbm-v1.md)
-- [`ec-sbm-v2`](docs/algorithms/ec-sbm-v2.md)
+- [`ec-sbm-v1`](docs/algorithms/ec-sbm-v1.md) / [`ec-sbm-v2`](docs/algorithms/ec-sbm-v2.md) / [`ec-sbm-v3`](docs/algorithms/ec-sbm-v3.md)
 - [`abcd`](docs/algorithms/abcd.md) / [`abcd+o`](docs/algorithms/abcd+o.md)
 - [`lfr`](docs/algorithms/lfr.md)
 - [`npso`](docs/algorithms/npso.md)
@@ -204,7 +203,7 @@ skip generators whose externals are not installed. See
 ## Benchmarking
 
 [`benchmark/bench_gens.sh`](benchmark/bench_gens.sh)
-measures end-to-end wall-clock and byte-reproducibility across the seven
+measures end-to-end wall-clock and byte-reproducibility across the eight
 generators (default: 2 warmup + 10 kept runs per seed, seeds 1-10,
 single-threaded, on the shipped `dnc + sbm-flat-best+cc` example). See
 the Runtime section of [docs/algorithms.md](docs/algorithms.md) for
@@ -213,7 +212,7 @@ reference numbers.
 ## Acknowledgements
 
 - **`sbm`**: [graph-tool](https://graph-tool.skewed.de/).
-- **`ec-sbm-v1`, `ec-sbm-v2`**: [illinois-or-research-analytics/ec-sbm](https://github.com/illinois-or-research-analytics/ec-sbm). The two versions are flag-bundle presets over a shared pipeline.
+- **`ec-sbm-v1`, `ec-sbm-v2`, `ec-sbm-v3`**: [illinois-or-research-analytics/ec-sbm](https://github.com/illinois-or-research-analytics/ec-sbm). The three versions are flag-bundle presets over a shared pipeline.
 - **`abcd` / `abcd+o`**: [ABCDGraphGenerator.jl](https://github.com/bkamins/ABCDGraphGenerator.jl).
 - **`lfr`**: [LFR benchmark](https://www.santofortunato.net/resources).
 - **`npso`**: [nPSO_model](https://github.com/biomedical-cybernetics/nPSO_model).

@@ -127,7 +127,7 @@ which disables reproducibility. Default everywhere in this repo is
 
 ## Cost
 
-SBM is the fastest of the seven generators at this input size. Concrete
+SBM is the fastest of the eight generators at this input size. Concrete
 numbers live in `examples/benchmark/summary.csv`, refreshed by
 [`tools/benchmark/bench_isolated.sh`](../../tools/benchmark/bench_isolated.sh).
 

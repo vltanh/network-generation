@@ -5,7 +5,7 @@ Algorithm walkthroughs (with interactive viz) live at
 the per-toolchain technical details: pipeline contract, output guarantees,
 determinism + reproducibility, runtime cost, and CLI flags.
 
-## The seven generators at a glance
+## The eight generators at a glance
 
 | Generator                    | Model family                                        | Stage-2 sampler                                                       |
 | ---------------------------- | --------------------------------------------------- | --------------------------------------------------------------------- |
@@ -18,7 +18,7 @@ determinism + reproducibility, runtime cost, and CLI flags.
 | [`lfr`](./algorithms/lfr.md) | Lancichinetti-Fortunato-Radicchi benchmark          | `unweighted_undirected/benchmark` (C++)                               |
 | [`npso`](./algorithms/npso.md) | Non-uniform popularity-similarity optimisation    | `nPSO_model` (MATLAB), wrapped in a secant search over temperature    |
 
-All seven consume the same inputs at the repo boundary: an undirected edge
+All eight consume the same inputs at the repo boundary: an undirected edge
 list and a reference clustering (`node_id → cluster_id`, not necessarily a
 partition). Stage 1 extracts a per-gen profile; stage 2 samples from it.
 
@@ -61,8 +61,8 @@ prepended outlier block of size n_outliers.
 
 ## Self-loops and parallel edges
 
-All seven generators emit simple graphs. sbm, ec-sbm-v1, and ec-sbm-v2
-call `remove_parallel_edges` + `remove_self_loops` after
+All eight generators emit simple graphs. sbm, ec-sbm-v1, ec-sbm-v2, and
+ec-sbm-v3 call `remove_parallel_edges` + `remove_self_loops` after
 `gt.generate_sbm`; the ec-sbm pipelines additionally `drop_duplicates`
 in the combine stage. ABCD / ABCD+o / LFR resolve loops and duplicates
 inside their external samplers via rewiring; LFR's Python wrapper
@@ -73,7 +73,7 @@ reads edges from a MATLAB {0, 1} adjacency matrix via `triu(adj, 1)` /
 
 ## Reproducibility notes
 
-All seven generators are byte-reproducible end-to-end under a fixed
+All eight generators are byte-reproducible end-to-end under a fixed
 `--seed`. The sha256 prefixes of the shipped example (dnc +
 sbm-flat-best+cc, `--seed 1`, on the current host) are:
 
@@ -89,9 +89,9 @@ sbm-flat-best+cc, `--seed 1`, on the current host) are:
 | npso       | `902a91042578`           | `994659ded445`          |
 
 `sbm` passes the input clustering through after dropping singletons;
-ec-sbm-v1 and ec-sbm-v2 share `com.csv` (same set of node→cluster pairs
-re-ordered by `match_degree`); the last four emit their own cluster
-assignment each run.
+ec-sbm-v1, ec-sbm-v2, and ec-sbm-v3 share `com.csv` (same set of
+node→cluster pairs re-ordered by `match_degree`); the remaining four
+emit their own cluster assignment each run.
 
 **Trap:** `--seed 0` silently disables graph-tool's PRNG (documented as
 "entropy source") and breaks byte-reproducibility for `sbm` and `ec-sbm`.
