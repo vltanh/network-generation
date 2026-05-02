@@ -531,6 +531,55 @@ def _bp_counts(edgelist_fp, b, node_id2iid):
     return counts
 
 
+def build_bp_budget_remap(input_edgelist_fp, ref_edgelist_fp,
+                          input_clustering_fp, outlier_mode, node_id2iid):
+    """Remap-mode bp budget in INPUT block space.
+
+    Rank-pair (descending degree, ties by node id) maps each ref node to
+    an input node. Each ref edge ``(a, b)`` translates to its rank-paired
+    input pair, whose bp under ``input_clustering`` increments
+    ``induced_bp``. Budget = ``induced_bp - input_bp`` clamped at 0.
+
+    Ref-side clustering plays no role: the rank-pair already mediates the
+    translation, and the budget lives in input block space.
+    """
+    b = build_block_assignment(node_id2iid, input_clustering_fp, outlier_mode)
+
+    in_df = pd.read_csv(input_edgelist_fp, dtype=str)
+    ref_df = pd.read_csv(ref_edgelist_fp, dtype=str)
+
+    in_endpoints = pd.concat([in_df["source"], in_df["target"]], ignore_index=True)
+    ref_endpoints = pd.concat([ref_df["source"], ref_df["target"]], ignore_index=True)
+    in_deg = in_endpoints.value_counts()
+    ref_deg = ref_endpoints.value_counts()
+
+    in_nodes = sorted(in_deg.index, key=lambda n: (-int(in_deg[n]), n))
+    ref_nodes = sorted(ref_deg.index, key=lambda n: (-int(ref_deg[n]), n))
+    n_pair = min(len(in_nodes), len(ref_nodes))
+    ref_node2input_id = {ref_nodes[i]: in_nodes[i] for i in range(n_pair)}
+
+    induced_bp = defaultdict(int)
+    for src, tgt in zip(ref_df["source"], ref_df["target"]):
+        u_id = ref_node2input_id.get(src)
+        v_id = ref_node2input_id.get(tgt)
+        if u_id is None or v_id is None:
+            continue
+        if u_id not in node_id2iid or v_id not in node_id2iid:
+            continue
+        u, v = node_id2iid[u_id], node_id2iid[v_id]
+        bu, bv = int(b[u]), int(b[v])
+        induced_bp[(min(bu, bv), max(bu, bv))] += 1
+
+    inp_bp = _bp_counts(input_edgelist_fp, b, node_id2iid)
+
+    bp_budget = {}
+    for key, ind_cnt in induced_bp.items():
+        diff = ind_cnt - inp_bp.get(key, 0)
+        if diff > 0:
+            bp_budget[key] = diff
+    return b, bp_budget
+
+
 def build_bp_budget_direct(input_edgelist_fp, ref_edgelist_fp, clustering_fp,
                            outlier_mode, node_id2iid):
     """Direct-mode bp budget: ``ref_count - input_count`` clamped at 0.
@@ -960,15 +1009,17 @@ def main():
 
     if is_cp:
         if args.remap:
-            raise SystemExit(
-                f"--remap is not yet wired for cluster-preserving algorithms; "
-                f"use --no-remap (direct mode) until C3 lands."
-            )
-        with timed("Built per-bp budget (direct mode)"):
-            b, bp_budget = build_bp_budget_direct(
-                args.input_edgelist, args.ref_edgelist,
-                args.input_clustering, args.outlier_mode, node_id2iid,
-            )
+            with timed("Built per-bp budget (remap mode)"):
+                b, bp_budget = build_bp_budget_remap(
+                    args.input_edgelist, args.ref_edgelist,
+                    args.input_clustering, args.outlier_mode, node_id2iid,
+                )
+        else:
+            with timed("Built per-bp budget (direct mode)"):
+                b, bp_budget = build_bp_budget_direct(
+                    args.input_edgelist, args.ref_edgelist,
+                    args.input_clustering, args.outlier_mode, node_id2iid,
+                )
 
     with timed("Degree matching"):
         bands = None
