@@ -176,9 +176,9 @@ if [ "${GEN_MATCH_DEGREE_ENABLE}" = "1" ]; then
     STG3_PARAMS="${STG3_EDGES_DIR}/params.txt"
     write_params_file "${STG3_PARAMS}" \
         "seed=$((SEED + 1))" \
-        "match_degree_algorithm=${GEN_MATCH_DEGREE_ALGORITHM}" \
-        "match_degree_mode=${GEN_MATCH_DEGREE_MODE}" \
-        "use_remap=${GEN_MATCH_DEGREE_USE_REMAP}"
+        "matcher=${GEN_MATCH_DEGREE_ALGORITHM}" \
+        "matcher_mode=${GEN_MATCH_DEGREE_MODE}" \
+        "matcher_use_remap=${GEN_MATCH_DEGREE_USE_REMAP}"
 
     IN_3="${STG2_DIR}/edge.csv ${INPUT_EDGELIST} ${INPUT_CLUSTERING} ${STG3_PARAMS}"
     OUT_3="${STG3_EDGES_DIR}/degree_matching_edge.csv"

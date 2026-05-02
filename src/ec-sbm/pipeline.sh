@@ -161,15 +161,15 @@ mkdir -p "${OUTPUT_DIR}"
 write_params_file "${FINAL_PARAMS}" \
     "seed=${SEED}" \
     "n_threads=${N_THREADS}" \
-    "outlier_mode=${OUTLIER_MODE}" \
-    "drop_outlier_outlier_edges=${DROP_OO_BOOL}" \
-    "sbm_overlay=${SBM_OVERLAY_BOOL}" \
-    "scope=${SCOPE}" \
-    "gen_outlier_mode=${GEN_OUTLIER_MODE}" \
-    "edge_correction=${EDGE_CORRECTION}" \
-    "algorithm=${ALGORITHM}" \
-    "match_degree_mode=${MATCH_DEGREE_MODE}" \
-    "match_degree_use_remap=${REMAP_ENABLE}"
+    "profile_outlier_mode=${OUTLIER_MODE}" \
+    "profile_drop_oo_edges=${DROP_OO_BOOL}" \
+    "gen_clustered_sbm_overlay=${SBM_OVERLAY_BOOL}" \
+    "gen_outlier_scope=${SCOPE}" \
+    "gen_outlier_assign_mode=${GEN_OUTLIER_MODE}" \
+    "gen_outlier_edge_correction=${EDGE_CORRECTION}" \
+    "matcher=${ALGORITHM}" \
+    "matcher_mode=${MATCH_DEGREE_MODE}" \
+    "matcher_use_remap=${REMAP_ENABLE}"
 
 log_invocation_header "${FINAL_LOG}" "${SEED}" "${KEEP_STATE}"
 
@@ -251,7 +251,7 @@ if [ "${VERSION}" = "v3" ]; then
     write_params_file "${STG_GEN_CLUSTERED_PARAMS}" \
         "seed=${SEED}" \
         "n_threads=${N_THREADS}" \
-        "method=pso" \
+        "gen_clustered_method=pso" \
         "pso_gamma=${PSO_GAMMA}" \
         "pso_m_floor=${PSO_M_FLOOR}" \
         "pso_search_strategy=${PSO_SEARCH_STRATEGY}" \
@@ -267,8 +267,8 @@ else
     write_params_file "${STG_GEN_CLUSTERED_PARAMS}" \
         "seed=${SEED}" \
         "n_threads=${N_THREADS}" \
-        "method=res-deg-weighted" \
-        "sbm_overlay=${SBM_OVERLAY_BOOL}"
+        "gen_clustered_method=res-deg-weighted" \
+        "gen_clustered_sbm_overlay=${SBM_OVERLAY_BOOL}"
 fi
 
 IN_GEN_CLUSTERED="${OUT_PROFILE} ${STG_GEN_CLUSTERED_PARAMS}"
@@ -393,9 +393,9 @@ echo "=== Starting Stage 4: Degree Matching & Final Combine ==="
 STG_MATCH_DEGREE_EDGES_PARAMS="${STG_MATCH_DEGREE_EDGES_DIR}/params.txt"
 write_params_file "${STG_MATCH_DEGREE_EDGES_PARAMS}" \
     "seed=$((SEED + 2))" \
-    "algorithm=${ALGORITHM}" \
-    "match_degree_mode=${MATCH_DEGREE_MODE}" \
-    "match_degree_use_remap=${REMAP_ENABLE}"
+    "matcher=${ALGORITHM}" \
+    "matcher_mode=${MATCH_DEGREE_MODE}" \
+    "matcher_use_remap=${REMAP_ENABLE}"
 
 # Cluster-preserving mode forwards clustering + outlier-mode and the remap
 # toggle. Default global mode keeps the legacy invocation byte-identical.

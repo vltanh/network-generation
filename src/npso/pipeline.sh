@@ -101,17 +101,17 @@ GEN_MATCH_DEGREE_OUTLIER_MODE="${OUTLIER_MODE}"
 GEN_TOPLEVEL_PARAMS=(
     "seed=${SEED}"
     "n_threads=${N_THREADS}"
-    "model=${MODEL}"
-    "outlier_mode=${OUTLIER_MODE}"
-    "drop_outlier_outlier_edges=${DROP_OO_BOOL}"
-    "search_max_iters=${SEARCH_MAX_ITERS}"
-    "search_diff_tol=${SEARCH_DIFF_TOL}"
-    "search_step_tol=${SEARCH_STEP_TOL}"
-    "search_t_min=${SEARCH_T_MIN}"
-    "match_degree_enable=${MATCH_DEGREE_ENABLE}"
-    "match_degree_algorithm=${MATCH_DEGREE_ALGORITHM}"
-    "match_degree_mode=${MATCH_DEGREE_MODE}"
-    "match_degree_use_remap=${REMAP_ENABLE}"
+    "profile_outlier_mode=${OUTLIER_MODE}"
+    "profile_drop_oo_edges=${DROP_OO_BOOL}"
+    "gen_model=${MODEL}"
+    "gen_search_max_iters=${SEARCH_MAX_ITERS}"
+    "gen_search_diff_tol=${SEARCH_DIFF_TOL}"
+    "gen_search_step_tol=${SEARCH_STEP_TOL}"
+    "gen_search_t_min=${SEARCH_T_MIN}"
+    "matcher_enable=${MATCH_DEGREE_ENABLE}"
+    "matcher=${MATCH_DEGREE_ALGORITHM}"
+    "matcher_mode=${MATCH_DEGREE_MODE}"
+    "matcher_use_remap=${REMAP_ENABLE}"
 )
 # shellcheck disable=SC2034
 GEN_PROFILE_PARAMS=(
@@ -122,11 +122,11 @@ GEN_PROFILE_PARAMS=(
 GEN_STAGE2_PARAMS=(
     "seed=${SEED}"
     "n_threads=${N_THREADS}"
-    "model=${MODEL}"
-    "search_max_iters=${SEARCH_MAX_ITERS}"
-    "search_diff_tol=${SEARCH_DIFF_TOL}"
-    "search_step_tol=${SEARCH_STEP_TOL}"
-    "search_t_min=${SEARCH_T_MIN}"
+    "gen_model=${MODEL}"
+    "gen_search_max_iters=${SEARCH_MAX_ITERS}"
+    "gen_search_diff_tol=${SEARCH_DIFF_TOL}"
+    "gen_search_step_tol=${SEARCH_STEP_TOL}"
+    "gen_search_t_min=${SEARCH_T_MIN}"
 )
 
 # Post-stage-1 hook: unpack derived.txt into scalar CLI flags. Keeps
