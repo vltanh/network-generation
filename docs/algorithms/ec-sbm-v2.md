@@ -189,8 +189,7 @@ Pipeline (`./src/ec-sbm/pipeline.sh`):
 - `--outlier-mode`: default `excluded`.
 - `--drop-outlier-outlier-edges` / `--keep-outlier-outlier-edges`: default keep.
 - `--gen-outlier-mode <combined|singleton>`: Stage-3a outlier block, default `combined`.
-- `--degree-matcher <a>`: any key from `src/match_degree.py:ALGO_TABLE` (the global five plus the `cluster_preserving_*` five). Pipeline default for `--version v2` is `cluster_preserving_true_greedy`. Cluster-preserving mode is inferred from the algorithm-name prefix.
-- Stage 4 match-degree is always on.
+- Match-degree flags (`--degree-matcher`): see [`../advanced-usage.md`](../advanced-usage.md) for the shared cross-generator surface. Pipeline default for `--version v2` is `cluster_preserving_true_greedy`; Stage 4 match-degree is always on (no `--no-match-degree` toggle).
 
 See [../advanced-usage.md](../advanced-usage.md).
 

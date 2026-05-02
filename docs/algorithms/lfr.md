@@ -137,9 +137,8 @@ Pipeline (`./src/lfr/pipeline.sh`):
 - `--binary <p>`: same role, short form at pipeline layer.
 - `--outlier-mode <excluded|singleton|combined>`: default `singleton`.
 - `--drop-outlier-outlier-edges` / `--keep-outlier-outlier-edges`: default keep.
-- `--match-degree` / `--no-match-degree`: default off.
-- `--degree-matcher <a>`: default `true_greedy`. Any key from `src/match_degree.py:ALGO_TABLE` (the global five plus the `cluster_preserving_*` five); see [`../advanced-usage.md`](../advanced-usage.md).
 - `--remap` / `--no-remap`: default on (C++ binary emits fresh 1..N IDs).
+- Match-degree flags (`--match-degree` / `--no-match-degree`, `--degree-matcher`): see [`../advanced-usage.md`](../advanced-usage.md) for the shared cross-generator surface.
 
 See [../advanced-usage.md](../advanced-usage.md).
 

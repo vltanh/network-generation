@@ -14,9 +14,8 @@ invocation):
 | --- | --- | --- |
 | `--outlier-mode <excluded\|singleton\|combined>` | `combined` | how `profile.py` folds outliers (drop / one cluster each / single `__outliers__` block) |
 | `--drop-outlier-outlier-edges` / `--keep-outlier-outlier-edges` | keep | strip OO edges from the input edgelist before profiling |
-| `--match-degree` / `--no-match-degree` | **on** | top-up pass that closes the per-node degree deficit left by gt dedup |
-| `--degree-matcher <a>` | `cluster_preserving_true_greedy` | strategy for the top-up pass; any key from `src/match_degree.py:ALGO_TABLE` (global five plus the `cluster_preserving_*` five) |
 | `--remap` / `--no-remap` | off | remap output node IDs (SBM passes input IDs through by default) |
+| Match-degree flags | see [`../advanced-usage.md`](../advanced-usage.md) | shared cross-generator surface (`--match-degree` / `--no-match-degree`, `--degree-matcher`); SBM has match-degree on by default with `cluster_preserving_true_greedy` |
 
 See [../advanced-usage.md](../advanced-usage.md) for the
 dispatcher-namespaced vs pipeline-short flag naming convention and the

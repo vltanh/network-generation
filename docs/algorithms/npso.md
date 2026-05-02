@@ -21,9 +21,8 @@ Pipeline ([`src/npso/pipeline.sh`](../../src/npso/pipeline.sh)):
 | `--model <m>` | `nPSO2` | dispatcher-equivalent of `--npso-model` |
 | `--outlier-mode <excluded\|singleton\|combined>` | `singleton` | how `profile.py` folds outliers |
 | `--drop-outlier-outlier-edges` / `--keep-outlier-outlier-edges` | keep | strip OO edges from input edgelist |
-| `--match-degree` / `--no-match-degree` | off | optional Stage-4 degree rewire |
-| `--degree-matcher <a>` | `true_greedy` | any key from `src/match_degree.py:ALGO_TABLE` (the global five plus the `cluster_preserving_*` five); only consulted with `--match-degree` |
 | `--remap` / `--no-remap` | on | MATLAB sampler emits fresh `1..N` IDs |
+| Match-degree flags | see [`../advanced-usage.md`](../advanced-usage.md) | shared cross-generator surface (`--match-degree` / `--no-match-degree`, `--degree-matcher`) |
 
 Standalone `gen.py` (runs without Stage 1 if caller has fit the
 parameters): see `parse_args()` at

@@ -254,8 +254,10 @@ Pipeline (`./src/ec-sbm/pipeline.sh --version v3 ...`) and standalone
   (default `0.5`).
 
 The other v2 flags (`--scope`, `--gen-outlier-mode`,
-`--edge-correction`, `--degree-matcher`) still apply to
-stages 3a / 4a; v3's preset bundle copies v2's defaults there.
+`--degree-matcher`) still apply to stages 3a / 4a; v3's preset
+bundle copies v2's defaults there. See
+[`../advanced-usage.md`](../advanced-usage.md) for the shared
+match-degree surface.
 
 ## Where to look next
 
