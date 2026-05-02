@@ -22,6 +22,8 @@ SCOPE=""
 GEN_OUTLIER_MODE=""
 EDGE_CORRECTION=""
 ALGORITHM=""
+MATCH_DEGREE_MODE="global"
+REMAP_ENABLE=0
 # v3-only PSO knobs.
 PSO_GAMMA=""
 PSO_M_FLOOR=""
@@ -50,6 +52,9 @@ while [[ "$#" -gt 0 ]]; do
         --gen-outlier-mode) GEN_OUTLIER_MODE="$2"; shift ;;
         --edge-correction) EDGE_CORRECTION="$2"; shift ;;
         --match-degree-algorithm) ALGORITHM="$2"; shift ;;
+        --match-degree-mode) MATCH_DEGREE_MODE="$2"; shift ;;
+        --remap) REMAP_ENABLE=1 ;;
+        --no-remap) REMAP_ENABLE=0 ;;
         --pso-gamma) PSO_GAMMA="$2"; shift ;;
         --pso-m-floor) PSO_M_FLOOR="$2"; shift ;;
         --pso-search-strategy) PSO_SEARCH_STRATEGY="$2"; shift ;;
@@ -162,7 +167,9 @@ write_params_file "${FINAL_PARAMS}" \
     "scope=${SCOPE}" \
     "gen_outlier_mode=${GEN_OUTLIER_MODE}" \
     "edge_correction=${EDGE_CORRECTION}" \
-    "algorithm=${ALGORITHM}"
+    "algorithm=${ALGORITHM}" \
+    "match_degree_mode=${MATCH_DEGREE_MODE}" \
+    "match_degree_use_remap=${REMAP_ENABLE}"
 
 log_invocation_header "${FINAL_LOG}" "${SEED}" "${KEEP_STATE}"
 
@@ -386,7 +393,24 @@ echo "=== Starting Stage 4: Degree Matching & Final Combine ==="
 STG_MATCH_DEGREE_EDGES_PARAMS="${STG_MATCH_DEGREE_EDGES_DIR}/params.txt"
 write_params_file "${STG_MATCH_DEGREE_EDGES_PARAMS}" \
     "seed=$((SEED + 2))" \
-    "algorithm=${ALGORITHM}"
+    "algorithm=${ALGORITHM}" \
+    "match_degree_mode=${MATCH_DEGREE_MODE}" \
+    "match_degree_use_remap=${REMAP_ENABLE}"
+
+# Cluster-preserving mode forwards clustering + outlier-mode and the remap
+# toggle. Default global mode keeps the legacy invocation byte-identical.
+MATCH_DEGREE_CP_FLAGS=()
+if [ "${MATCH_DEGREE_MODE}" = "cluster_preserving" ]; then
+    MATCH_DEGREE_CP_FLAGS=(
+        --input-clustering "${INPUT_CLUSTERING}"
+        --ref-clustering "${INPUT_CLUSTERING}"
+        --outlier-mode "${GEN_OUTLIER_MODE}"
+    )
+fi
+MATCH_DEGREE_REMAP_FLAG=()
+if [ "${REMAP_ENABLE}" = "1" ]; then
+    MATCH_DEGREE_REMAP_FLAG=(--remap)
+fi
 
 IN_MATCH_DEGREE="${STG_GEN_OUTLIER_DIR}/edge.csv ${INPUT_EDGELIST} ${INPUT_CLUSTERING} ${STG_MATCH_DEGREE_EDGES_PARAMS}"
 OUT_MATCH_DEGREE="${STG_MATCH_DEGREE_EDGES_DIR}/degree_matching_edge.csv ${STG_MATCH_DEGREE_EDGES_DIR}/sources.json"
@@ -397,6 +421,8 @@ if ! is_step_done "${STG_MATCH_DEGREE_EDGES_DIR}/done" "${OUT_MATCH_DEGREE}"; th
         --input-edgelist "${STG_GEN_OUTLIER_DIR}/edge.csv" \
         --ref-edgelist "${INPUT_EDGELIST}" \
         --match-degree-algorithm "${ALGORITHM}" \
+        "${MATCH_DEGREE_CP_FLAGS[@]}" \
+        "${MATCH_DEGREE_REMAP_FLAG[@]}" \
         --output-folder "${STG_MATCH_DEGREE_EDGES_DIR}" \
         --seed "$((SEED + 2))"
     mark_done "${STG_MATCH_DEGREE_EDGES_DIR}/done" "Stage 4a (match_degree)" "${IN_MATCH_DEGREE}" "${OUT_MATCH_DEGREE}"
