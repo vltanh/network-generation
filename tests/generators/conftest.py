@@ -1,19 +1,19 @@
-"""Fixtures + GenSpec for the unified 7-generator integration suite.
+"""Fixtures + GenSpec for the unified 8-generator integration suite.
 
-Covers sbm, abcd, abcd+o, lfr, npso, ec-sbm-v1, ec-sbm-v2. All tests
-drive `run_generator.sh` as a subprocess and skip when the generator's
-required external dependency is missing.
+Covers sbm, abcd, abcd+o, lfr, npso, ec-sbm-v1, ec-sbm-v2, ec-sbm-v3.
+All tests drive `run_generator.sh` as a subprocess and skip when the
+generator's required external dependency is missing.
 
 Two generator families:
   * **Simple** (sbm, abcd, abcd+o, lfr, npso): two-stage pipeline with
     `.state/setup/` + `.state/gen/` and user-facing files
     `{edge.csv, com.csv, done, run.log, params.txt}`.
-  * **ec-sbm** (v1, v2): six-stage pipeline with `.state/{profile,
+  * **ec-sbm** (v1, v2, v3): six-stage pipeline with `.state/{profile,
     gen_clustered, gen_outlier, match_degree}/` plus `sources.json` in
     the user-facing tree.
 
 Each generator's `GenSpec` carries the per-family differences so tests
-stay parametrized across all 7.
+stay parametrized across all 8.
 """
 from __future__ import annotations
 
@@ -118,6 +118,11 @@ SPECS: list[GenSpec] = [
     ),
     GenSpec(
         "ec-sbm-v2", "--ec-sbm-dir", REPO_ROOT / "externals" / "ec-sbm",
+        ECSBM_USER_FACING, ECSBM_STAGES, ECSBM_STATE_DIRS, ECSBM_PROBE,
+        "com.csv",
+    ),
+    GenSpec(
+        "ec-sbm-v3", "--ec-sbm-dir", REPO_ROOT / "externals" / "ec-sbm",
         ECSBM_USER_FACING, ECSBM_STAGES, ECSBM_STATE_DIRS, ECSBM_PROBE,
         "com.csv",
     ),

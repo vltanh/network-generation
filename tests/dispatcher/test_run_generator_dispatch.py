@@ -29,7 +29,7 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[2]
 RUN_GENERATOR_SRC = REPO_ROOT / "run_generator.sh"
 
-GENS = ["ec-sbm-v2", "ec-sbm-v1", "sbm", "abcd", "abcd+o", "lfr", "npso"]
+GENS = ["ec-sbm-v2", "ec-sbm-v1", "ec-sbm-v3", "sbm", "abcd", "abcd+o", "lfr", "npso"]
 
 STUB_PIPELINE = """#!/bin/bash
 # Stub pipeline.sh: write argv to $OUT_DIR/argv (one arg per line) and
@@ -166,6 +166,7 @@ FLAG_MATRIX = [
     ("npso", "--seed", "42", True),
     ("ec-sbm-v1", "--seed", "42", True),
     ("ec-sbm-v2", "--seed", "42", True),
+    ("ec-sbm-v3", "--seed", "42", True),
     # n-threads: every gen *except* lfr
     ("sbm", "--n-threads", "3", True),
     ("abcd", "--n-threads", "3", True),
@@ -173,6 +174,7 @@ FLAG_MATRIX = [
     ("npso", "--n-threads", "3", True),
     ("ec-sbm-v1", "--n-threads", "3", True),
     ("ec-sbm-v2", "--n-threads", "3", True),
+    ("ec-sbm-v3", "--n-threads", "3", True),
     ("lfr", "--n-threads", None, False),
     # external-binary flags — dispatcher's --abcd-dir/--lfr-binary/--npso-dir
     # are translated by configs/*.sh into short pipeline-level flags
@@ -183,26 +185,35 @@ FLAG_MATRIX = [
     ("npso", "--package-dir", None, True),
     ("ec-sbm-v1", "--package-dir", None, True),
     ("ec-sbm-v2", "--package-dir", None, True),
+    ("ec-sbm-v3", "--package-dir", None, True),
     ("sbm", "--package-dir", None, False),
-    # ec-sbm: each config forwards --version {v1|v2} to pipeline.sh,
+    # ec-sbm: each config forwards --version {v1|v2|v3} to pipeline.sh,
     # which expands that into the per-stage preset bundle (sbm-overlay /
-    # scope / gen-outlier-mode / edge-correction / match-degree-algorithm).
-    # The configs do not list those individual flags, so the stub argv
-    # contains only --version plus the common flags.
+    # scope / gen-outlier-mode / edge-correction / match-degree-algorithm,
+    # plus the v3-only --pso-* knobs). The configs do not list those
+    # individual flags, so the stub argv contains only --version plus
+    # the common flags.
     ("ec-sbm-v1", "--version", "v1", True),
     ("ec-sbm-v2", "--version", "v2", True),
+    ("ec-sbm-v3", "--version", "v3", True),
     ("ec-sbm-v1", "--sbm-overlay", None, False),
     ("ec-sbm-v2", "--no-sbm-overlay", None, False),
+    ("ec-sbm-v3", "--no-sbm-overlay", None, False),
     ("ec-sbm-v1", "--scope", None, False),
     ("ec-sbm-v2", "--scope", None, False),
+    ("ec-sbm-v3", "--scope", None, False),
     ("ec-sbm-v1", "--gen-outlier-mode", None, False),
     ("ec-sbm-v2", "--gen-outlier-mode", None, False),
+    ("ec-sbm-v3", "--gen-outlier-mode", None, False),
     ("ec-sbm-v1", "--edge-correction", None, False),
     ("ec-sbm-v2", "--edge-correction", None, False),
+    ("ec-sbm-v3", "--edge-correction", None, False),
     ("ec-sbm-v1", "--match-degree-algorithm", None, False),
     ("ec-sbm-v2", "--match-degree-algorithm", None, False),
+    ("ec-sbm-v3", "--match-degree-algorithm", None, False),
     ("ec-sbm-v1", "--outlier-mode", None, False),
     ("ec-sbm-v2", "--outlier-mode", None, False),
+    ("ec-sbm-v3", "--outlier-mode", None, False),
     ("sbm", "--match-degree-algorithm", None, False),
     # npso search knobs: dispatcher flags are optional. When unset, the
     # pipeline's own defaults apply; the config does not forward them.
