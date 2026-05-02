@@ -72,17 +72,16 @@ def test_pso_is_k_edge_connected(pso_core, N, m):
     assert cut >= m, f"PSO(m={m}) should be {m}-edge-connected; got mincut {cut}"
 
 
-def test_pso_ccoeff_decreasing_in_T(pso_core):
-    cc_vals = []
-    for T in (0.0, 0.1, 0.3, 0.6, 0.9):
-        e = pso_core.pso_cluster_edges(80, 5, T, 3.0, 7)
-        cc_vals.append(pso_core.induced_global_ccoeff(80, e))
-    # Strict monotone is too strong (sampling noise); require a clear
-    # drop from low T to high T plus monotone-ish behaviour.
-    assert cc_vals[0] - cc_vals[-1] > 0.03, (
-        f"expected ccoeff to fall as T grows; got {cc_vals}"
-    )
-    assert cc_vals[0] >= cc_vals[2] >= cc_vals[4] - 0.05
+def test_pso_ccoeff_trends_down_in_T(pso_core):
+    # PSO is stochastic so per-T ccoeff is noisy. Assert only that the
+    # mean ccoeff over many seeds at low T exceeds the mean at high T.
+    def avg_cc(T):
+        out = []
+        for s in range(8):
+            e = pso_core.pso_cluster_edges(80, 5, T, 3.0, s + 1)
+            out.append(pso_core.induced_global_ccoeff(80, e))
+        return sum(out) / len(out)
+    assert avg_cc(0.05) - avg_cc(0.9) > 0.05
 
 
 def test_pso_complete_graph_when_n_le_m_plus_1(pso_core):
@@ -111,3 +110,36 @@ def test_resolve_m_auto_policy(gen_v3):
 
 def test_resolve_m_capped_at_n_minus_1(gen_v3):
     assert gen_v3._resolve_m(k=10, n=4, m_policy="floor", m_floor=1, empirical_mean_deg=0) == 3
+
+
+def test_bayesian_search_runs_and_logs_iters(gen_v3):
+    pytest.importorskip("skopt")
+    cluster_nodes_iid = list(range(40))
+    best_T, best_cc, edges, recs, m = gen_v3._search_T_for_cluster(
+        cluster_nodes_iid=cluster_nodes_iid, k=2, gamma=2.0,
+        target_ccoeff=0.3, base_seed=12345,
+        max_iters=10, diff_tol=1e-6, step_tol=1e-6,
+        t_min=0.01, t_max=0.99, initial_T=0.5,
+        m_policy="floor", m_floor=2, empirical_mean_deg=4.0,
+        strategy="bayesian", initial_points=4, samples_per_T=1,
+    )
+    assert m == 2
+    assert 0.01 <= best_T <= 0.99
+    assert len(recs) <= 10 and len(recs) >= 1
+    # The reported best_cc should match the best diff in the trace.
+    diffs = [r["diff"] for r in recs]
+    assert min(diffs) == pytest.approx(abs(best_cc - 0.3))
+
+
+def test_samples_per_T_averages_multiple_draws(gen_v3):
+    # 3 samples per T should populate the "samples" key with 3 floats.
+    cluster_nodes_iid = list(range(30))
+    _, _, _, recs, _ = gen_v3._search_T_for_cluster(
+        cluster_nodes_iid=cluster_nodes_iid, k=2, gamma=2.0,
+        target_ccoeff=0.4, base_seed=7,
+        max_iters=3, diff_tol=1e-6, step_tol=1e-6,
+        t_min=0.05, t_max=0.95, initial_T=0.5,
+        m_policy="floor", m_floor=2, empirical_mean_deg=4.0,
+        strategy="secant", initial_points=2, samples_per_T=3,
+    )
+    assert all(len(r.get("samples") or []) == 3 for r in recs)

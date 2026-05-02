@@ -26,7 +26,10 @@ ALGORITHM=""
 PSO_GAMMA=""
 PSO_M_POLICY=""
 PSO_M_FLOOR=""
+PSO_SEARCH_STRATEGY=""
 PSO_SEARCH_MAX_ITERS=""
+PSO_SEARCH_INITIAL_POINTS=""
+PSO_SEARCH_SAMPLES_PER_T=""
 PSO_SEARCH_DIFF_TOL=""
 PSO_SEARCH_STEP_TOL=""
 PSO_SEARCH_T_MIN=""
@@ -51,7 +54,10 @@ while [[ "$#" -gt 0 ]]; do
         --pso-gamma) PSO_GAMMA="$2"; shift ;;
         --pso-m-policy) PSO_M_POLICY="$2"; shift ;;
         --pso-m-floor) PSO_M_FLOOR="$2"; shift ;;
+        --pso-search-strategy) PSO_SEARCH_STRATEGY="$2"; shift ;;
         --pso-search-max-iters) PSO_SEARCH_MAX_ITERS="$2"; shift ;;
+        --pso-search-initial-points) PSO_SEARCH_INITIAL_POINTS="$2"; shift ;;
+        --pso-search-samples-per-T) PSO_SEARCH_SAMPLES_PER_T="$2"; shift ;;
         --pso-search-diff-tol) PSO_SEARCH_DIFF_TOL="$2"; shift ;;
         --pso-search-step-tol) PSO_SEARCH_STEP_TOL="$2"; shift ;;
         --pso-search-t-min) PSO_SEARCH_T_MIN="$2"; shift ;;
@@ -91,10 +97,13 @@ case "${VERSION}" in
         : "${GEN_OUTLIER_MODE:=combined}"
         : "${EDGE_CORRECTION:=rewire}"
         : "${ALGORITHM:=true_greedy}"
-        : "${PSO_GAMMA:=3.0}"
+        : "${PSO_GAMMA:=2.0}"
         : "${PSO_M_POLICY:=auto}"
         : "${PSO_M_FLOOR:=1}"
+        : "${PSO_SEARCH_STRATEGY:=bayesian}"
         : "${PSO_SEARCH_MAX_ITERS:=30}"
+        : "${PSO_SEARCH_INITIAL_POINTS:=5}"
+        : "${PSO_SEARCH_SAMPLES_PER_T:=1}"
         : "${PSO_SEARCH_DIFF_TOL:=0.01}"
         : "${PSO_SEARCH_STEP_TOL:=0.0001}"
         : "${PSO_SEARCH_T_MIN:=0.01}"
@@ -230,7 +239,10 @@ if [ "${VERSION}" = "v3" ]; then
         "pso_gamma=${PSO_GAMMA}" \
         "pso_m_policy=${PSO_M_POLICY}" \
         "pso_m_floor=${PSO_M_FLOOR}" \
+        "pso_search_strategy=${PSO_SEARCH_STRATEGY}" \
         "pso_search_max_iters=${PSO_SEARCH_MAX_ITERS}" \
+        "pso_search_initial_points=${PSO_SEARCH_INITIAL_POINTS}" \
+        "pso_search_samples_per_T=${PSO_SEARCH_SAMPLES_PER_T}" \
         "pso_search_diff_tol=${PSO_SEARCH_DIFF_TOL}" \
         "pso_search_step_tol=${PSO_SEARCH_STEP_TOL}" \
         "pso_search_t_min=${PSO_SEARCH_T_MIN}" \
@@ -269,7 +281,10 @@ if ! is_step_done "${STG_GEN_CLUSTERED_DIR}/done" "${OUT_GEN_CLUSTERED}"; then
             --pso-gamma "${PSO_GAMMA}" \
             --pso-m-policy "${PSO_M_POLICY}" \
             --pso-m-floor "${PSO_M_FLOOR}" \
+            --pso-search-strategy "${PSO_SEARCH_STRATEGY}" \
             --pso-search-max-iters "${PSO_SEARCH_MAX_ITERS}" \
+            --pso-search-initial-points "${PSO_SEARCH_INITIAL_POINTS}" \
+            --pso-search-samples-per-T "${PSO_SEARCH_SAMPLES_PER_T}" \
             --pso-search-diff-tol "${PSO_SEARCH_DIFF_TOL}" \
             --pso-search-step-tol "${PSO_SEARCH_STEP_TOL}" \
             --pso-search-t-min "${PSO_SEARCH_T_MIN}" \

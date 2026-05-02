@@ -64,20 +64,33 @@ guarantee inherited from v1 is unchanged.
 The cluster's target is the empirical global clustering coefficient
 on its intra-cluster induced subgraph (`3 * triangles / triplets`,
 matching the [`networkit` exactGlobal](https://networkit.github.io/) and
-nPSO conventions). The simulated ccoeff is monotone decreasing in `T`,
-so `f(T) = ccoeff(T) - target` is a 1-D root with a sign-change
-guarantee on `[t_min, t_max]`.
+nPSO conventions). The objective is `|ccoeff(T) - target|`. PSO is
+stochastic, so two evaluations at the same `T` yield different ccoeff
+values; the underlying trend is decreasing in `T` but a single draw can
+buck the trend on any given probe. v3 therefore defaults to a noisy-
+function-aware optimiser:
 
-The search is the same secant-over-bisection scheme used by
-[`src/npso/gen.py`](../../src/npso/gen.py): bracket on
-`[t_min, t_max]`, midpoint when only one endpoint residual is known,
-secant otherwise (with a 5%-margin guard that falls back to midpoint
-when the secant guess sits too close to a bracket end). Each iteration
-re-seeds PSO so that different `T` values get different draws but the
-same `T` re-runs deterministically. Stops on
+- `--pso-search-strategy bayesian` (default): scikit-optimize's
+  `Optimizer` with a Matern-kernel GP and Expected-Improvement
+  acquisition. The first `--pso-search-initial-points` evaluations are
+  Latin-hypercube samples (default 5) to seed the GP; subsequent probes
+  are EI-driven. Robust to per-realisation noise because the GP averages
+  evidence across nearby T values.
+- `--pso-search-strategy secant`: bisection + secant bracket (the
+  scheme [`src/npso/gen.py`](../../src/npso/gen.py) uses for the
+  global-ccoeff search). Cheaper but brittle when realisation noise
+  flips the sign of `f(T)`.
+
+To suppress noise directly, `--pso-search-samples-per-T N` averages
+`N` independent PSO draws per probe before reporting to the optimiser.
+Default `1`; raise it (with budget) on clusters where ccoeff variance
+is large relative to the bracket gap.
+
+Each evaluation re-seeds PSO so different `T` values get different
+draws and the same `T` re-runs deterministically. Stops on
 `|ccoeff - target| < diff_tol`, on
-`|ccoeff(t_i) - ccoeff(t_{i-1})| < step_tol`, or after
-`pso_search_max_iters` iterations.
+`|ccoeff(t_i) - ccoeff(t_{i-1})| < step_tol` (secant only), or after
+`pso_search_max_iters` total evaluations.
 
 `stage/gen_clustered/pso_search_log.json` keeps the per-cluster trace
 (every `(T, ccoeff, diff)` it tried, plus the final `(best_T,
@@ -142,15 +155,25 @@ Dispatcher (`run_generator.sh`):
 Pipeline (`./src/ec-sbm/pipeline.sh --version v3 ...`) and standalone
 (`./externals/ec-sbm/scripts/run_ecsbm.sh --version v3 ...`):
 
-- `--pso-gamma F`: power-law exponent (default `3.0`).
+- `--pso-gamma F`: PSO power-law exponent. Default `2.0`, which makes
+  PSO's radial coordinates collapse to `r_i = 2 * log(arrival_rank)`.
+  Combined with the descending-empirical-degree sort that decides
+  arrival order, this means the highest-degree empirical node sits at
+  the centre and the kth-highest at radius `2 log k`. Override only for
+  ablation.
 - `--pso-m-policy {auto|floor}`: how to derive m. `auto` lifts to the
   empirical mean intra-cluster degree (default), `floor` keeps it at
   `max(k, --pso-m-floor)`.
 - `--pso-m-floor N`: hard lower bound on m (default `1`).
+- `--pso-search-strategy {bayesian|secant}`: default `bayesian`.
 - `--pso-search-max-iters N`: T-search iter cap (default `30`).
+- `--pso-search-initial-points N`: BO LHS warm-up before the GP
+  takes over (default `5`).
+- `--pso-search-samples-per-T N`: PSO realisations averaged per probe
+  (default `1`).
 - `--pso-search-diff-tol F`: stop when `|cc - target| < this`.
 - `--pso-search-step-tol F`: stop when successive ccoeffs differ
-  by less than this.
+  by less than this (secant only).
 - `--pso-search-t-min F`, `--pso-search-t-max F`: search bracket.
 - `--pso-initial-t F`: T used for the complete-graph regime
   (default `0.5`).
