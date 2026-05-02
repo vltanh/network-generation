@@ -20,6 +20,9 @@ SEARCH_MAX_ITERS=100
 SEARCH_DIFF_TOL=0.005
 SEARCH_STEP_TOL=0.0001
 SEARCH_T_MIN=0.0005
+SEARCH_STRATEGY="bayesian"
+SEARCH_INITIAL_POINTS=5
+SEARCH_SAMPLES_PER_T=1
 # nPSO's MATLAB sampler emits integer node IDs 1..N with fresh clusters;
 # when match_degree runs, --remap pairs by descending-degree rank.
 REMAP_ENABLE=1
@@ -44,6 +47,9 @@ while [[ "$#" -gt 0 ]]; do
         --search-diff-tol) SEARCH_DIFF_TOL="$2"; shift ;;
         --search-step-tol) SEARCH_STEP_TOL="$2"; shift ;;
         --search-t-min) SEARCH_T_MIN="$2"; shift ;;
+        --search-strategy) SEARCH_STRATEGY="$2"; shift ;;
+        --search-initial-points) SEARCH_INITIAL_POINTS="$2"; shift ;;
+        --search-samples-per-T) SEARCH_SAMPLES_PER_T="$2"; shift ;;
         --remap) REMAP_ENABLE=1 ;;
         --no-remap) REMAP_ENABLE=0 ;;
         --match-degree) MATCH_DEGREE_ENABLE=1 ;;
@@ -150,6 +156,9 @@ gen_post_stage1() {
         --search-diff-tol     "${SEARCH_DIFF_TOL}"
         --search-step-tol     "${SEARCH_STEP_TOL}"
         --search-t-min        "${SEARCH_T_MIN}"
+        --search-strategy     "${SEARCH_STRATEGY}"
+        --search-initial-points "${SEARCH_INITIAL_POINTS}"
+        --search-samples-per-T "${SEARCH_SAMPLES_PER_T}"
     )
 }
 

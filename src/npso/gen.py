@@ -17,6 +17,11 @@ from pipeline_common import standard_setup, timed, drop_singleton_clusters, simp
 MODELS = ("nPSO1", "nPSO2", "nPSO3")
 DEFAULT_MODEL = "nPSO2"
 
+SEARCH_STRATEGIES = ("bayesian", "secant")
+DEFAULT_SEARCH_STRATEGY = "bayesian"
+DEFAULT_SEARCH_INITIAL_POINTS = 5
+DEFAULT_SEARCH_SAMPLES_PER_T = 1
+
 SEARCH_LOG_NAME = "search_log.json"
 
 
@@ -187,6 +192,52 @@ def make_runner(n_threads, npso_dir_abs, matlab_wrapper_dir):
         return SubprocessRunner(n_threads, npso_dir_abs, matlab_wrapper_dir)
 
 
+def _eval_T_with_samples(
+    runner, fallback_factory, scratch_dir, T, N, m, gamma, c, model,
+    mixing_proportions, base_seed, samples_per_T, iter_idx,
+):
+    """Run MATLAB ``samples_per_T`` times at temperature ``T`` with
+    distinct per-realisation seeds; return ``(mean_cc, rep_edge_df,
+    rep_com_df, sample_ccs, fallback_ref)`` where ``rep_*`` is the
+    realisation whose ccoeff is closest to the empirical mean.
+
+    Per-realisation seed = ``base_seed * 1_000_003 + iter_idx * 31337
+    + s`` so re-runs are deterministic and different probes / samples
+    get distinct draws. ``fallback_ref`` is the (lazily created)
+    SubprocessRunner used when the engine errs on a sample, so the
+    caller can keep reusing it.
+    """
+    sample_ccs = []
+    edges_list = []
+    coms_list = []
+    fallback = fallback_factory()
+    for s in range(samples_per_T):
+        seed_iter = (int(base_seed) * 1_000_003 + int(iter_idx) * 31337 + s) % (2**31 - 1)
+        prefix = scratch_dir / f"{T:.5f}_s{s}_"
+        result = runner.run_iter(
+            N, m, T, gamma, c, model, mixing_proportions, prefix, seed_iter,
+        )
+        if result is None and not isinstance(runner, SubprocessRunner):
+            if fallback is None:
+                fallback = fallback_factory(force=True)
+            result = fallback.run_iter(
+                N, m, T, gamma, c, model, mixing_proportions, prefix, seed_iter,
+            )
+        if result is None:
+            return None, None, None, sample_ccs, fallback
+        edge_df, com_df = result
+        cc = _ccoeff_from_edges(edge_df)
+        sample_ccs.append(cc)
+        edges_list.append(edge_df)
+        coms_list.append(com_df)
+    mean_cc = float(np.mean(sample_ccs))
+    if samples_per_T == 1:
+        return mean_cc, edges_list[0], coms_list[0], sample_ccs, fallback
+    diffs = [abs(c - mean_cc) for c in sample_ccs]
+    rep_idx = int(np.argmin(diffs))
+    return mean_cc, edges_list[rep_idx], coms_list[rep_idx], sample_ccs, fallback
+
+
 def run_npso_generation(
     N,
     m,
@@ -199,6 +250,9 @@ def run_npso_generation(
     seed,
     n_threads,
     model=DEFAULT_MODEL,
+    search_strategy=DEFAULT_SEARCH_STRATEGY,
+    search_initial_points=DEFAULT_SEARCH_INITIAL_POINTS,
+    search_samples_per_T=DEFAULT_SEARCH_SAMPLES_PER_T,
     search_max_iters=100,
     search_diff_tol=0.005,
     search_step_tol=0.0001,
@@ -276,7 +330,14 @@ def run_npso_generation(
         )
 
     runner = make_runner(n_threads, npso_dir_abs, matlab_wrapper_dir)
-    fallback = None
+    fallback_holder = {"runner": None}
+
+    def fallback_factory(force=False):
+        if force and fallback_holder["runner"] is None:
+            fallback_holder["runner"] = SubprocessRunner(
+                n_threads, npso_dir_abs, matlab_wrapper_dir,
+            )
+        return fallback_holder["runner"]
 
     with tempfile.TemporaryDirectory(prefix="npso_scratch_", dir=output_dir) as scratch_str:
         scratch_dir = Path(scratch_str)
@@ -289,9 +350,10 @@ def run_npso_generation(
                     N, m, best_T, gamma, c, model, mixing_proportions, prefix, seed,
                 )
                 if restored is None and not isinstance(runner, SubprocessRunner):
-                    if fallback is None:
-                        fallback = SubprocessRunner(n_threads, npso_dir_abs, matlab_wrapper_dir)
-                    restored = fallback.run_iter(
+                    fallback_holder["runner"] = SubprocessRunner(
+                        n_threads, npso_dir_abs, matlab_wrapper_dir,
+                    )
+                    restored = fallback_holder["runner"].run_iter(
                         N, m, best_T, gamma, c, model, mixing_proportions, prefix, seed,
                     )
                 if restored is not None:
@@ -310,56 +372,99 @@ def run_npso_generation(
                     prev_global_ccoeff = None
                     global_ccoeff = None
 
-            if not converged_in_replay:
+            if converged_in_replay:
+                pass
+            elif search_strategy == "bayesian":
+                from skopt import Optimizer
+                from skopt.space import Real
+
+                opt = Optimizer(
+                    dimensions=[Real(max(search_t_min, 1e-4), 1.0, name="T")],
+                    base_estimator="GP",
+                    acq_func="EI",
+                    n_initial_points=min(search_initial_points, max_iters),
+                    initial_point_generator="lhs",
+                    random_state=int(seed) % (2**32 - 1),
+                )
+                # Replay prior iters into the GP so resume keeps its memory.
+                for r in iter_records:
+                    opt.tell([float(r["T"])], abs(float(r["ccoeff"]) - target_global_ccoeff))
+
                 for it in range(start_iter, max_iters):
-                    T = _next_T(min_T, max_T, f_min_T, f_max_T)
+                    suggestion = opt.ask()
+                    T = float(suggestion[0])
                     if T < search_t_min:
                         break
-                    logging.info(f"[iter {it}] T={T}")
-
+                    logging.info(f"[iter {it}] (bayesian) T={T}")
                     with timed("Generation"):
-                        prefix = scratch_dir / f"{T:.5f}_"
-                        result = runner.run_iter(
-                            N, m, T, gamma, c, model, mixing_proportions, prefix, seed,
+                        mean_cc, edge_df, com_df, samples, _ = _eval_T_with_samples(
+                            runner, fallback_factory, scratch_dir, T,
+                            N, m, gamma, c, model, mixing_proportions,
+                            seed, search_samples_per_T, it,
                         )
-                        if result is None and not isinstance(runner, SubprocessRunner):
-                            logging.warning("Engine iter failed; retrying via subprocess fallback for this iter.")
-                            if fallback is None:
-                                fallback = SubprocessRunner(n_threads, npso_dir_abs, matlab_wrapper_dir)
-                            result = fallback.run_iter(
-                                N, m, T, gamma, c, model, mixing_proportions, prefix, seed,
-                            )
-
-                    if result is None:
+                    if mean_cc is None:
                         logging.error(f"Missing MATLAB outputs at T={T}")
-                        global_ccoeff = None
-                        edge_df, com_df = None, None
-                    else:
-                        edge_df, com_df = result
-                        prev_global_ccoeff = global_ccoeff
-                        global_ccoeff = _ccoeff_from_edges(edge_df)
-                        logging.info(f"Global clustering coefficient: {global_ccoeff}")
-                        iter_records.append({"T": T, "ccoeff": global_ccoeff})
-                        _write_search_log(search_log_path, inputs_sha256, iter_records)
-
-                    diff = abs(global_ccoeff - target_global_ccoeff) if global_ccoeff is not None else 2.0
-                    step = abs(prev_global_ccoeff - global_ccoeff) if prev_global_ccoeff is not None and global_ccoeff is not None else 2.0
-
-                    if result is not None and (best_global_ccoeff is None or diff < best_diff):
+                        opt.tell(suggestion, 2.0)  # penalise so BO doesn't re-pick
+                        continue
+                    global_ccoeff = mean_cc
+                    rec = {"T": T, "ccoeff": global_ccoeff}
+                    if search_samples_per_T > 1:
+                        rec["samples"] = samples
+                    iter_records.append(rec)
+                    _write_search_log(search_log_path, inputs_sha256, iter_records)
+                    diff = abs(global_ccoeff - target_global_ccoeff)
+                    opt.tell(suggestion, diff)
+                    if best_global_ccoeff is None or diff < best_diff:
                         best_T = T
                         best_edge_df = edge_df
                         best_com_df = com_df
                         best_global_ccoeff = global_ccoeff
                         best_diff = diff
-
+                    logging.info(
+                        f"mean ccoeff={global_ccoeff:.4f} diff={diff:.4f} "
+                        f"best T={best_T} best cc={best_global_ccoeff:.4f}"
+                    )
+                    if best_diff < search_diff_tol:
+                        break
+            else:
+                # secant strategy
+                for it in range(start_iter, max_iters):
+                    T = _next_T(min_T, max_T, f_min_T, f_max_T)
+                    if T < search_t_min:
+                        break
+                    logging.info(f"[iter {it}] (secant) T={T}")
+                    with timed("Generation"):
+                        mean_cc, edge_df, com_df, samples, _ = _eval_T_with_samples(
+                            runner, fallback_factory, scratch_dir, T,
+                            N, m, gamma, c, model, mixing_proportions,
+                            seed, search_samples_per_T, it,
+                        )
+                    if mean_cc is None:
+                        logging.error(f"Missing MATLAB outputs at T={T}")
+                        global_ccoeff = None
+                    else:
+                        prev_global_ccoeff = global_ccoeff
+                        global_ccoeff = mean_cc
+                        logging.info(f"Global clustering coefficient: {global_ccoeff}")
+                        rec = {"T": T, "ccoeff": global_ccoeff}
+                        if search_samples_per_T > 1:
+                            rec["samples"] = samples
+                        iter_records.append(rec)
+                        _write_search_log(search_log_path, inputs_sha256, iter_records)
+                    diff = abs(global_ccoeff - target_global_ccoeff) if global_ccoeff is not None else 2.0
+                    step = abs(prev_global_ccoeff - global_ccoeff) if prev_global_ccoeff is not None and global_ccoeff is not None else 2.0
+                    if mean_cc is not None and (best_global_ccoeff is None or diff < best_diff):
+                        best_T = T
+                        best_edge_df = edge_df
+                        best_com_df = com_df
+                        best_global_ccoeff = global_ccoeff
+                        best_diff = diff
                     logging.info(f"Step: {step}  Best T: {best_T}  Best ccoeff: {best_global_ccoeff}  Best diff: {best_diff}")
                     if best_diff is not None and best_diff < search_diff_tol:
                         break
                     if step < search_step_tol:
                         break
-
                     if global_ccoeff is not None:
-                        # ccoeff decreasing in T. f>0 ⇒ raise min_T; f<0 ⇒ lower max_T.
                         f_T = global_ccoeff - target_global_ccoeff
                         if f_T < 0:
                             max_T = T
@@ -369,12 +474,13 @@ def run_npso_generation(
                             f_min_T = f_T
         finally:
             runner.close()
-            if fallback is not None:
-                fallback.close()
+            if fallback_holder["runner"] is not None:
+                fallback_holder["runner"].close()
 
     if best_T is None or best_edge_df is None:
         last = (
-            getattr(fallback, "last_error", None) if fallback is not None else None
+            getattr(fallback_holder["runner"], "last_error", None)
+            if fallback_holder["runner"] is not None else None
         ) or getattr(runner, "last_error", None)
         msg = "nPSO produced no viable output."
         if last:
@@ -486,8 +592,23 @@ def parse_args():
     parser.add_argument("--n-threads", type=int, default=1)
     parser.add_argument("--model", choices=MODELS, default=DEFAULT_MODEL,
                         help="nPSO angular-distribution variant")
+    parser.add_argument("--search-strategy", choices=SEARCH_STRATEGIES,
+                        default=DEFAULT_SEARCH_STRATEGY,
+                        help="T-search strategy. 'bayesian' uses skopt's GP "
+                             "+ EI (handles ccoeff sampling noise across MATLAB "
+                             "realisations); 'secant' uses bisection + secant.")
+    parser.add_argument("--search-initial-points", type=int,
+                        default=DEFAULT_SEARCH_INITIAL_POINTS,
+                        help="BO-only: number of LHS warm-up evaluations "
+                             "before the GP takes over.")
+    parser.add_argument("--search-samples-per-T", type=int,
+                        default=DEFAULT_SEARCH_SAMPLES_PER_T,
+                        help="MATLAB realisations to average per T probe. "
+                             "Distinct seeds per realisation; ccoeff is the "
+                             "empirical mean. Default 1.")
     parser.add_argument("--search-max-iters", type=int, default=100,
-                        help="Max bisection/secant iterations on T.")
+                        help="Max search iterations on T (counts T-probes, "
+                             "not realisations).")
     parser.add_argument("--search-diff-tol", type=float, default=0.005,
                         help="Converge when |ccoeff - target| falls below this.")
     parser.add_argument("--search-step-tol", type=float, default=0.0001,
@@ -511,6 +632,9 @@ def main():
         args.seed,
         args.n_threads,
         model=args.model,
+        search_strategy=args.search_strategy,
+        search_initial_points=args.search_initial_points,
+        search_samples_per_T=args.search_samples_per_T,
         search_max_iters=args.search_max_iters,
         search_diff_tol=args.search_diff_tol,
         search_step_tol=args.search_step_tol,

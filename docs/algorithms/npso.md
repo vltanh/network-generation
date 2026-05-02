@@ -138,11 +138,25 @@ Engine for Python is importable) or from `SubprocessRunner.run(...)`
 at [`src/npso/gen.py:79`](../../src/npso/gen.py#L79) (fallback,
 launches `matlab -batch`).
 
-## Stage 4: the secant search
+## Stage 4: the T search
 
 `run_npso_generation(...)` at
-[`src/npso/gen.py:190`](../../src/npso/gen.py#L190) runs a 100-iter
-search to find the `T` whose realised `cc(T)` matches `C_G`.
+[`src/npso/gen.py:190`](../../src/npso/gen.py#L190) runs up to a 100-iter
+search to find the `T` whose realised `cc(T)` matches `C_G`. Two
+strategies are available via `--search-strategy`:
+
+- `bayesian` (default): `skopt.Optimizer` with a Matern GP and EI
+  acquisition. The first `--search-initial-points` (default 5) probes
+  are Latin-hypercube samples, the rest are EI-suggested. Robust to
+  the per-realisation noise of the MATLAB sampler.
+- `secant`: bracket on `[T_min, T_max] = [0, 1]` with bisection +
+  secant. Cheaper but treats noise as a sign-flip.
+
+`--search-samples-per-T N` (default 1) averages N independent MATLAB
+realisations per T probe (distinct seeds per realisation). Use it when
+sampling noise dominates the trend at the realisations of interest.
+
+### Secant heuristic
 
 `_next_T(min_T, max_T, f_min, f_max)` at
 [`src/npso/gen.py:440`](../../src/npso/gen.py#L440):
