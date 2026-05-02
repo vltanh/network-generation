@@ -182,7 +182,7 @@ else
 fi
 singleton_count=$(awk -F"${_com_fs}" 'NR>1 {c[$2]++} END {n=0; for (k in c) if (c[k]==1) n++; print n}' "${INP_COM}")
 if [ "${singleton_count}" -gt 0 ]; then
-    log "WARNING: Input clustering contains ${singleton_count} singleton cluster(s). Generators that reuse the reference (sbm, ec-sbm-v1, ec-sbm-v2) will propagate them; strip them beforehand for consistency with the new-clustering generators."
+    log "WARNING: Input clustering contains ${singleton_count} singleton cluster(s). Generators that reuse the reference (sbm, ec-sbm-v1, ec-sbm-v2, ec-sbm-v3) will propagate them; strip them beforehand for consistency with the new-clustering generators."
 fi
 
 SYNTH_CLUSTER_STATS_DIR="${STATS_DIR}/cluster"
