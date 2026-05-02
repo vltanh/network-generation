@@ -24,27 +24,28 @@ partition). Stage 1 extracts a per-gen profile; stage 2 samples from it.
 
 ## Summary: who guarantees what
 
-| Property                                | sbm  | ec-sbm-v1 | ec-sbm-v2 | abcd | abcd+o | lfr  | npso |
-| --------------------------------------- | ---- | --------- | --------- | ---- | ------ | ---- | ---- |
-| *Size*                                  |      |           |           |      |        |      |      |
-| Number of nodes                         | ✓    | ✓         | ✓         | ✓    | ✓      | ✓    | ✓    |
-| Cluster sizes                           | ✓    | ✓         | ✓         | ✓    | ✓      | —    | —    |
-| *Degrees*                               |      |           |           |      |        |      |      |
-| Degree sequence                         | ≈    | ≈         | ≈         | ≈    | ≈      | —    | —    |
-| Degree dist. ~ fitted power-law         | —    | —         | —         | —    | —      | ✓    | ✓    |
-| *Clustering and blocks*                 |      |           |           |      |        |      |      |
-| Block structure (input partition)       | ✓    | ✓         | ✓         | —    | —      | —    | —    |
-| Inter-cluster edge counts               | ≈    | ≈         | ≈         | —    | —      | —    | —    |
-| Per-cluster edge connectivity ≥ k       | —    | ✓         | ✓         | —    | —      | —    | —    |
-| *Mixing and topology*                   |      |           |           |      |        |      |      |
-| Global mixing parameter ξ               | —    | —         | —         | ≈    | ≈      | —    | —    |
-| Mean per-node mixing parameter μ        | —    | —         | —         | —    | —      | ≈    | —    |
-| Global clustering coefficient           | —    | —         | —         | —    | —      | —    | ≈*   |
-| *Outliers*                              |      |           |           |      |        |      |      |
-| Outlier count from G preserved          | ✓    | —         | —         | ✓    | ✓      | ✓    | ✓    |
-| Outliers are identifiable in output     | —    | —         | —         | —    | ✓      | —    | ✓    |
-| *Reproducibility*                       |      |           |           |      |        |      |      |
-| Byte-reproducible from `--seed`         | ✓    | ✓         | ✓         | ✓    | ✓      | ✓    | ✓    |
+| Property                                | sbm  | ec-sbm-v1 | ec-sbm-v2 | ec-sbm-v3 | abcd | abcd+o | lfr  | npso |
+| --------------------------------------- | ---- | --------- | --------- | --------- | ---- | ------ | ---- | ---- |
+| *Size*                                  |      |           |           |           |      |        |      |      |
+| Number of nodes                         | ✓    | ✓         | ✓         | ✓         | ✓    | ✓      | ✓    | ✓    |
+| Cluster sizes                           | ✓    | ✓         | ✓         | ✓         | ✓    | ✓      | —    | —    |
+| *Degrees*                               |      |           |           |           |      |        |      |      |
+| Degree sequence                         | ≈    | ≈         | ≈         | ≈         | ≈    | ≈      | —    | —    |
+| Degree dist. ~ fitted power-law         | —    | —         | —         | —         | —    | —      | ✓    | ✓    |
+| *Clustering and blocks*                 |      |           |           |           |      |        |      |      |
+| Block structure (input partition)       | ✓    | ✓         | ✓         | ✓         | —    | —      | —    | —    |
+| Inter-cluster edge counts               | ≈    | ≈         | ≈         | ≈         | —    | —      | —    | —    |
+| Per-cluster edge connectivity ≥ k       | —    | ✓         | ✓         | ✓         | —    | —      | —    | —    |
+| *Mixing and topology*                   |      |           |           |           |      |        |      |      |
+| Global mixing parameter ξ               | —    | —         | —         | —         | ≈    | ≈      | —    | —    |
+| Mean per-node mixing parameter μ        | —    | —         | —         | —         | —    | —      | ≈    | —    |
+| Global clustering coefficient           | —    | —         | —         | —         | —    | —      | —    | ≈*   |
+| Per-cluster clustering coefficient      | —    | —         | —         | ≈*        | —    | —      | —    | —    |
+| *Outliers*                              |      |           |           |           |      |        |      |      |
+| Outlier count from G preserved          | ✓    | —         | —         | —         | ✓    | ✓      | ✓    | ✓    |
+| Outliers are identifiable in output     | —    | —         | —         | —         | —    | ✓      | —    | ✓    |
+| *Reproducibility*                       |      |           |           |           |      |        |      |      |
+| Byte-reproducible from `--seed`         | ✓    | ✓         | ✓         | ✓         | ✓    | ✓      | ✓    | ✓    |
 
 ✓ = preserved exactly (deterministic function of the profile). ≈ =
 targeted but perturbed by internal rewiring, post-hoc dedup of
@@ -81,6 +82,7 @@ sbm-flat-best+cc, `--seed 1`, on the current host) are:
 | sbm        | `3f8356d4236f`           | `e240ae23f3ea`          |
 | ec-sbm-v1  | `e4e3b6cf1b68`           | `5a5afc352f13`          |
 | ec-sbm-v2  | `e0d6d1d7feb5`           | `5a5afc352f13`          |
+| ec-sbm-v3  | `7fc09e0d20eb`           | `5a5afc352f13`          |
 | abcd       | `057a8ef26ebc`           | `55c19725f859`          |
 | abcd+o     | `be419667a464`           | `1151780594fc`          |
 | lfr        | `ea9b42120eb3`           | `2db4f5ab80be`          |
@@ -107,6 +109,7 @@ mean k-core 15.99, char-time 40.41, pseudo-diameter 8, 87 clusters.
 | sbm        | 906  | 10429 | 23.02    | 0.422      |     11.49 |           8 | 87       |
 | ec-sbm-v1  | 906  | 10425 | 23.01    | 0.424      |     22.38 |           7 | 87       |
 | ec-sbm-v2  | 906  | 10342 | 22.83    | 0.501      |     22.24 |           7 | 87       |
+| ec-sbm-v3  | 906  | 10449 | 23.07    | 0.512      |     22.79 |           9 | 87       |
 | abcd       | 906  | 10150 | 22.41    | 0.307      |      1.95 |           5 | 87       |
 | abcd+o     | 673* | 10070 | 29.93    | 0.307      |      2.92 |           6 | 87       |
 | lfr        | 906  | 10370 | 22.89    | 0.252      |      1.38 |           4 | 10       |
