@@ -14,7 +14,7 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$REPO_ROOT"
 
-GENS_DEFAULT="sbm,ec-sbm-v1,ec-sbm-v2,abcd,abcd+o,lfr,npso"
+GENS_DEFAULT="sbm,ec-sbm-v1,ec-sbm-v2,ec-sbm-v3,abcd,abcd+o,lfr,npso"
 SEEDS_DEFAULT="1 2 3 4 5 6 7 8 9 10"
 RUNS=10
 WARMUP=2  # warmup runs are executed and recorded, but reported separately

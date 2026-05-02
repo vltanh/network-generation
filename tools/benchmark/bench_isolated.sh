@@ -91,7 +91,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 set -- "${PASS_ARGS[@]+"${PASS_ARGS[@]}"}"
-GENS_REQ="${GENS_REQ:-sbm,ec-sbm-v1,ec-sbm-v2,abcd,abcd+o,lfr,npso}"
+GENS_REQ="${GENS_REQ:-sbm,ec-sbm-v1,ec-sbm-v2,ec-sbm-v3,abcd,abcd+o,lfr,npso}"
 
 # ---------- Preflight ----------
 preflight_fail() {
@@ -122,7 +122,7 @@ preflight() {
         "$nw_env/python" -c "import graph_tool, numpy, pandas, scipy" 2>/dev/null \
           || preflight_fail "$g: $nw_env/python missing graph_tool/numpy/pandas/scipy"
         ;;
-      ec-sbm-v1|ec-sbm-v2)
+      ec-sbm-v1|ec-sbm-v2|ec-sbm-v3)
         "$nw_env/python" -c "import graph_tool, numpy, pandas, pymincut" 2>/dev/null \
           || preflight_fail "$g: $nw_env/python missing graph_tool/numpy/pandas/pymincut"
         ;;
