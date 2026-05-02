@@ -22,7 +22,7 @@ SCOPE=""
 GEN_OUTLIER_MODE=""
 EDGE_CORRECTION=""
 ALGORITHM=""
-MATCH_DEGREE_MODE="global"
+MATCH_DEGREE_MODE=""
 REMAP_ENABLE=0
 # v3-only PSO knobs.
 PSO_GAMMA=""
@@ -92,14 +92,16 @@ case "${VERSION}" in
         : "${SCOPE:=all}"
         : "${GEN_OUTLIER_MODE:=combined}"
         : "${EDGE_CORRECTION:=rewire}"
-        : "${ALGORITHM:=true_greedy}"
+        : "${ALGORITHM:=cluster_preserving_true_greedy}"
+        : "${MATCH_DEGREE_MODE:=cluster_preserving}"
         ;;
     v3)
         : "${SBM_OVERLAY_BOOL:=false}"  # stage 2 of v3 ignores this; kept for params.txt
         : "${SCOPE:=all}"
         : "${GEN_OUTLIER_MODE:=combined}"
         : "${EDGE_CORRECTION:=rewire}"
-        : "${ALGORITHM:=true_greedy}"
+        : "${ALGORITHM:=cluster_preserving_true_greedy}"
+        : "${MATCH_DEGREE_MODE:=cluster_preserving}"
         : "${PSO_GAMMA:=2.0}"
         : "${PSO_M_FLOOR:=1}"
         : "${PSO_SEARCH_STRATEGY:=secant}"
@@ -122,6 +124,7 @@ esac
 : "${GEN_OUTLIER_MODE:=combined}"
 : "${EDGE_CORRECTION:=rewire}"
 : "${ALGORITHM:=true_greedy}"
+: "${MATCH_DEGREE_MODE:=global}"
 
 if [ -z "${PACKAGE_DIR}" ]; then
     echo "Error: --package-dir is required (path to externals/ec-sbm)." >&2

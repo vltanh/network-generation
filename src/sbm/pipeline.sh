@@ -17,8 +17,8 @@ DROP_OO_BOOL="false"
 # dropped by gt.generate_sbm dedup.
 REMAP_ENABLE=0
 MATCH_DEGREE_ENABLE=1
-MATCH_DEGREE_ALGORITHM="true_greedy"
-MATCH_DEGREE_MODE="global"
+MATCH_DEGREE_ALGORITHM="cluster_preserving_true_greedy"
+MATCH_DEGREE_MODE="cluster_preserving"
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
