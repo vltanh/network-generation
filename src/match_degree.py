@@ -44,15 +44,6 @@ from graph_utils import (
 )
 
 
-GLOBAL_ALGOS = ("greedy", "true_greedy", "random_greedy", "rewire", "hybrid")
-CP_ALGOS = (
-    "cluster_preserving_greedy",
-    "cluster_preserving_true_greedy",
-    "cluster_preserving_random_greedy",
-    "cluster_preserving_rewire",
-    "cluster_preserving_hybrid",
-)
-ALL_ALGOS = GLOBAL_ALGOS + CP_ALGOS
 OUTLIER_MODES = ("combined", "singleton")
 
 
@@ -69,7 +60,7 @@ def parse_args():
                              "Top-up edges stay in the input's ID space.")
     parser.add_argument(
         "--match-degree-algorithm", dest="match_degree_algorithm", type=str,
-        choices=list(ALL_ALGOS),
+        choices=list(ALGO_TABLE),
         default="true_greedy",
     )
     parser.add_argument(
@@ -826,7 +817,7 @@ def match_missing_degrees_cluster_preserving_rewire(out_degs, exist_neighbor,
         E_k = int(row_sums[k])
         if D_k > E_k:
             excess = D_k - E_k
-            for nd in sorted(nodes_in_k, reverse=True):
+            for nd in nodes_in_k[::-1]:
                 if excess <= 0:
                     break
                 drop = min(excess, int(out_degs_array[nd]))
@@ -958,6 +949,60 @@ def export_degree_matched_edgelist(degree_edges, node_iid2id, output_dir,
         json.dump(sources, f, indent=4)
 
 
+# Algorithm registry consumed by main(). Each entry: (kind, fn, labels, is_cp).
+#   kind="single"  → fn(...) returns edges set; bands = [(label, edges)].
+#   kind="rewire"  → fn(..., max_retries=10) returns (edges, leftover);
+#                    bands = [(label, edges)].
+#   kind="hybrid"  → fn(...) returns {"hybrid_rewire": ..., "hybrid_true_greedy": ...};
+#                    labels is a (rewire_label, tg_label) pair.
+# is_cp=True signals the matcher takes (b, bp_budget) after the standard args.
+ALGO_TABLE = {
+    "greedy": (
+        "single", match_missing_degrees_greedy,
+        "match_degree_greedy", False,
+    ),
+    "true_greedy": (
+        "single", match_missing_degrees_true_greedy,
+        "match_degree_true_greedy", False,
+    ),
+    "random_greedy": (
+        "single", match_missing_degrees_random_greedy,
+        "match_degree_random_greedy", False,
+    ),
+    "rewire": (
+        "rewire", match_missing_degrees_rewire,
+        "match_degree_rewire", False,
+    ),
+    "hybrid": (
+        "hybrid", match_missing_degrees_hybrid_bands,
+        ("match_degree_hybrid_rewire", "match_degree_hybrid_true_greedy"),
+        False,
+    ),
+    "cluster_preserving_greedy": (
+        "single", match_missing_degrees_cluster_preserving_greedy,
+        "match_degree_cluster_preserving_greedy", True,
+    ),
+    "cluster_preserving_true_greedy": (
+        "single", match_missing_degrees_cluster_preserving_true_greedy,
+        "match_degree_cluster_preserving_true_greedy", True,
+    ),
+    "cluster_preserving_random_greedy": (
+        "single", match_missing_degrees_cluster_preserving_random_greedy,
+        "match_degree_cluster_preserving_random_greedy", True,
+    ),
+    "cluster_preserving_rewire": (
+        "rewire", match_missing_degrees_cluster_preserving_rewire,
+        "match_degree_cluster_preserving_rewire", True,
+    ),
+    "cluster_preserving_hybrid": (
+        "hybrid", match_missing_degrees_cluster_preserving_hybrid_bands,
+        ("match_degree_cluster_preserving_hybrid_rewire",
+         "match_degree_cluster_preserving_hybrid_true_greedy"),
+        True,
+    ),
+}
+
+
 def main():
     args = parse_args()
     out_dir = standard_setup(args.output_folder)
@@ -966,7 +1011,7 @@ def main():
     np.random.seed(args.seed)
 
     algo = args.match_degree_algorithm
-    is_cp = algo in CP_ALGOS
+    kind, algo_fn, labels, is_cp = ALGO_TABLE[algo]
 
     # Cluster-preserving rewire/hybrid call into gt.generate_sbm; seed
     # graph-tool's RNG too so the SBM sample is reproducible.
@@ -979,8 +1024,6 @@ def main():
             f"--match-degree-algorithm {algo} requires --input-clustering."
         )
     if is_cp and args.ref_clustering is None and not args.remap:
-        # Direct mode: ref_clustering defaults to input_clustering when absent
-        # (shared ID space).
         args.ref_clustering = args.input_clustering
 
     logging.info(
@@ -1019,68 +1062,22 @@ def main():
                 )
 
     with timed("Degree matching"):
-        bands = None
-        if algo == "greedy":
-            degree_edges = match_missing_degrees_greedy(updated_out_degs, exist_neighbor)
-            bands = [("match_degree_greedy", degree_edges)]
-        elif algo == "true_greedy":
-            degree_edges = match_missing_degrees_true_greedy(
-                updated_out_degs, exist_neighbor
+        extra = (b, bp_budget) if is_cp else ()
+        if kind == "single":
+            degree_edges = algo_fn(updated_out_degs, exist_neighbor, *extra)
+            bands = [(labels, degree_edges)]
+        elif kind == "rewire":
+            degree_edges, _ = algo_fn(
+                updated_out_degs, exist_neighbor, *extra, max_retries=10,
             )
-            bands = [("match_degree_true_greedy", degree_edges)]
-        elif algo == "random_greedy":
-            degree_edges = match_missing_degrees_random_greedy(
-                updated_out_degs, exist_neighbor
-            )
-            bands = [("match_degree_random_greedy", degree_edges)]
-        elif algo == "rewire":
-            degree_edges, _ = match_missing_degrees_rewire(
-                updated_out_degs, exist_neighbor, max_retries=10
-            )
-            bands = [("match_degree_rewire", degree_edges)]
-        elif algo == "hybrid":
-            hybrid_bands = match_missing_degrees_hybrid_bands(
-                updated_out_degs, exist_neighbor
-            )
-            degree_edges = (
-                hybrid_bands["hybrid_rewire"] | hybrid_bands["hybrid_true_greedy"]
-            )
+            bands = [(labels, degree_edges)]
+        else:  # kind == "hybrid"
+            band_dict = algo_fn(updated_out_degs, exist_neighbor, *extra)
+            degree_edges = band_dict["hybrid_rewire"] | band_dict["hybrid_true_greedy"]
             bands = [
-                ("match_degree_hybrid_rewire", hybrid_bands["hybrid_rewire"]),
-                ("match_degree_hybrid_true_greedy", hybrid_bands["hybrid_true_greedy"]),
+                (labels[0], band_dict["hybrid_rewire"]),
+                (labels[1], band_dict["hybrid_true_greedy"]),
             ]
-        elif algo == "cluster_preserving_greedy":
-            degree_edges = match_missing_degrees_cluster_preserving_greedy(
-                updated_out_degs, exist_neighbor, b, bp_budget,
-            )
-            bands = [("match_degree_cluster_preserving_greedy", degree_edges)]
-        elif algo == "cluster_preserving_true_greedy":
-            degree_edges = match_missing_degrees_cluster_preserving_true_greedy(
-                updated_out_degs, exist_neighbor, b, bp_budget,
-            )
-            bands = [("match_degree_cluster_preserving_true_greedy", degree_edges)]
-        elif algo == "cluster_preserving_random_greedy":
-            degree_edges = match_missing_degrees_cluster_preserving_random_greedy(
-                updated_out_degs, exist_neighbor, b, bp_budget,
-            )
-            bands = [("match_degree_cluster_preserving_random_greedy", degree_edges)]
-        elif algo == "cluster_preserving_rewire":
-            degree_edges, _ = match_missing_degrees_cluster_preserving_rewire(
-                updated_out_degs, exist_neighbor, b, bp_budget, max_retries=10,
-            )
-            bands = [("match_degree_cluster_preserving_rewire", degree_edges)]
-        elif algo == "cluster_preserving_hybrid":
-            cp_bands = match_missing_degrees_cluster_preserving_hybrid_bands(
-                updated_out_degs, exist_neighbor, b, bp_budget,
-            )
-            degree_edges = cp_bands["hybrid_rewire"] | cp_bands["hybrid_true_greedy"]
-            bands = [
-                ("match_degree_cluster_preserving_hybrid_rewire", cp_bands["hybrid_rewire"]),
-                ("match_degree_cluster_preserving_hybrid_true_greedy", cp_bands["hybrid_true_greedy"]),
-            ]
-        else:
-            logging.error(f"Unknown algorithm choice: {algo}")
-            return
 
         logging.info(f"Added {len(degree_edges)} edges")
 

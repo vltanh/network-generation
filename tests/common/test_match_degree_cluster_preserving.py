@@ -163,6 +163,15 @@ def _bp_counts(b, edges):
     return counts
 
 
+def _seed_all(seed):
+    random.seed(seed)
+    try:
+        import graph_tool.all as gt
+        gt.seed_rng(seed)
+    except ImportError:
+        pass
+
+
 CP_DETERMINISTIC = [
     ("cluster_preserving_greedy",
      match_missing_degrees_cluster_preserving_greedy),
@@ -197,15 +206,6 @@ def test_cp_algo_respects_bp_budget(two_cluster_fixture, name, fn):
     # Simple-graph invariants.
     assert all(u != v for u, v in edges)
     assert len(set(edges)) == len(edges)
-
-
-def _seed_all(seed):
-    random.seed(seed)
-    try:
-        import graph_tool.all as gt
-        gt.seed_rng(seed)
-    except ImportError:
-        pass
 
 
 @pytest.mark.parametrize("name,fn", CP_DETERMINISTIC + CP_RANDOM)

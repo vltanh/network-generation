@@ -6,8 +6,5 @@ GEN_EXTRA_ARGS=(
     --n-threads "${n_threads}"
     --timeout "${timeout_duration}"
     "${KEEP_STATE_ARG[@]}"
-    "${MATCH_DEGREE_ALGORITHM_ARG[@]}"
-    "${MATCH_DEGREE_MODE_ARG[@]}"
-    "${REMAP_ARG[@]}"
-    "${OUTLIER_MODE_ARG[@]}"
+    "${MATCH_DEGREE_PASSTHROUGH[@]}"
 )

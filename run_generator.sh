@@ -337,25 +337,23 @@ KEEP_STATE_ARG=()
 if [ "${keep_state}" -eq 1 ]; then
     KEEP_STATE_ARG=(--keep-state)
 fi
-# Match-degree passthrough arrays. Empty by default → no behavior change at
-# the per-gen pipeline layer. Configs append these to GEN_EXTRA_ARGS.
-MATCH_DEGREE_ALGORITHM_ARG=()
+# Match-degree passthrough. Empty when no flags are set → no behavior change
+# at the per-gen pipeline layer. Configs append "${MATCH_DEGREE_PASSTHROUGH[@]}"
+# to GEN_EXTRA_ARGS.
+MATCH_DEGREE_PASSTHROUGH=()
 if [ -n "${match_degree_algorithm}" ]; then
-    MATCH_DEGREE_ALGORITHM_ARG=(--match-degree-algorithm "${match_degree_algorithm}")
+    MATCH_DEGREE_PASSTHROUGH+=(--match-degree-algorithm "${match_degree_algorithm}")
 fi
-MATCH_DEGREE_MODE_ARG=()
 if [ -n "${match_degree_mode}" ]; then
-    MATCH_DEGREE_MODE_ARG=(--match-degree-mode "${match_degree_mode}")
+    MATCH_DEGREE_PASSTHROUGH+=(--match-degree-mode "${match_degree_mode}")
 fi
-REMAP_ARG=()
 if [ "${remap_setting}" = "on" ]; then
-    REMAP_ARG=(--remap)
+    MATCH_DEGREE_PASSTHROUGH+=(--remap)
 elif [ "${remap_setting}" = "off" ]; then
-    REMAP_ARG=(--no-remap)
+    MATCH_DEGREE_PASSTHROUGH+=(--no-remap)
 fi
-OUTLIER_MODE_ARG=()
 if [ -n "${outlier_mode}" ]; then
-    OUTLIER_MODE_ARG=(--outlier-mode "${outlier_mode}")
+    MATCH_DEGREE_PASSTHROUGH+=(--outlier-mode "${outlier_mode}")
 fi
 # shellcheck source=/dev/null
 source "${GENERATORS_DIR}/${generator}.sh"
