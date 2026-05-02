@@ -12,14 +12,18 @@ conda activate sbm
 conda install -c conda-forge graph-tool -y
 ```
 
-## `ec-sbm-v1`, `ec-sbm-v2`
+## `ec-sbm-v1`, `ec-sbm-v2`, `ec-sbm-v3`
 
 Initialize the submodule, then follow its
 [`INSTALL.md`](externals/ec-sbm/INSTALL.md) for the conda recipe + the
-CMake 4.0+ workaround.
+CMake 4.0+ workaround. v3 also needs `optuna` if you opt into the
+Bayesian T-search strategy (`--pso-search-strategy bayesian`); the
+default `secant` strategy has no extra dependency.
 
 ```bash
 git submodule update --init --recursive externals/ec-sbm
+# Optional, for `ec-sbm-v3 --pso-search-strategy bayesian`:
+pip install optuna
 ```
 
 ## `abcd` / `abcd+o`
