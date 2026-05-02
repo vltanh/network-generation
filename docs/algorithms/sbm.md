@@ -14,8 +14,9 @@ invocation):
 | --- | --- | --- |
 | `--outlier-mode <excluded\|singleton\|combined>` | `combined` | how `profile.py` folds outliers (drop / one cluster each / single `__outliers__` block) |
 | `--drop-outlier-outlier-edges` / `--keep-outlier-outlier-edges` | keep | strip OO edges from the input edgelist before profiling |
-| `--match-degree` / `--no-match-degree` | off | optional Stage-4 degree rewire pass |
-| `--match-degree-algorithm <greedy\|true_greedy\|random_greedy\|rewire\|hybrid>` | `true_greedy` | only effective with `--match-degree` |
+| `--match-degree` / `--no-match-degree` | **on** | top-up pass that closes the per-node degree deficit left by gt dedup |
+| `--match-degree-algorithm <a>` | `cluster_preserving_true_greedy` | strategy for the top-up pass; any key from `src/match_degree.py:ALGO_TABLE` (global five plus the `cluster_preserving_*` five) |
+| `--match-degree-mode <global\|cluster_preserving>` | `cluster_preserving` | when `cluster_preserving`, gates each accepted edge on a per-(min_block, max_block) budget read from the reference clustering |
 | `--remap` / `--no-remap` | off | remap output node IDs (SBM passes input IDs through by default) |
 
 See [../advanced-usage.md](../advanced-usage.md) for the
@@ -74,13 +75,13 @@ constraints as counts, not as distinct edges. Small block + high
 intra-block count ⇒ self-loops. Two hubs holding up a large
 `probs[r, s]` ⇒ parallel edges. Both are simplified away.
 
-### What the kernel actually does
+### What the sampler actually does
 
 [`graph-tool/src/graph/generation/graph_sbm.hh`](../../graph-tool/src/graph/generation/graph_sbm.hh)
-implements the micro-canonical sampler. The kernel builds one urn per
+implements the micro-canonical sampler. It builds one urn per
 block, populated by every node `v` with `b_v = r` repeated `k_v` times.
 Stubs in the urn are not typed by target block. For each `(r, s)` pair
-with `r <= s` in row-major order, the kernel pulls `e_{rs}` half-edges
+with `r <= s` in row-major order, the sampler pulls `e_{rs}` half-edges
 out of urn `r` (and another `e_{rs}` from urn `s` when `r != s`)
 without replacement, pairing them up into edges. So the per-pair edge
 count and the per-node degree land exactly on the input; what
@@ -93,34 +94,14 @@ the same on the `s` side. If they fail, graph-tool throws
 of edge counts between groups"`. A consistent profile (sum of degrees
 in block `r` = row sum of `e_{r,*}`) drains every urn to zero.
 
-## What you get on the shipped example
-
-Default run on the
-[`dnc`](../../examples/input/empirical_networks/networks/dnc/) input
-with [`sbm-flat-best+cc`](../../examples/input/reference_clusterings/clusterings/sbm-flat-best+cc/dnc/)
-clustering at `--seed 1`:
-
-| Stat | Input | SBM output | Note |
-| --- | --- | --- | --- |
-| N | 906 | 902 | 4 nodes isolated after dedup |
-| Edges | 10429 | 7438 | 29% lost to multi-edge / self-loop removal |
-| Mean degree | 23.02 | 16.49 | tracks the edge loss |
-| Global clustering coeff. | 0.548 | 0.341 | DC-SBM tends tree-like |
-| Mean local CC | 0.494 | 0.216 | same per-node |
-| Num clusters | 87 | 87 | exact (passthrough minus singletons) |
-
-29% edge loss = the dedup bill for this input: a highly clustered graph
-(global ccoeff 0.548) compressed through a micro-SBM whose block matrix
-was filled with duplicate-heavy cells.
-
 ## Output guarantees
 
 | Property | Status |
 | --- | --- |
-| N | exact after the `combined` outlier transform |
+| N | exact after the `combined` outlier transform + top-up |
 | Block structure | exact (each node stays in its input block) |
-| Degree sequence | exact pre-dedup; upper bound post-dedup |
-| Inter-block counts `e_{rs}` | exact pre-dedup; upper bound post-dedup |
+| Degree sequence | exact pre-dedup; closed by top-up (residual stubs possible if every valid partner is already adjacent) |
+| Inter-block counts `e_{rs}` | exact pre-dedup; upper bound post-dedup; top-up adds edges without re-targeting `e_{rs}` |
 | Clustering coefficient / triangle count | not targeted |
 
 ## Determinism

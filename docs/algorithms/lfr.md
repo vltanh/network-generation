@@ -83,23 +83,6 @@ resampled from the fitted power laws, not taken from our input. LFR's
 output will not have your graph's degree sequence; it will have a fresh
 sample from the power law that approximately matches your graph's shape.
 
-## What you get on the shipped example
-
-Default run on dnc + sbm-flat-best+cc at `--seed 1`:
-
-| Stat | Input | LFR output | Note |
-| --- | --- | --- | --- |
-| N | 906 | 906 | exact (CLI arg) |
-| Edges | 10429 | 10370 | within 0.6% |
-| Mean degree | 23.02 | 22.89 | tracks k argument |
-| Global clustering coeff. | 0.548 | 0.252 | not targeted |
-| Local clustering coeff. | 0.494 | 0.732 | |
-| Num clusters | 87 | 10 | resampled from the fitted cluster-size power law |
-
-Notice the cluster count difference: LFR resampled the cluster-size
-distribution, so the number of clusters is not preserved. The input has
-87 clusters, the output has 10.
-
 ## Output guarantees
 
 - **N** exact (CLI arg).
@@ -155,7 +138,8 @@ Pipeline (`./src/lfr/pipeline.sh`):
 - `--outlier-mode <excluded|singleton|combined>`: default `singleton`.
 - `--drop-outlier-outlier-edges` / `--keep-outlier-outlier-edges`: default keep.
 - `--match-degree` / `--no-match-degree`: default off.
-- `--match-degree-algorithm <greedy|true_greedy|random_greedy|rewire|hybrid>`: default `true_greedy`.
+- `--match-degree-algorithm <a>`: default `true_greedy`. Any key from `src/match_degree.py:ALGO_TABLE` (the global five plus the `cluster_preserving_*` five); see [`../advanced-usage.md`](../advanced-usage.md).
+- `--match-degree-mode <global|cluster_preserving>`: default `global`.
 - `--remap` / `--no-remap`: default on (C++ binary emits fresh 1..N IDs).
 
 See [../advanced-usage.md](../advanced-usage.md).

@@ -17,12 +17,18 @@ file is still called `gen_outlier.py`, but it fills all residual edges, not
 just outlier-touching ones.
 
 **3. Stage 4 has five matchers.** v1 had one heap-greedy that silently
-dropped stuck stubs. v2 exposes five algorithms via `--algorithm`
-(`greedy`, `true_greedy`, `random_greedy`, `rewire`, `hybrid`). Most log
-gridlock instead of hiding it. The registry default in
-[`configs/ec-sbm-v2.sh`](../../configs/ec-sbm-v2.sh) is `true_greedy`
-(dynamic-heap greedy with no gridlock under typical residual loads);
-`hybrid` is the randomized-pairing fallback for ablations.
+dropped stuck stubs. v2 exposes the full
+[`src/match_degree.py`](../../src/match_degree.py) registry via
+`--match-degree-algorithm`: the global family (`greedy`,
+`true_greedy`, `random_greedy`, `rewire`, `hybrid`) and the
+cluster-preserving family
+(`cluster_preserving_greedy`, `cluster_preserving_true_greedy`,
+`cluster_preserving_random_greedy`, `cluster_preserving_rewire`,
+`cluster_preserving_hybrid`). Most log gridlock instead of hiding it.
+The v2 preset in [`src/ec-sbm/pipeline.sh`](../../src/ec-sbm/pipeline.sh)
+selects `cluster_preserving_true_greedy` with `--match-degree-mode
+cluster_preserving`, so each accepted edge stays inside its
+profile-derived per-(min_block, max_block) budget.
 
 ## The K_{k+1} core
 
@@ -88,10 +94,15 @@ more degrees. Keep `rewire` as default unless you are benchmarking.
 ## The matcher menu (stage 4a)
 
 After stage 3 combines clustered + residual, some nodes still have
-residual stubs. Algorithms:
+residual stubs. Two families share the same heap / pairing scaffolding,
+distinguished only by whether each accept is gated on a per-block-pair
+budget read from the reference clustering.
+
+Global family (`--match-degree-mode global`):
 
 - **`greedy`**: same as v1's heap-based greedy. Pop max-degree u, connect
-  to `min(residual, non-neighbors)` partners via `set.pop()`. Silent
+  to `min(residual, non-neighbors)` partners via the sorted-iid burst
+  (the `set.pop()` of v1, deterministic across `PYTHONHASHSEED`). Silent
   gridlock.
 - **`true_greedy`**: max-heap with dynamic re-push. Pop u, pick
   v = argmax over `current_degrees` among valid targets, push updated
@@ -106,18 +117,14 @@ residual stubs. Algorithms:
   could not place. Rewire handles the bulk unbiased, greedy handles the
   stuck tail deterministically.
 
-## What you get on the shipped example
-
-Default run on dnc + sbm-flat-best+cc at `--seed 1` with the pipeline's
-`--edge-correction rewire --algorithm true_greedy`:
-
-| Stat | Input | v2 output | Note |
-| --- | --- | --- | --- |
-| N | 906 | 906 | exact |
-| Edges | 10429 | 10342 | within 0.8% |
-| Mean degree | 23.02 | 22.83 | |
-| Global clustering coeff. | 0.548 | 0.501 | highest of the SBM family here |
-| Mean k-core | 15.99 | 14.30 | |
+Cluster-preserving family (`--match-degree-mode cluster_preserving`,
+the v2 default): same five algorithms, prefixed
+`cluster_preserving_`. Each candidate `(u, v)` is filtered on a positive
+remaining `bp_budget[(min(b_u, b_v), max(b_u, b_v))]` derived from the
+reference clustering (block sums of empirical edges minus what stages
+2-3 already placed); each accepted edge decrements that budget. Stubs
+that cannot find an in-budget partner gridlock the same way the global
+variant does.
 
 ## Output guarantees
 
@@ -171,8 +178,10 @@ Dispatcher (`run_generator.sh`):
 
 - `--ec-sbm-dir <p>`: path to the ec-sbm submodule (default `externals/ec-sbm`). Forwarded to the pipeline wrapper as `--package-dir`.
 
-The dispatcher also hardcodes `--edge-correction rewire` and
-`--match-degree-algorithm true_greedy`; override by direct pipeline invocation.
+The dispatcher also hardcodes `--edge-correction rewire`,
+`--match-degree-algorithm cluster_preserving_true_greedy`, and
+`--match-degree-mode cluster_preserving`; override by direct pipeline
+invocation.
 
 Pipeline (`./src/ec-sbm/pipeline.sh`):
 
@@ -181,7 +190,8 @@ Pipeline (`./src/ec-sbm/pipeline.sh`):
 - `--drop-outlier-outlier-edges` / `--keep-outlier-outlier-edges`: default keep.
 - `--gen-outlier-mode <combined|singleton>`: Stage-3a outlier block, default `combined`.
 - `--edge-correction <drop|rewire>`: residual-SBM dedup. Direct invocation must supply it explicitly (no default).
-- `--match-degree-algorithm <greedy|true_greedy|random_greedy|rewire|hybrid>`: required for Stage 4 (no default at pipeline layer).
+- `--match-degree-algorithm <a>`: any key from `src/match_degree.py:ALGO_TABLE` (the global five plus the `cluster_preserving_*` five). Pipeline default for `--version v2` is `cluster_preserving_true_greedy`.
+- `--match-degree-mode <global|cluster_preserving>`: pipeline default for `--version v2` is `cluster_preserving`.
 - Stage 4 match-degree is always on.
 
 See [../advanced-usage.md](../advanced-usage.md).

@@ -64,23 +64,6 @@ external stubs, ABCD makes the global ξ a property of the generative
 process. The output's ξ cannot drift far unless rewiring shuffles things
 significantly.
 
-## What you get on the shipped example
-
-Default run on dnc + sbm-flat-best+cc at `--seed 1`:
-
-| Stat | Input | ABCD output | Note |
-| --- | --- | --- | --- |
-| N | 906 | 906 | exact |
-| Edges | 10429 | 10150 | within 2.7% |
-| Mean degree | 23.02 | 22.41 | very close |
-| Global clustering coeff. | 0.548 | 0.307 | not targeted |
-| Mean k-core | 15.99 | 13.44 | |
-| Num clusters | 87 | 87 | exact |
-
-The degrees and cluster sizes are exact by construction (before rewiring);
-the small edge-count drift is the rewiring pass. The global ξ tracks the
-target tightly.
-
 ## Output guarantees
 
 | Property | Status |
@@ -127,7 +110,8 @@ Pipeline (`./src/abcd/pipeline.sh`):
 - `--outlier-mode <excluded|singleton|combined>`: default `singleton`.
 - `--drop-outlier-outlier-edges` / `--keep-outlier-outlier-edges`: default keep.
 - `--match-degree` / `--no-match-degree`: default off.
-- `--match-degree-algorithm <greedy|true_greedy|random_greedy|rewire|hybrid>`: default `true_greedy`.
+- `--match-degree-algorithm <a>`: default `true_greedy`. Any key from `src/match_degree.py:ALGO_TABLE` (the global five plus the `cluster_preserving_*` five). Cluster-preserving variants additionally read the gen's stage-2 `com.csv` so each accepted edge stays inside its per-block-pair budget; see [`../advanced-usage.md`](../advanced-usage.md).
+- `--match-degree-mode <global|cluster_preserving>`: default `global`.
 - `--remap` / `--no-remap`: default on (ABCD emits fresh 1..N IDs; rank-pair to reference for match-degree targets).
 
 See [../advanced-usage.md](../advanced-usage.md).

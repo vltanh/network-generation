@@ -630,18 +630,18 @@ def parse_args():
                         help="nPSO angular-distribution variant")
     parser.add_argument("--search-strategy", choices=SEARCH_STRATEGIES,
                         default=DEFAULT_SEARCH_STRATEGY,
-                        help="T-search strategy. 'bayesian' uses skopt's GP "
-                             "+ EI (handles ccoeff sampling noise across MATLAB "
-                             "realisations); 'secant' uses bisection + secant.")
+                        help="T-search strategy. 'bayesian' uses Optuna's TPE "
+                             "sampler (density model over good vs bad probes; "
+                             "noise-tolerant); 'secant' uses bisection + secant.")
     parser.add_argument("--search-initial-points", type=int,
                         default=DEFAULT_SEARCH_INITIAL_POINTS,
-                        help="BO-only: number of LHS warm-up evaluations "
-                             "before the GP takes over.")
+                        help="bayesian-only: TPE n_startup_trials before the "
+                             "density model takes over.")
     parser.add_argument("--search-samples-per-T", type=int,
                         default=DEFAULT_SEARCH_SAMPLES_PER_T,
                         help="MATLAB realisations to average per T probe. "
                              "Distinct seeds per realisation; ccoeff is the "
-                             "empirical mean. Default 1.")
+                             f"empirical mean. Default {DEFAULT_SEARCH_SAMPLES_PER_T}.")
     parser.add_argument("--search-max-iters", type=int, default=100,
                         help="Max search iterations on T (counts T-probes, "
                              "not realisations).")

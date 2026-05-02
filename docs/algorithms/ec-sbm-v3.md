@@ -25,8 +25,9 @@ targets. The other profile artifacts are identical to v1/v2.
 
 Stages 1, 3, 4 are unchanged from v2. The residual SBM still runs over
 all blocks with the same `--scope all --gen-outlier-mode combined
---edge-correction rewire` defaults, and `match_degree` still defaults to
-`true_greedy`.
+--edge-correction rewire` defaults, and `match_degree` defaults to
+`cluster_preserving_true_greedy` with `--match-degree-mode
+cluster_preserving` (per-(min_block, max_block) budget gating).
 
 ## Why PSO
 
@@ -112,11 +113,9 @@ For each cluster:
 1. Sort nodes by descending residual degree (tiebreak iid asc). The
    highest-degree survivor plays PSO's "node 1" role: oldest in the
    growth process, most central radially.
-2. Pick `m = max(k, m_floor, round(empirical_mean_intra_deg / 2))`.
-   Capped at `n - 1`. With `--pso-m-policy auto` (default) the lift
-   above `k` reflects PSO's literal "m = half mean degree" interpretation
-   when the empirical cluster is denser than its mincut alone implies.
-   `--pso-m-policy floor` skips the empirical lift.
+2. Pick `m = min(max(k, --pso-m-floor), n - 1)`. `m >= k` keeps the
+   cluster k-edge-connected; raise `--pso-m-floor` above 1 to give
+   triangle capacity to clusters whose empirical mincut is degenerate.
 3. Sample angular coordinates `theta_i ~ Uniform[0, 2pi)`.
 4. Grow the graph node by node from `t = 2 ... n`. Update radial
    coordinates `r_i(t) = beta * 2 ln(i) + (1 - beta) * 2 ln(t)`,
@@ -240,16 +239,16 @@ Pipeline (`./src/ec-sbm/pipeline.sh --version v3 ...`) and standalone
 - `--pso-m-floor N`: hard lower bound on m. `m = min(max(k, this), n - 1)`.
   Default `1`. Raise to give triangle capacity to clusters whose
   empirical mincut is degenerate (k=1 trees).
-- `--pso-search-strategy {bayesian|secant}`: default `bayesian`.
+- `--pso-search-strategy {bayesian|secant}`: default `secant`.
 - `--pso-search-max-iters N`: T-search iter cap (default `30`).
-- `--pso-search-initial-points N`: BO LHS warm-up before the GP
-  takes over (default `5`).
+- `--pso-search-initial-points N`: bayesian-only TPE `n_startup_trials`
+  before the density model takes over (default `5`).
 - `--pso-search-samples-per-T N`: PSO realisations averaged per probe
   (default `3`). Distinct seeds per realisation; the recorded ccoeff
   is the empirical mean.
 - `--pso-search-diff-tol F`: stop when `|cc - target| < this`.
 - `--pso-search-step-tol F`: stop when successive ccoeffs differ
-  by less than this (secant only).
+  by less than this.
 - `--pso-search-t-min F`, `--pso-search-t-max F`: search bracket.
 - `--pso-initial-t F`: T used for the complete-graph regime
   (default `0.5`).
@@ -260,7 +259,7 @@ stages 3a / 4a; v3's preset bundle copies v2's defaults there.
 
 ## Where to look next
 
-- [Source: `externals/ec-sbm/src/gen_clustered_v3.py`](../../externals/ec-sbm/src/gen_clustered_v3.py) (per-cluster T-search driver)
+- [Source: `externals/ec-sbm/src/gen_clustered.py`](../../externals/ec-sbm/src/gen_clustered.py) (`--method pso` branch is the per-cluster T-search driver)
 - [Source: `externals/ec-sbm/src/gen_pso_core.py`](../../externals/ec-sbm/src/gen_pso_core.py) (Python port of `nPSO_model.m` PSO branch)
 - [Source: `externals/ec-sbm/src/gen_outlier.py`](../../externals/ec-sbm/src/gen_outlier.py) (residual SBM, unchanged from v2)
 - [Source: `src/match_degree.py`](../../src/match_degree.py)

@@ -21,7 +21,7 @@ Generator-specific flags are **namespaced** at the dispatcher
 | `--lfr-binary <p>`          | `--binary <p>` (lfr)                   |
 | `--npso-dir <p>`            | `--package-dir <p>` (npso)             |
 | `--npso-model <m>`          | `--model <m>` (npso)                   |
-| `--ec-sbm-dir <p>`          | `--package-dir <p>` (ec-sbm-v1, ec-sbm-v2) |
+| `--ec-sbm-dir <p>`          | `--package-dir <p>` (ec-sbm-v1, ec-sbm-v2, ec-sbm-v3) |
 
 Shared flags that already carry no ambiguity (`--seed`, `--n-threads`,
 `--timeout`, `--keep-state`, `--outlier-mode`, etc.) keep the same name
@@ -33,21 +33,23 @@ at both layers.
 | --- | --- | --- |
 | `--outlier-mode <m>` | all | Stage-1 handling of singleton clusters: `excluded` \| `singleton` \| `combined`. `ec-sbm-v1` only accepts `excluded`. |
 | `--drop-outlier-outlier-edges` / `--keep-outlier-outlier-edges` | all | Drop or keep outlier-outlier edges in the profile. |
-| `--match-degree` / `--no-match-degree` | `sbm`, `abcd`, `abcd+o`, `lfr`, `npso` | Toggle Stage-4 degree-matching rewire. (Always on for `ec-sbm-v1` / `ec-sbm-v2`.) |
-| `--match-degree-algorithm <a>` | `sbm`, `abcd`, `abcd+o`, `lfr`, `npso`, `ec-sbm-v2` | `greedy` \| `true_greedy` \| `random_greedy` \| `rewire` \| `hybrid`. |
-| `--remap` / `--no-remap` | same as above | Rank-pair synthetic nodes to reference by descending degree before matching. |
+| `--match-degree` / `--no-match-degree` | `sbm`, `abcd`, `abcd+o`, `lfr`, `npso` | Toggle Stage-4 degree-matching rewire. Always on for `ec-sbm-v1` / `ec-sbm-v2` / `ec-sbm-v3`. |
+| `--match-degree-algorithm <a>` | `sbm`, `abcd`, `abcd+o`, `lfr`, `npso`, `ec-sbm-v2`, `ec-sbm-v3` | Global family: `greedy` \| `true_greedy` \| `random_greedy` \| `rewire` \| `hybrid`. Cluster-preserving family: `cluster_preserving_greedy` \| `cluster_preserving_true_greedy` \| `cluster_preserving_random_greedy` \| `cluster_preserving_rewire` \| `cluster_preserving_hybrid`. The CP family gates every accepted edge on a per-(min_block, max_block) budget derived from the reference clustering. |
+| `--match-degree-mode <m>` | all | `global` \| `cluster_preserving` (requires a `cluster_preserving_*` algorithm and the reference clustering). |
+| `--remap` / `--no-remap` | same as above | Rank-pair synthetic nodes to reference by descending degree before matching. Works for both global and cluster-preserving families. |
 
 ## Per-generator defaults
 
-| Generator | `--outlier-mode` | OO edges | match-degree | algorithm | remap |
-| --- | --- | --- | --- | --- | --- |
-| `sbm` | `combined` | keep | off | `true_greedy` | off |
-| `ec-sbm-v1` | `excluded` (fixed) | keep | on (fixed) | `greedy` (fixed) | n/a |
-| `ec-sbm-v2` | `excluded` | keep | on (fixed) | `true_greedy` (dispatcher) | n/a |
-| `abcd` | `singleton` | keep | off | `true_greedy` | on |
-| `abcd+o` | `singleton` | **drop** | off | `true_greedy` | on |
-| `lfr` | `singleton` | keep | off | `true_greedy` | on |
-| `npso` | `singleton` | keep | off | `true_greedy` | on |
+| Generator | `--outlier-mode` | OO edges | match-degree | algorithm | mode | remap |
+| --- | --- | --- | --- | --- | --- | --- |
+| `sbm` | `combined` | keep | **on** | `cluster_preserving_true_greedy` | `cluster_preserving` | off |
+| `ec-sbm-v1` | `excluded` (fixed) | keep | on (fixed) | `greedy` (fixed) | `global` | n/a |
+| `ec-sbm-v2` | `excluded` | keep | on (fixed) | `cluster_preserving_true_greedy` | `cluster_preserving` | n/a |
+| `ec-sbm-v3` | `excluded` | keep | on (fixed) | `cluster_preserving_true_greedy` | `cluster_preserving` | n/a |
+| `abcd` | `singleton` | keep | off | `true_greedy` | `global` | on |
+| `abcd+o` | `singleton` | **drop** | off | `true_greedy` | `global` | on |
+| `lfr` | `singleton` | keep | off | `true_greedy` | `global` | on |
+| `npso` | `singleton` | keep | off | `true_greedy` | `global` | on |
 
 ## Generator-unique flags
 

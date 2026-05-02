@@ -10,7 +10,12 @@
 # Optional: GEN_PROFILE_CLI_ARGS, GEN_EXTRA_STAGE2_INPUTS,
 #   GEN_TOPLEVEL_PARAMS / GEN_PROFILE_PARAMS / GEN_STAGE2_PARAMS (key=value lists),
 #   GEN_MATCH_DEGREE_ENABLE (0|1, default 0; add post-gen match_degree + combine stages),
-#   GEN_MATCH_DEGREE_ALGORITHM (greedy|true_greedy|random_greedy|rewire|hybrid, default true_greedy).
+#   GEN_MATCH_DEGREE_ALGORITHM (one of src/match_degree.py:ALGO_TABLE keys; default true_greedy).
+#     Includes greedy, true_greedy, random_greedy, rewire, hybrid + the
+#     cluster_preserving_* family (requires GEN_MATCH_DEGREE_MODE=cluster_preserving).
+#   GEN_MATCH_DEGREE_MODE (global|cluster_preserving, default global). cluster_preserving
+#     gates each accepted edge on a per-(min_block, max_block) budget; requires the
+#     gen's com.csv on stage-2 output and the reference clustering.
 
 set -u
 
