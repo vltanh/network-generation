@@ -145,16 +145,19 @@ launches `matlab -batch`).
 search to find the `T` whose realised `cc(T)` matches `C_G`. Two
 strategies are available via `--search-strategy`:
 
-- `bayesian` (default): `skopt.Optimizer` with a Matern GP and EI
-  acquisition. The first `--search-initial-points` (default 5) probes
-  are Latin-hypercube samples, the rest are EI-suggested. Robust to
-  the per-realisation noise of the MATLAB sampler.
-- `secant`: bracket on `[T_min, T_max] = [0, 1]` with bisection +
-  secant. Cheaper but treats noise as a sign-flip.
+- `secant` (default): bracket on `[T_min, T_max] = [0, 1]` with
+  bisection + secant on the sign of the residual. Empirical sweep
+  ([`tools/npso_bo_sweep/`](../../tools/npso_bo_sweep/)) shows it
+  ties or beats Bayesian opt across N ∈ {50, 200} on the swept
+  configs.
+- `bayesian` (opt-in): Optuna TPE sampler. TPE is noise-tolerant by
+  construction (density estimation, not GP fit); `optuna` is an
+  optional dependency, install it with `pip install optuna`. Useful
+  for ablation or for non-monotone regimes outside the swept grid.
 
-`--search-samples-per-T N` (default 1) averages N independent MATLAB
-realisations per T probe (distinct seeds per realisation). Use it when
-sampling noise dominates the trend at the realisations of interest.
+`--search-samples-per-T N` (default `3`) averages N independent
+MATLAB realisations per T probe with distinct per-realisation seeds.
+Reported ccoeff is the empirical mean.
 
 ### Secant heuristic
 

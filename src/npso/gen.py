@@ -25,7 +25,7 @@ SEARCH_STRATEGIES = ("bayesian", "secant")
 # regimes where realisation-to-realisation noise dominates the trend.
 DEFAULT_SEARCH_STRATEGY = "secant"
 DEFAULT_SEARCH_INITIAL_POINTS = 3
-DEFAULT_SEARCH_SAMPLES_PER_T = 1
+DEFAULT_SEARCH_SAMPLES_PER_T = 3
 
 SEARCH_LOG_NAME = "search_log.json"
 

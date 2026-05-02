@@ -22,7 +22,7 @@ SEARCH_STEP_TOL=0.0001
 SEARCH_T_MIN=0.0005
 SEARCH_STRATEGY="secant"
 SEARCH_INITIAL_POINTS=5
-SEARCH_SAMPLES_PER_T=1
+SEARCH_SAMPLES_PER_T=3
 # nPSO's MATLAB sampler emits integer node IDs 1..N with fresh clusters;
 # when match_degree runs, --remap pairs by descending-degree rank.
 REMAP_ENABLE=1

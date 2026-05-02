@@ -32,6 +32,71 @@ and triangles disappear. So PSO ships a single dial that lets each
 cluster's intra-cluster ccoeff move toward its empirical target without
 giving up the k-edge-connectivity guarantee.
 
+## Per-cluster walkthrough
+
+Stage 2 iterates clusters in `cluster_iid` ascending order
+(profile's size-rank-then-id ordering). For each cluster `c`:
+
+1. **Pick the empirical target.** Read `(node, cluster_id)` from the
+   input clustering and the empirical edgelist. Restrict to edges
+   whose endpoints both sit in `c`. Compute
+   `target_cc = 3 * triangles / triplets` on that induced subgraph
+   (`networkit`-style global ccoeff). Singletons and pairs get
+   `target_cc = 0`.
+2. **Sort cluster nodes by descending residual degree.** Tie-break
+   on iid asc. The residual degree is the per-node degree budget
+   left after earlier clusters consumed theirs (the same `deg`
+   array `gen_kec_core` mutates in v1 / v2). The highest-degree
+   surviving node becomes PSO arrival index 1 (centre of the
+   hyperbolic disk).
+3. **Resolve `m`.** `m = max(k, m_floor, round(empirical_mean_intra_deg / 2))`
+   capped at `n - 1` under `--pso-m-policy auto` (default).
+   `--pso-m-policy floor` skips the empirical lift. `m >= k` keeps
+   the cluster k-edge-connected (the K_{m+1} sub-clique built by the
+   "connect to all existing" branch when `t - 1 <= m` is itself
+   m-edge-connected, and every later attachment of `m` edges
+   preserves the mincut).
+4. **Short-circuit if trivial.** When `n <= m + 1`, PSO produces the
+   complete graph regardless of `T`. One call at `--pso-initial-t`,
+   one log entry tagged `note: complete_graph`, no search.
+5. **Run the T search** (`secant` by default; `bayesian` opt-in via
+   Optuna TPE). Each iteration:
+   1. Pick a candidate `T`. Secant: bisection or secant from the
+      current bracket and the residuals at its endpoints. BO: Optuna
+      TPE samples from its surrogate.
+   2. Run PSO `--pso-search-samples-per-T` times at `T` with distinct
+      per-realisation seeds (default `3`). Compute the realisation
+      ccoeffs and report their mean to the search. Pick the
+      realisation closest to the mean as the representative edge set.
+   3. Update the bracket (secant) or call `study.tell` (BO).
+   4. Bookkeep `best_T`, `best_ccoeff`, `best_edges` whenever the
+      mean-diff improves.
+   5. Stop early on `|cc - target| < diff_tol`,
+      `|cc - prev_cc| < step_tol`, or after `max_iters` total
+      probes.
+6. **Decrement the residual degree budget.** Every PSO edge
+   `(u, v)` placed by the chosen realisation does
+   `deg[u] -= 1; deg[v] -= 1` so stages 3 and 4 know what budget
+   PSO already consumed.
+7. **Log the cluster.** Append a record to
+   `pso_search_log.json` with `n`, `k`, `m_used`,
+   `empirical_mean_intra_deg`, `target_ccoeff`, `best_T`,
+   `best_ccoeff`, `n_iters`, and the full `iters` trace
+   (`T`, `ccoeff`, `diff`, optional `samples` list when
+   `samples_per_T > 1`).
+8. **Per-cluster RNG seed.** `cluster_seed = (global_seed *
+   9_999_991 + cluster_iid) & 0xFFFFFFFF`. Per-iter seed is
+   `(cluster_seed * 7_777_771 + iter_idx) & 0xFFFFFFFF`; per-sample
+   seed inside `_eval_T` is `(iter_seed * 1_000_003 + sample_idx) &
+   0xFFFFFFFF`. So the same cluster at the same global seed
+   reproduces byte-for-byte.
+
+After the loop, the union of all chosen-realisation edges (mapped
+back through `node_id2id`) is sorted, written to
+`stage/gen_clustered/edge.csv` under the band
+`clustered_pso_core` in `sources.json`. Stage 3a (residual SBM) and
+stage 4a (match_degree) then run unchanged from v2.
+
 ## The PSO call
 
 For each cluster:
@@ -66,30 +131,33 @@ on its intra-cluster induced subgraph (`3 * triangles / triplets`,
 matching the [`networkit` exactGlobal](https://networkit.github.io/) and
 nPSO conventions). The objective is `|ccoeff(T) - target|`. PSO is
 stochastic, so two evaluations at the same `T` yield different ccoeff
-values; the underlying trend is decreasing in `T` but a single draw can
-buck the trend on any given probe. v3 therefore defaults to a noisy-
-function-aware optimiser:
+values; the underlying trend is decreasing in `T` but a single draw
+can buck the trend on any given probe. Two strategies ship:
 
-- `--pso-search-strategy bayesian` (default): scikit-optimize's
-  `Optimizer` with a Matern-kernel GP and Expected-Improvement
-  acquisition. The first `--pso-search-initial-points` evaluations are
-  Latin-hypercube samples (default 5) to seed the GP; subsequent probes
-  are EI-driven. Robust to per-realisation noise because the GP averages
-  evidence across nearby T values.
-- `--pso-search-strategy secant`: bisection + secant bracket (the
-  scheme [`src/npso/gen.py`](../../src/npso/gen.py) uses for the
-  global-ccoeff search). Cheaper but brittle when realisation noise
-  flips the sign of `f(T)`.
+- `--pso-search-strategy secant` (default): bisection + secant bracket
+  on the sign of `f(T) = ccoeff(T) - target`. The empirical sweep at
+  [`tools/npso_bo_sweep/`](../../tools/npso_bo_sweep/) shows secant
+  ties or beats Bayesian opt on every (target, iters) cell at
+  N ∈ {50, 200} despite the realisation noise, because the
+  monotone-in-expectation trend has S/N ≥ 1.5 even at N=50 and the
+  bracket update is the optimal access pattern for that geometry.
+- `--pso-search-strategy bayesian` (opt-in): Optuna TPE sampler.
+  TPE is noise-tolerant by construction (density estimation rather
+  than GP surrogate fit) and shares the same `diff_tol` / `step_tol`
+  early-stop as secant. Useful for ablation or for non-monotone
+  regimes outside the swept grid. Optuna is an optional dependency;
+  selecting `bayesian` without it logs a warning and falls back to
+  secant.
 
-To suppress noise directly, `--pso-search-samples-per-T N` averages
-`N` independent PSO draws per probe before reporting to the optimiser.
-Default `1`; raise it (with budget) on clusters where ccoeff variance
-is large relative to the bracket gap.
+`--pso-search-samples-per-T N` averages N independent PSO draws per
+probe before reporting to the search; default `3`. Distinct seeds per
+realisation, so re-runs are deterministic. Helps secant more than BO
+because secant's sign-update sees a cleaner residual.
 
 Each evaluation re-seeds PSO so different `T` values get different
 draws and the same `T` re-runs deterministically. Stops on
 `|ccoeff - target| < diff_tol`, on
-`|ccoeff(t_i) - ccoeff(t_{i-1})| < step_tol` (secant only), or after
+`|ccoeff(t_i) - ccoeff(t_{i-1})| < step_tol`, or after
 `pso_search_max_iters` total evaluations.
 
 `stage/gen_clustered/pso_search_log.json` keeps the per-cluster trace
@@ -170,7 +238,8 @@ Pipeline (`./src/ec-sbm/pipeline.sh --version v3 ...`) and standalone
 - `--pso-search-initial-points N`: BO LHS warm-up before the GP
   takes over (default `5`).
 - `--pso-search-samples-per-T N`: PSO realisations averaged per probe
-  (default `1`).
+  (default `3`). Distinct seeds per realisation; the recorded ccoeff
+  is the empirical mean.
 - `--pso-search-diff-tol F`: stop when `|cc - target| < this`.
 - `--pso-search-step-tol F`: stop when successive ccoeffs differ
   by less than this (secant only).
