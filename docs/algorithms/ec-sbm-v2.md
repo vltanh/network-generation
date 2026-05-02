@@ -19,16 +19,17 @@ just outlier-touching ones.
 **3. Stage 4 has five matchers.** v1 had one heap-greedy that silently
 dropped stuck stubs. v2 exposes the full
 [`src/match_degree.py`](../../src/match_degree.py) registry via
-`--match-degree-algorithm`: the global family (`greedy`,
+`--degree-matcher`: the global family (`greedy`,
 `true_greedy`, `random_greedy`, `rewire`, `hybrid`) and the
 cluster-preserving family
 (`cluster_preserving_greedy`, `cluster_preserving_true_greedy`,
 `cluster_preserving_random_greedy`, `cluster_preserving_rewire`,
 `cluster_preserving_hybrid`). Most log gridlock instead of hiding it.
 The v2 preset in [`src/ec-sbm/pipeline.sh`](../../src/ec-sbm/pipeline.sh)
-selects `cluster_preserving_true_greedy` with `--match-degree-mode
-cluster_preserving`, so each accepted edge stays inside its
-profile-derived per-(min_block, max_block) budget.
+selects `cluster_preserving_true_greedy`, so each accepted edge stays
+inside its profile-derived per-(min_block, max_block) budget. The
+matcher detects cluster-preserving mode from the algorithm-name
+prefix; no separate mode flag.
 
 ## The K_{k+1} core
 
@@ -98,7 +99,7 @@ residual stubs. Two families share the same heap / pairing scaffolding,
 distinguished only by whether each accept is gated on a per-block-pair
 budget read from the reference clustering.
 
-Global family (`--match-degree-mode global`):
+Global family:
 
 - **`greedy`**: same as v1's heap-based greedy. Pop max-degree u, connect
   to `min(residual, non-neighbors)` partners via the sorted-iid burst
@@ -117,14 +118,14 @@ Global family (`--match-degree-mode global`):
   could not place. Rewire handles the bulk unbiased, greedy handles the
   stuck tail deterministically.
 
-Cluster-preserving family (`--match-degree-mode cluster_preserving`,
-the v2 default): same five algorithms, prefixed
-`cluster_preserving_`. Each candidate `(u, v)` is filtered on a positive
-remaining `bp_budget[(min(b_u, b_v), max(b_u, b_v))]` derived from the
-reference clustering (block sums of empirical edges minus what stages
-2-3 already placed); each accepted edge decrements that budget. Stubs
-that cannot find an in-budget partner gridlock the same way the global
-variant does.
+Cluster-preserving family (the v2 default): same five algorithms,
+prefixed `cluster_preserving_`. Each candidate `(u, v)` is filtered on
+a positive remaining `bp_budget[(min(b_u, b_v), max(b_u, b_v))]`
+derived from the reference clustering (block sums of empirical edges
+minus what stages 2-3 already placed); each accepted edge decrements
+that budget. Stubs that cannot find an in-budget partner gridlock the
+same way the global variant does. The matcher detects this family
+from the algorithm-name prefix; no separate mode flag.
 
 ## Output guarantees
 
@@ -178,9 +179,8 @@ Dispatcher (`run_generator.sh`):
 
 - `--ec-sbm-dir <p>`: path to the ec-sbm submodule (default `externals/ec-sbm`). Forwarded to the pipeline wrapper as `--package-dir`.
 
-The dispatcher also hardcodes `--edge-correction rewire`,
-`--match-degree-algorithm cluster_preserving_true_greedy`, and
-`--match-degree-mode cluster_preserving`; override by direct pipeline
+The dispatcher also hardcodes `--degree-matcher
+cluster_preserving_true_greedy`; override by direct pipeline
 invocation.
 
 Pipeline (`./src/ec-sbm/pipeline.sh`):
@@ -189,9 +189,7 @@ Pipeline (`./src/ec-sbm/pipeline.sh`):
 - `--outlier-mode`: default `excluded`.
 - `--drop-outlier-outlier-edges` / `--keep-outlier-outlier-edges`: default keep.
 - `--gen-outlier-mode <combined|singleton>`: Stage-3a outlier block, default `combined`.
-- `--edge-correction <drop|rewire>`: residual-SBM dedup. Direct invocation must supply it explicitly (no default).
-- `--match-degree-algorithm <a>`: any key from `src/match_degree.py:ALGO_TABLE` (the global five plus the `cluster_preserving_*` five). Pipeline default for `--version v2` is `cluster_preserving_true_greedy`.
-- `--match-degree-mode <global|cluster_preserving>`: pipeline default for `--version v2` is `cluster_preserving`.
+- `--degree-matcher <a>`: any key from `src/match_degree.py:ALGO_TABLE` (the global five plus the `cluster_preserving_*` five). Pipeline default for `--version v2` is `cluster_preserving_true_greedy`. Cluster-preserving mode is inferred from the algorithm-name prefix.
 - Stage 4 match-degree is always on.
 
 See [../advanced-usage.md](../advanced-usage.md).

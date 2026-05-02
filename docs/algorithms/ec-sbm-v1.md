@@ -104,7 +104,7 @@ ranges per provenance band.
 Some nodes are still short of their target degree after stage 3b, because
 dedup removed their edges. Stage 4a tops them off using the shared
 [`src/match_degree.py`](../../src/match_degree.py) tool. v1 hardcodes
-`--match-degree-algorithm greedy` for byte-compat with the original v1
+`--degree-matcher greedy` for byte-compat with the original v1
 implementation:
 
 1. Build a max-heap of `(-residual_degree, node_id)` for nodes still short.

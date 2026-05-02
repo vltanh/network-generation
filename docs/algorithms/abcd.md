@@ -110,8 +110,7 @@ Pipeline (`./src/abcd/pipeline.sh`):
 - `--outlier-mode <excluded|singleton|combined>`: default `singleton`.
 - `--drop-outlier-outlier-edges` / `--keep-outlier-outlier-edges`: default keep.
 - `--match-degree` / `--no-match-degree`: default off.
-- `--match-degree-algorithm <a>`: default `true_greedy`. Any key from `src/match_degree.py:ALGO_TABLE` (the global five plus the `cluster_preserving_*` five). Cluster-preserving variants additionally read the gen's stage-2 `com.csv` so each accepted edge stays inside its per-block-pair budget; see [`../advanced-usage.md`](../advanced-usage.md).
-- `--match-degree-mode <global|cluster_preserving>`: default `global`.
+- `--degree-matcher <a>`: default `true_greedy`. Any key from `src/match_degree.py:ALGO_TABLE` (the global five plus the `cluster_preserving_*` five). Cluster-preserving variants additionally read the gen's stage-2 `com.csv` so each accepted edge stays inside its per-block-pair budget; see [`../advanced-usage.md`](../advanced-usage.md).
 - `--remap` / `--no-remap`: default on (ABCD emits fresh 1..N IDs; rank-pair to reference for match-degree targets).
 
 See [../advanced-usage.md](../advanced-usage.md).

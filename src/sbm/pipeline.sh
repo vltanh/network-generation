@@ -18,7 +18,6 @@ DROP_OO_BOOL="false"
 REMAP_ENABLE=0
 MATCH_DEGREE_ENABLE=1
 MATCH_DEGREE_ALGORITHM="cluster_preserving_true_greedy"
-MATCH_DEGREE_MODE="cluster_preserving"
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -36,8 +35,7 @@ while [[ "$#" -gt 0 ]]; do
         --no-remap) REMAP_ENABLE=0 ;;
         --match-degree) MATCH_DEGREE_ENABLE=1 ;;
         --no-match-degree) MATCH_DEGREE_ENABLE=0 ;;
-        --match-degree-algorithm) MATCH_DEGREE_ALGORITHM="$2"; shift ;;
-        --match-degree-mode) MATCH_DEGREE_MODE="$2"; shift ;;
+        --degree-matcher) MATCH_DEGREE_ALGORITHM="$2"; shift ;;
         *) echo "Unknown parameter passed: $1"; exit 1 ;;
     esac
     shift
@@ -69,7 +67,6 @@ GEN_CLI_ARGS=(
 GEN_MATCH_DEGREE_ENABLE="${MATCH_DEGREE_ENABLE}"
 GEN_MATCH_DEGREE_ALGORITHM="${MATCH_DEGREE_ALGORITHM}"
 GEN_MATCH_DEGREE_USE_REMAP="${REMAP_ENABLE}"
-GEN_MATCH_DEGREE_MODE="${MATCH_DEGREE_MODE}"
 GEN_MATCH_DEGREE_OUTLIER_MODE="${OUTLIER_MODE}"
 
 # Per-stage params.txt fingerprints (see _common/state.sh:write_params_file).
@@ -81,7 +78,6 @@ GEN_TOPLEVEL_PARAMS=(
     "profile_drop_oo_edges=${DROP_OO_BOOL}"
     "matcher_enable=${MATCH_DEGREE_ENABLE}"
     "matcher=${MATCH_DEGREE_ALGORITHM}"
-    "matcher_mode=${MATCH_DEGREE_MODE}"
     "matcher_use_remap=${REMAP_ENABLE}"
 )
 # shellcheck disable=SC2034

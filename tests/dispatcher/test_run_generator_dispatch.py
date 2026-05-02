@@ -208,13 +208,13 @@ FLAG_MATRIX = [
     ("ec-sbm-v1", "--edge-correction", None, False),
     ("ec-sbm-v2", "--edge-correction", None, False),
     ("ec-sbm-v3", "--edge-correction", None, False),
-    ("ec-sbm-v1", "--match-degree-algorithm", None, False),
-    ("ec-sbm-v2", "--match-degree-algorithm", None, False),
-    ("ec-sbm-v3", "--match-degree-algorithm", None, False),
+    ("ec-sbm-v1", "--degree-matcher", None, False),
+    ("ec-sbm-v2", "--degree-matcher", None, False),
+    ("ec-sbm-v3", "--degree-matcher", None, False),
     ("ec-sbm-v1", "--outlier-mode", None, False),
     ("ec-sbm-v2", "--outlier-mode", None, False),
     ("ec-sbm-v3", "--outlier-mode", None, False),
-    ("sbm", "--match-degree-algorithm", None, False),
+    ("sbm", "--degree-matcher", None, False),
     # npso search knobs: dispatcher flags are optional. When unset, the
     # pipeline's own defaults apply; the config does not forward them.
     ("npso", "--search-max-iters", None, False),

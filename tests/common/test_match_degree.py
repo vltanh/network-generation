@@ -310,7 +310,7 @@ def test_cli_produces_csv_with_canonical_columns(tmp_path, input_edgelist, ref_e
          "--input-edgelist", str(input_edgelist),
          "--ref-edgelist", str(ref_edgelist),
          "--output-folder", str(out_dir),
-         "--match-degree-algorithm", "hybrid",
+         "--degree-matcher", "hybrid",
          "--seed", "1"],
         env=env, capture_output=True, text=True,
     )
@@ -341,7 +341,7 @@ def test_cli_remap_mode_flag(tmp_path, input_edgelist, ref_edgelist):
          "--input-edgelist", str(input_edgelist),
          "--ref-edgelist", str(ref_edgelist),
          "--output-folder", str(out_dir),
-         "--remap", "--match-degree-algorithm", "hybrid", "--seed", "1"],
+         "--remap", "--degree-matcher", "hybrid", "--seed", "1"],
         env=env, capture_output=True, text=True,
     )
     assert result.returncode == 0, result.stderr

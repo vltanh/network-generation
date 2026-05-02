@@ -20,9 +20,7 @@ DROP_OO_BOOL="false"
 SBM_OVERLAY_BOOL=""
 SCOPE=""
 GEN_OUTLIER_MODE=""
-EDGE_CORRECTION=""
 ALGORITHM=""
-MATCH_DEGREE_MODE=""
 REMAP_ENABLE=0
 # v3-only PSO knobs.
 PSO_GAMMA=""
@@ -50,9 +48,7 @@ while [[ "$#" -gt 0 ]]; do
         --no-sbm-overlay) SBM_OVERLAY_BOOL="false" ;;
         --scope) SCOPE="$2"; shift ;;
         --gen-outlier-mode) GEN_OUTLIER_MODE="$2"; shift ;;
-        --edge-correction) EDGE_CORRECTION="$2"; shift ;;
-        --match-degree-algorithm) ALGORITHM="$2"; shift ;;
-        --match-degree-mode) MATCH_DEGREE_MODE="$2"; shift ;;
+        --degree-matcher) ALGORITHM="$2"; shift ;;
         --remap) REMAP_ENABLE=1 ;;
         --no-remap) REMAP_ENABLE=0 ;;
         --pso-gamma) PSO_GAMMA="$2"; shift ;;
@@ -84,24 +80,19 @@ case "${VERSION}" in
         : "${SBM_OVERLAY_BOOL:=true}"
         : "${SCOPE:=outlier-incident}"
         : "${GEN_OUTLIER_MODE:=singleton}"
-        : "${EDGE_CORRECTION:=none}"
         : "${ALGORITHM:=greedy}"
         ;;
     v2)
         : "${SBM_OVERLAY_BOOL:=false}"
         : "${SCOPE:=all}"
         : "${GEN_OUTLIER_MODE:=combined}"
-        : "${EDGE_CORRECTION:=rewire}"
         : "${ALGORITHM:=cluster_preserving_true_greedy}"
-        : "${MATCH_DEGREE_MODE:=cluster_preserving}"
         ;;
     v3)
         : "${SBM_OVERLAY_BOOL:=false}"  # stage 2 of v3 ignores this; kept for params.txt
         : "${SCOPE:=all}"
         : "${GEN_OUTLIER_MODE:=combined}"
-        : "${EDGE_CORRECTION:=rewire}"
         : "${ALGORITHM:=cluster_preserving_true_greedy}"
-        : "${MATCH_DEGREE_MODE:=cluster_preserving}"
         : "${PSO_GAMMA:=2.0}"
         : "${PSO_M_FLOOR:=1}"
         : "${PSO_SEARCH_STRATEGY:=secant}"
@@ -122,9 +113,7 @@ esac
 : "${SBM_OVERLAY_BOOL:=false}"
 : "${SCOPE:=all}"
 : "${GEN_OUTLIER_MODE:=combined}"
-: "${EDGE_CORRECTION:=rewire}"
 : "${ALGORITHM:=true_greedy}"
-: "${MATCH_DEGREE_MODE:=global}"
 
 if [ -z "${PACKAGE_DIR}" ]; then
     echo "Error: --package-dir is required (path to externals/ec-sbm)." >&2
@@ -169,9 +158,7 @@ write_params_file "${FINAL_PARAMS}" \
     "gen_clustered_sbm_overlay=${SBM_OVERLAY_BOOL}" \
     "gen_outlier_scope=${SCOPE}" \
     "gen_outlier_assign_mode=${GEN_OUTLIER_MODE}" \
-    "gen_outlier_edge_correction=${EDGE_CORRECTION}" \
     "matcher=${ALGORITHM}" \
-    "matcher_mode=${MATCH_DEGREE_MODE}" \
     "matcher_use_remap=${REMAP_ENABLE}"
 
 log_invocation_header "${FINAL_LOG}" "${SEED}" "${KEEP_STATE}"
@@ -338,8 +325,7 @@ STG_GEN_OUTLIER_EDGES_PARAMS="${STG_GEN_OUTLIER_EDGES_DIR}/params.txt"
 write_params_file "${STG_GEN_OUTLIER_EDGES_PARAMS}" \
     "seed=$((SEED + 1))" \
     "scope=${SCOPE}" \
-    "outlier_mode=${GEN_OUTLIER_MODE}" \
-    "edge_correction=${EDGE_CORRECTION}"
+    "outlier_mode=${GEN_OUTLIER_MODE}"
 
 # scope=outlier-incident (v1) ignores exist-edgelist; only the
 # residual-SBM-over-all-blocks branch (scope=all) subtracts it.
@@ -359,7 +345,6 @@ if ! is_step_done "${STG_GEN_OUTLIER_EDGES_DIR}/done" "${OUT_GEN_OUTLIER}"; then
         "${GEN_OUTLIER_EXIST_FLAG[@]}" \
         --scope "${SCOPE}" \
         --outlier-mode "${GEN_OUTLIER_MODE}" \
-        --edge-correction "${EDGE_CORRECTION}" \
         --output-folder "${STG_GEN_OUTLIER_EDGES_DIR}" \
         --seed "$((SEED + 1))"
     mark_done "${STG_GEN_OUTLIER_EDGES_DIR}/done" "Stage 3a (gen_outlier)" "${IN_GEN_OUTLIER}" "${OUT_GEN_OUTLIER}"
@@ -397,19 +382,21 @@ STG_MATCH_DEGREE_EDGES_PARAMS="${STG_MATCH_DEGREE_EDGES_DIR}/params.txt"
 write_params_file "${STG_MATCH_DEGREE_EDGES_PARAMS}" \
     "seed=$((SEED + 2))" \
     "matcher=${ALGORITHM}" \
-    "matcher_mode=${MATCH_DEGREE_MODE}" \
     "matcher_use_remap=${REMAP_ENABLE}"
 
-# Cluster-preserving mode forwards clustering + outlier-mode and the remap
-# toggle. Default global mode keeps the legacy invocation byte-identical.
+# cluster_preserving_* algorithms need the input + reference clustering;
+# the global family ignores them. Mode is inferred from the algorithm
+# name prefix.
 MATCH_DEGREE_CP_FLAGS=()
-if [ "${MATCH_DEGREE_MODE}" = "cluster_preserving" ]; then
-    MATCH_DEGREE_CP_FLAGS=(
-        --input-clustering "${INPUT_CLUSTERING}"
-        --ref-clustering "${INPUT_CLUSTERING}"
-        --outlier-mode "${GEN_OUTLIER_MODE}"
-    )
-fi
+case "${ALGORITHM}" in
+    cluster_preserving_*)
+        MATCH_DEGREE_CP_FLAGS=(
+            --input-clustering "${INPUT_CLUSTERING}"
+            --ref-clustering "${INPUT_CLUSTERING}"
+            --outlier-mode "${GEN_OUTLIER_MODE}"
+        )
+        ;;
+esac
 MATCH_DEGREE_REMAP_FLAG=()
 if [ "${REMAP_ENABLE}" = "1" ]; then
     MATCH_DEGREE_REMAP_FLAG=(--remap)
@@ -423,7 +410,7 @@ if ! is_step_done "${STG_MATCH_DEGREE_EDGES_DIR}/done" "${OUT_MATCH_DEGREE}"; th
         python "${SRC_DIR}/match_degree.py" \
         --input-edgelist "${STG_GEN_OUTLIER_DIR}/edge.csv" \
         --ref-edgelist "${INPUT_EDGELIST}" \
-        --match-degree-algorithm "${ALGORITHM}" \
+        --degree-matcher "${ALGORITHM}" \
         "${MATCH_DEGREE_CP_FLAGS[@]}" \
         "${MATCH_DEGREE_REMAP_FLAG[@]}" \
         --output-folder "${STG_MATCH_DEGREE_EDGES_DIR}" \

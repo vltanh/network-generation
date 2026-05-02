@@ -35,8 +35,7 @@ run_stats_flag=0
 run_comp_flag=0
 keep_state=0
 
-match_degree_algorithm=""
-match_degree_mode=""
+degree_matcher=""
 remap_setting=""
 outlier_mode=""
 output_suffix=""
@@ -69,8 +68,7 @@ while [[ "$#" -gt 0 ]]; do
         --run-stats) run_stats_flag=1; shift 1 ;;
         --run-comp) run_comp_flag=1; shift 1 ;;
         --keep-state) keep_state=1; shift 1 ;;
-        --match-degree-algorithm) match_degree_algorithm="$2"; shift 2 ;;
-        --match-degree-mode) match_degree_mode="$2"; shift 2 ;;
+        --degree-matcher) degree_matcher="$2"; shift 2 ;;
         --remap) remap_setting="on"; shift 1 ;;
         --no-remap) remap_setting="off"; shift 1 ;;
         --outlier-mode) outlier_mode="$2"; shift 2 ;;
@@ -344,11 +342,8 @@ fi
 # at the per-gen pipeline layer. Configs append "${MATCH_DEGREE_PASSTHROUGH[@]}"
 # to GEN_EXTRA_ARGS.
 MATCH_DEGREE_PASSTHROUGH=()
-if [ -n "${match_degree_algorithm}" ]; then
-    MATCH_DEGREE_PASSTHROUGH+=(--match-degree-algorithm "${match_degree_algorithm}")
-fi
-if [ -n "${match_degree_mode}" ]; then
-    MATCH_DEGREE_PASSTHROUGH+=(--match-degree-mode "${match_degree_mode}")
+if [ -n "${degree_matcher}" ]; then
+    MATCH_DEGREE_PASSTHROUGH+=(--degree-matcher "${degree_matcher}")
 fi
 if [ "${remap_setting}" = "on" ]; then
     MATCH_DEGREE_PASSTHROUGH+=(--remap)

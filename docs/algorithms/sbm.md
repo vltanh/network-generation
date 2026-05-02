@@ -15,8 +15,7 @@ invocation):
 | `--outlier-mode <excluded\|singleton\|combined>` | `combined` | how `profile.py` folds outliers (drop / one cluster each / single `__outliers__` block) |
 | `--drop-outlier-outlier-edges` / `--keep-outlier-outlier-edges` | keep | strip OO edges from the input edgelist before profiling |
 | `--match-degree` / `--no-match-degree` | **on** | top-up pass that closes the per-node degree deficit left by gt dedup |
-| `--match-degree-algorithm <a>` | `cluster_preserving_true_greedy` | strategy for the top-up pass; any key from `src/match_degree.py:ALGO_TABLE` (global five plus the `cluster_preserving_*` five) |
-| `--match-degree-mode <global\|cluster_preserving>` | `cluster_preserving` | when `cluster_preserving`, gates each accepted edge on a per-(min_block, max_block) budget read from the reference clustering |
+| `--degree-matcher <a>` | `cluster_preserving_true_greedy` | strategy for the top-up pass; any key from `src/match_degree.py:ALGO_TABLE` (global five plus the `cluster_preserving_*` five) |
 | `--remap` / `--no-remap` | off | remap output node IDs (SBM passes input IDs through by default) |
 
 See [../advanced-usage.md](../advanced-usage.md) for the

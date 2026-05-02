@@ -24,10 +24,10 @@ intra-induced global clustering coefficient that v3's T-search
 targets. The other profile artifacts are identical to v1/v2.
 
 Stages 1, 3, 4 are unchanged from v2. The residual SBM still runs over
-all blocks with the same `--scope all --gen-outlier-mode combined
---edge-correction rewire` defaults, and `match_degree` defaults to
-`cluster_preserving_true_greedy` with `--match-degree-mode
-cluster_preserving` (per-(min_block, max_block) budget gating).
+all blocks with the same `--scope all --gen-outlier-mode combined`
+defaults, and `match_degree` defaults to
+`cluster_preserving_true_greedy` (per-(min_block, max_block) budget
+gating; mode is inferred from the algorithm name).
 
 ## Why PSO
 
@@ -254,7 +254,7 @@ Pipeline (`./src/ec-sbm/pipeline.sh --version v3 ...`) and standalone
   (default `0.5`).
 
 The other v2 flags (`--scope`, `--gen-outlier-mode`,
-`--edge-correction`, `--match-degree-algorithm`) still apply to
+`--edge-correction`, `--degree-matcher`) still apply to
 stages 3a / 4a; v3's preset bundle copies v2's defaults there.
 
 ## Where to look next

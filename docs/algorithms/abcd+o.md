@@ -67,8 +67,7 @@ Pipeline (`./src/abcd+o/pipeline.sh`):
 - `--outlier-mode <excluded|singleton|combined>`: default `combined` (one outlier cluster, matches the sampler's cluster_id = 1 mega-cluster). With `drop_outlier_outlier_edges` on, `singleton` and `combined` produce the same `mixing_parameter.txt`.
 - `--drop-outlier-outlier-edges` / `--keep-outlier-outlier-edges`: **default drop** (Julia sampler cannot produce OO edges).
 - `--match-degree` / `--no-match-degree`: default off.
-- `--match-degree-algorithm <a>`: default `true_greedy`. Any key from `src/match_degree.py:ALGO_TABLE` (the global five plus the `cluster_preserving_*` five); see [`../advanced-usage.md`](../advanced-usage.md).
-- `--match-degree-mode <global|cluster_preserving>`: default `global`.
+- `--degree-matcher <a>`: default `true_greedy`. Any key from `src/match_degree.py:ALGO_TABLE` (the global five plus the `cluster_preserving_*` five); see [`../advanced-usage.md`](../advanced-usage.md). Cluster-preserving mode is inferred from the algorithm-name prefix.
 - `--remap` / `--no-remap`: default on.
 
 See [../advanced-usage.md](../advanced-usage.md).

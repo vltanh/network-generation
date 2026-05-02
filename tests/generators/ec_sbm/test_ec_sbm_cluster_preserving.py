@@ -1,4 +1,4 @@
-"""End-to-end checks for ec-sbm with --match-degree-mode cluster_preserving.
+"""End-to-end checks for ec-sbm with a cluster_preserving_* matcher.
 
 Slow because it spins up the full pipeline; gated under @pytest.mark.slow
 and skipped without the ec-sbm submodule.
@@ -55,8 +55,7 @@ def test_ec_sbm_cluster_preserving_hybrid_emits_two_bands(gen_name, tmp_path):
         "--seed", "1",
         "--n-threads", "1",
         "--ec-sbm-dir", str(EC_SBM_DIR),
-        "--match-degree-mode", "cluster_preserving",
-        "--match-degree-algorithm", "cluster_preserving_hybrid",
+        "--degree-matcher", "cluster_preserving_hybrid",
         "--keep-state",
     ]
     proc = subprocess.run(

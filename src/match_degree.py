@@ -59,7 +59,7 @@ def parse_args():
                              "the ref degree of its rank-paired ref node. "
                              "Top-up edges stay in the input's ID space.")
     parser.add_argument(
-        "--match-degree-algorithm", dest="match_degree_algorithm", type=str,
+        "--degree-matcher", dest="degree_matcher", type=str,
         choices=list(ALGO_TABLE),
         default="true_greedy",
     )
@@ -1010,7 +1010,7 @@ def main():
     random.seed(args.seed)
     np.random.seed(args.seed)
 
-    algo = args.match_degree_algorithm
+    algo = args.degree_matcher
     kind, algo_fn, labels, is_cp = ALGO_TABLE[algo]
 
     # Cluster-preserving rewire/hybrid call into gt.generate_sbm; seed
@@ -1021,7 +1021,7 @@ def main():
 
     if is_cp and args.input_clustering is None:
         raise SystemExit(
-            f"--match-degree-algorithm {algo} requires --input-clustering."
+            f"--degree-matcher {algo} requires --input-clustering."
         )
     if is_cp and args.ref_clustering is None and not args.remap:
         args.ref_clustering = args.input_clustering

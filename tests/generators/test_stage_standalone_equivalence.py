@@ -218,7 +218,7 @@ def _replay_match_degree(state_dir: Path, version: str, tmp: Path, hashseed: str
         "python", str(SRC_DIR / "match_degree.py"),
         "--input-edgelist", str(state_dir / "gen_outlier" / "edge.csv"),
         "--ref-edgelist", str(INP_EDGE),
-        "--match-degree-algorithm", flags["algorithm"],
+        "--degree-matcher", flags["algorithm"],
         "--output-folder", str(tmp),
         "--seed", str(SEED + 2),
     ]

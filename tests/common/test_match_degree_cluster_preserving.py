@@ -484,7 +484,7 @@ def test_cp_true_greedy_golden_hash(tmp_path):
 
     out_bytes = _run_match_degree(
         1,
-        ["--match-degree-algorithm", "cluster_preserving_true_greedy"],
+        ["--degree-matcher", "cluster_preserving_true_greedy"],
         tmp_path,
         edges, ref, com,
     )
