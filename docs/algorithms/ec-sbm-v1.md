@@ -125,21 +125,6 @@ Merge stage-3b's `edge.csv` with stage-4a's `degree_matching_edge.csv` using
 three provenance bands (`clustered`, `outlier`, `match_degree`) land in the
 final `sources.json`.
 
-## What you get on the shipped example
-
-Default run on dnc + sbm-flat-best+cc at `--seed 1`:
-
-| Stat | Input | v1 output | Note |
-| --- | --- | --- | --- |
-| N | 906 | 906 | exact |
-| Edges | 10429 | 10425 | within 0.04% (match-degree fills most of the dedup loss) |
-| Mean degree | 23.02 | 23.01 | tracks the edge count |
-| Global clustering coeff. | 0.548 | 0.424 | higher than plain SBM (0.341) thanks to K_{k+1} cores |
-| Mean k-core | 15.99 | 13.85 | |
-
-`com.csv` is a stage-1 passthrough with singleton clusters dropped, so the
-block structure matches the input exactly.
-
 ## Output guarantees
 
 - **N** exact after the `excluded` outlier transform.
@@ -167,11 +152,12 @@ Slower than v2 because v1 runs two `gt.generate_sbm` calls (cluster SBM
 
 ## v1 vs v2
 
-Short answer: prefer v2. v2 has cleaner residual accounting (one SBM call on
-the residual instead of an overlay on mutated probs) and a choice of five
-matcher algorithms, most of which log gridlock rather than dropping stubs
-silently. v1 stays in the repo for comparison. See
-[ec-sbm-v2](./ec-sbm-v2.md) for the details.
+v2 differs in two structural choices: one SBM call on the residual block
+matrix instead of v1's overlay on a mutated `probs`, and a ten-algorithm
+matcher menu (the global five plus the `cluster_preserving_*` five), most
+of which log gridlock rather than dropping stubs silently. v1 stays in
+the repo for byte-reproducibility against the original paper
+implementation. See [ec-sbm-v2](./ec-sbm-v2.md) for the details.
 
 ## CLI flags
 

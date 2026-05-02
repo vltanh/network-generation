@@ -19,7 +19,7 @@ parameter (capped at `n-1` and floored at `--pso-m-floor`).
 
 **Profile gains `--method`.** When `method=pso`,
 [`profile.py`](../../externals/ec-sbm/src/profile.py) additionally
-emits `cluster_ccoeff.csv` — one float per cluster iid, the empirical
+emits `cluster_ccoeff.csv`: one float per cluster iid, the empirical
 intra-induced global clustering coefficient that v3's T-search
 targets. The other profile artifacts are identical to v1/v2.
 
@@ -216,7 +216,7 @@ sites.
 
 `stage/gen_clustered/sources.json` holds a single band:
 
-- `clustered_pso_core` — every per-cluster PSO edge, sorted globally.
+- `clustered_pso_core`: every per-cluster PSO edge, sorted globally.
 
 Stage 3a + 4a bands are inherited from v2 (`outlier_sbm`,
 `outlier_rewire`, `match_degree_<algo>`).

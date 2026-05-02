@@ -161,13 +161,13 @@ Faster than v1 because v1 runs two `gt.generate_sbm` calls (cluster SBM
 Every `OUTPUT_DIR/edge.csv` carries a `sources.json` that maps stage-level
 provenance labels to inclusive 1-based row ranges:
 
-- `clustered_kec_clique` — phase 1 of `gen_kec_core` (K_{k+1} on top-(k+1) by residual degree)
-- `clustered_kec_attach` — phase 2 attach-by-degree (greedy + weighted-random fallback)
-- `clustered_sbm_overlay` — only when `--sbm-overlay`; SBM-overlay edges that survived dedup against the kec core
-- `outlier_sbm` — `gen_outlier`'s SBM-sampled edges that survived untouched
-- `outlier_rewire` — only when `--edge-correction rewire`; edges introduced by the 2-opt block-preserving swap
-- `match_degree_<algo>` — non-hybrid algos
-- `match_degree_hybrid_rewire` + `match_degree_hybrid_true_greedy` — hybrid splits its rewire phase from the true-greedy fallback on gridlocked stubs
+- `clustered_kec_clique`: phase 1 of `gen_kec_core` (K_{k+1} on top-(k+1) by residual degree)
+- `clustered_kec_attach`: phase 2 attach-by-degree (greedy + weighted-random fallback)
+- `clustered_sbm_overlay`: only when `--sbm-overlay`; SBM-overlay edges that survived dedup against the kec core
+- `outlier_sbm`: `gen_outlier`'s SBM-sampled edges that survived untouched
+- `outlier_rewire`: only when `--edge-correction rewire`; edges introduced by the 2-opt block-preserving swap
+- `match_degree_<algo>`: non-hybrid algos
+- `match_degree_hybrid_rewire` + `match_degree_hybrid_true_greedy`: hybrid splits its rewire phase from the true-greedy fallback on gridlocked stubs
 
 Empty bands are omitted. Colour edges by band to see what each stage
 placed.
