@@ -29,4 +29,8 @@ GEN_EXTRA_ARGS=(
     "${NPSO_MODEL_ARG[@]}"
     "${NPSO_SEARCH_ARG[@]}"
     "${KEEP_STATE_ARG[@]}"
+    "${MATCH_DEGREE_ALGORITHM_ARG[@]}"
+    "${MATCH_DEGREE_MODE_ARG[@]}"
+    "${REMAP_ARG[@]}"
+    "${OUTLIER_MODE_ARG[@]}"
 )

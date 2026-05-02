@@ -35,6 +35,11 @@ run_stats_flag=0
 run_comp_flag=0
 keep_state=0
 
+match_degree_algorithm=""
+match_degree_mode=""
+remap_setting=""
+outlier_mode=""
+
 seed=1
 n_threads=1
 timeout_duration="3d"
@@ -63,6 +68,11 @@ while [[ "$#" -gt 0 ]]; do
         --run-stats) run_stats_flag=1; shift 1 ;;
         --run-comp) run_comp_flag=1; shift 1 ;;
         --keep-state) keep_state=1; shift 1 ;;
+        --match-degree-algorithm) match_degree_algorithm="$2"; shift 2 ;;
+        --match-degree-mode) match_degree_mode="$2"; shift 2 ;;
+        --remap) remap_setting="on"; shift 1 ;;
+        --no-remap) remap_setting="off"; shift 1 ;;
+        --outlier-mode) outlier_mode="$2"; shift 2 ;;
         --seed) seed="$2"; shift 2 ;;
         --n-threads) n_threads="$2"; shift 2 ;;
         --timeout) timeout_duration="$2"; shift 2 ;;
@@ -326,6 +336,26 @@ GEN_EXTRA_ARGS=()
 KEEP_STATE_ARG=()
 if [ "${keep_state}" -eq 1 ]; then
     KEEP_STATE_ARG=(--keep-state)
+fi
+# Match-degree passthrough arrays. Empty by default → no behavior change at
+# the per-gen pipeline layer. Configs append these to GEN_EXTRA_ARGS.
+MATCH_DEGREE_ALGORITHM_ARG=()
+if [ -n "${match_degree_algorithm}" ]; then
+    MATCH_DEGREE_ALGORITHM_ARG=(--match-degree-algorithm "${match_degree_algorithm}")
+fi
+MATCH_DEGREE_MODE_ARG=()
+if [ -n "${match_degree_mode}" ]; then
+    MATCH_DEGREE_MODE_ARG=(--match-degree-mode "${match_degree_mode}")
+fi
+REMAP_ARG=()
+if [ "${remap_setting}" = "on" ]; then
+    REMAP_ARG=(--remap)
+elif [ "${remap_setting}" = "off" ]; then
+    REMAP_ARG=(--no-remap)
+fi
+OUTLIER_MODE_ARG=()
+if [ -n "${outlier_mode}" ]; then
+    OUTLIER_MODE_ARG=(--outlier-mode "${outlier_mode}")
 fi
 # shellcheck source=/dev/null
 source "${GENERATORS_DIR}/${generator}.sh"
