@@ -1,8 +1,12 @@
 """ABCD+o profile.
 
 Outputs: degree.csv, cluster_sizes.csv, mixing_parameter.txt, n_outliers.txt.
-Default (singleton, drop_oo=true) drops OO edges — the Julia sampler
-cannot produce them. cluster_sizes.csv lists real clusters only.
+Default (combined, drop_oo=true) drops OO edges — the Julia sampler
+cannot produce them — and folds outliers into one community. With OO
+removed the singleton and combined framings produce the same ξ; the
+combined form is cheaper (one cluster_id, not N) and matches the
+sampler's cluster_id = 1 mega-cluster. cluster_sizes.csv lists real
+clusters only.
 """
 from __future__ import annotations
 
@@ -27,7 +31,7 @@ from profile_common import (
 )
 
 
-DEFAULT_OUTLIER_MODE = "singleton"
+DEFAULT_OUTLIER_MODE = "combined"
 DEFAULT_DROP_OO = True
 
 
