@@ -168,10 +168,9 @@ Dispatcher (`run_generator.sh`):
 Pipeline (`./src/ec-sbm/pipeline.sh`):
 
 - `--package-dir <p>`: required; path to the ec-sbm submodule that contains the algorithm Python modules.
-- `--outlier-mode`: only `excluded` is accepted; any other value errors. Outliers are synthesized by Stage 3.
-- Stage 4 match-degree always runs with algorithm fixed to `greedy` (not user-toggleable).
+- `--version v1`: pins the v1 preset (`--outlier-mode excluded`, `--degree-matcher greedy`, no toggle for either; outliers are synthesized by Stage 3).
 
-See [../advanced-usage.md](../advanced-usage.md).
+Cross-generator flags live in [`../advanced-usage.md`](../advanced-usage.md) along with the per-gen default matrix.
 
 ## Where to look next
 

@@ -253,11 +253,9 @@ Pipeline (`./src/ec-sbm/pipeline.sh --version v3 ...`) and standalone
 - `--pso-initial-t F`: T used for the complete-graph regime
   (default `0.5`).
 
-The other v2 flags (`--scope`, `--gen-outlier-mode`,
-`--degree-matcher`) still apply to stages 3a / 4a; v3's preset
-bundle copies v2's defaults there. See
-[`../advanced-usage.md`](../advanced-usage.md) for the shared
-match-degree surface.
+The v2-shared per-stage flags (`--scope`, `--gen-outlier-mode`) still
+apply to stage 3a; v3's preset bundle copies v2's defaults there.
+Cross-generator flags live in [`../advanced-usage.md`](../advanced-usage.md).
 
 ## Where to look next
 

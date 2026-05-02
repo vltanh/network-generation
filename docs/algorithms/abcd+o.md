@@ -64,12 +64,8 @@ Dispatcher (`run_generator.sh`):
 Pipeline (`./src/abcd+o/pipeline.sh`):
 
 - `--package-dir <p>`: same role, short form at pipeline layer.
-- `--outlier-mode <excluded|singleton|combined>`: default `combined` (one outlier cluster, matches the sampler's cluster_id = 1 mega-cluster). With `drop_outlier_outlier_edges` on, `singleton` and `combined` produce the same `mixing_parameter.txt`.
-- `--drop-outlier-outlier-edges` / `--keep-outlier-outlier-edges`: **default drop** (Julia sampler cannot produce OO edges).
-- `--remap` / `--no-remap`: default on.
-- Match-degree flags (`--match-degree` / `--no-match-degree`, `--degree-matcher`): see [`../advanced-usage.md`](../advanced-usage.md) for the shared cross-generator surface.
 
-See [../advanced-usage.md](../advanced-usage.md).
+Cross-generator flags (`--outlier-mode`, `--drop-outlier-outlier-edges` / `--keep-outlier-outlier-edges`, `--remap` / `--no-remap`, `--match-degree` / `--no-match-degree`, `--degree-matcher`) live in [`../advanced-usage.md`](../advanced-usage.md) along with the per-gen default matrix.
 
 ## Where to look next
 

@@ -4,22 +4,7 @@
 
 ## CLI flags
 
-Dispatcher (`run_generator.sh`): no generator-specific flag beyond the
-shared set documented in the repo [README.md](../../README.md).
-
-Pipeline ([`src/sbm/pipeline.sh`](../../src/sbm/pipeline.sh), direct
-invocation):
-
-| Flag | Default | Effect |
-| --- | --- | --- |
-| `--outlier-mode <excluded\|singleton\|combined>` | `combined` | how `profile.py` folds outliers (drop / one cluster each / single `__outliers__` block) |
-| `--drop-outlier-outlier-edges` / `--keep-outlier-outlier-edges` | keep | strip OO edges from the input edgelist before profiling |
-| `--remap` / `--no-remap` | off | remap output node IDs (SBM passes input IDs through by default) |
-| Match-degree flags | see [`../advanced-usage.md`](../advanced-usage.md) | shared cross-generator surface (`--match-degree` / `--no-match-degree`, `--degree-matcher`); SBM has match-degree on by default with `cluster_preserving_true_greedy` |
-
-See [../advanced-usage.md](../advanced-usage.md) for the
-dispatcher-namespaced vs pipeline-short flag naming convention and the
-cross-generator default matrix.
+SBM has no per-gen CLI flag. Cross-generator flags (`--outlier-mode`, `--drop-outlier-outlier-edges` / `--keep-outlier-outlier-edges`, `--remap` / `--no-remap`, `--match-degree` / `--no-match-degree`, `--degree-matcher`) and per-gen defaults live in [`../advanced-usage.md`](../advanced-usage.md).
 
 ## Stage 1: the profile
 

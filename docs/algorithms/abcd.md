@@ -107,12 +107,8 @@ Dispatcher (`run_generator.sh`):
 Pipeline (`./src/abcd/pipeline.sh`):
 
 - `--package-dir <p>`: same role, short form at pipeline layer.
-- `--outlier-mode <excluded|singleton|combined>`: default `singleton`.
-- `--drop-outlier-outlier-edges` / `--keep-outlier-outlier-edges`: default keep.
-- `--remap` / `--no-remap`: default on (ABCD emits fresh 1..N IDs; rank-pair to reference for match-degree targets).
-- Match-degree flags (`--match-degree` / `--no-match-degree`, `--degree-matcher`): see [`../advanced-usage.md`](../advanced-usage.md) for the shared cross-generator surface.
 
-See [../advanced-usage.md](../advanced-usage.md).
+Cross-generator flags (`--outlier-mode`, `--drop-outlier-outlier-edges` / `--keep-outlier-outlier-edges`, `--remap` / `--no-remap`, `--match-degree` / `--no-match-degree`, `--degree-matcher`) live in [`../advanced-usage.md`](../advanced-usage.md) along with the per-gen default matrix.
 
 ## Where to look next
 

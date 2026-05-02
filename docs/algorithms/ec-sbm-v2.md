@@ -179,19 +179,13 @@ Dispatcher (`run_generator.sh`):
 
 - `--ec-sbm-dir <p>`: path to the ec-sbm submodule (default `externals/ec-sbm`). Forwarded to the pipeline wrapper as `--package-dir`.
 
-The dispatcher also hardcodes `--degree-matcher
-cluster_preserving_true_greedy`; override by direct pipeline
-invocation.
-
 Pipeline (`./src/ec-sbm/pipeline.sh`):
 
 - `--package-dir <p>`: required; path to the ec-sbm submodule that contains the algorithm Python modules.
-- `--outlier-mode`: default `excluded`.
-- `--drop-outlier-outlier-edges` / `--keep-outlier-outlier-edges`: default keep.
+- `--version v2`: pins the v2 preset bundle.
 - `--gen-outlier-mode <combined|singleton>`: Stage-3a outlier block, default `combined`.
-- Match-degree flags (`--degree-matcher`): see [`../advanced-usage.md`](../advanced-usage.md) for the shared cross-generator surface. Pipeline default for `--version v2` is `cluster_preserving_true_greedy`; Stage 4 match-degree is always on (no `--no-match-degree` toggle).
 
-See [../advanced-usage.md](../advanced-usage.md).
+Cross-generator flags live in [`../advanced-usage.md`](../advanced-usage.md) along with the per-gen default matrix.
 
 ## Where to look next
 
