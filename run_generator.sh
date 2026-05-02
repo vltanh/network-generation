@@ -39,6 +39,7 @@ match_degree_algorithm=""
 match_degree_mode=""
 remap_setting=""
 outlier_mode=""
+output_suffix=""
 
 seed=1
 n_threads=1
@@ -73,6 +74,7 @@ while [[ "$#" -gt 0 ]]; do
         --remap) remap_setting="on"; shift 1 ;;
         --no-remap) remap_setting="off"; shift 1 ;;
         --outlier-mode) outlier_mode="$2"; shift 2 ;;
+        --output-suffix) output_suffix="$2"; shift 2 ;;
         --seed) seed="$2"; shift 2 ;;
         --n-threads) n_threads="$2"; shift 2 ;;
         --timeout) timeout_duration="$2"; shift 2 ;;
@@ -144,7 +146,8 @@ else
     INP_COM="${custom_inp_com}"
 
     # Dynamically build the trailing subpath for custom mode
-    opt_subpath="${clustering_id:+/${clustering_id}}${network_id:+/${network_id}}/${run_id}"
+    opt_suffix="${output_suffix:+/${output_suffix}}"
+    opt_subpath="${opt_suffix}${clustering_id:+/${clustering_id}}${network_id:+/${network_id}}/${run_id}"
 
     OUT_DIR="${custom_out_dir}/networks/${generator}${opt_subpath}"
     STATS_DIR="${custom_out_dir}/stats/${generator}${opt_subpath}"

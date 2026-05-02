@@ -3,3 +3,8 @@ __pycache__
 
 # Runtime artifacts
 complete.log
+
+# Match-degree sweep per-cell outputs (regenerable from run_md_sweep.sh).
+# comparison_table.{csv,md} + sweep.log are tracked.
+examples/output/synthetic_networks_md_sweep/networks/
+examples/output/synthetic_networks_md_sweep/stats/
