@@ -82,11 +82,11 @@ sbm-flat-best+cc, `--seed 1`, on the current host) are:
 | sbm        | `3f8356d4236f`           | `e240ae23f3ea`          |
 | ec-sbm-v1  | `e4e3b6cf1b68`           | `5a5afc352f13`          |
 | ec-sbm-v2  | `e0d6d1d7feb5`           | `5a5afc352f13`          |
-| ec-sbm-v3  | `7fc09e0d20eb`           | `5a5afc352f13`          |
+| ec-sbm-v3  | `6d3b296d6954`           | `5a5afc352f13`          |
 | abcd       | `057a8ef26ebc`           | `55c19725f859`          |
 | abcd+o     | `be419667a464`           | `1151780594fc`          |
 | lfr        | `ea9b42120eb3`           | `2db4f5ab80be`          |
-| npso       | `5dc2b4ee3023`           | `e7e3a6a047b8`          |
+| npso       | `902a91042578`           | `994659ded445`          |
 
 `sbm` passes the input clustering through after dropping singletons;
 ec-sbm-v1 and ec-sbm-v2 share `com.csv` (same set of node→cluster pairs
@@ -109,11 +109,11 @@ mean k-core 15.99, char-time 40.41, pseudo-diameter 8, 87 clusters.
 | sbm        | 906  | 10429 | 23.02    | 0.422      |     11.49 |           8 | 87       |
 | ec-sbm-v1  | 906  | 10425 | 23.01    | 0.424      |     22.38 |           7 | 87       |
 | ec-sbm-v2  | 906  | 10342 | 22.83    | 0.501      |     22.24 |           7 | 87       |
-| ec-sbm-v3  | 906  | 10449 | 23.07    | 0.512      |     22.79 |           9 | 87       |
+| ec-sbm-v3  | 906  | 10442 | 23.05    | 0.515      |     22.87 |           8 | 87       |
 | abcd       | 906  | 10150 | 22.41    | 0.307      |      1.95 |           5 | 87       |
 | abcd+o     | 673* | 10070 | 29.93    | 0.307      |      2.92 |           6 | 87       |
 | lfr        | 906  | 10370 | 22.89    | 0.252      |      1.38 |           4 | 10       |
-| npso       | 906  | 10794 | 23.83    | 0.098**    |      6.14 |           3 | 161      |
+| npso       | 906  | 10794 | 23.83    | 0.114**    |      3.59 |           4 | 161      |
 
 &ast; abcd+o's `edge.csv` carries 673 distinct endpoints; the remaining
 profile-declared outliers (n_outliers = 355) end up edgeless and drop
@@ -121,10 +121,11 @@ out of the materialised edge list. `com.csv` covers 551 of those
 endpoints under the 87 real clusters; the rest are surviving outliers.
 
 &ast;&ast; nPSO did not converge on this input. Target was 0.548, best
-achieved was 0.098 at T=0.0625. The search exhausted its 100-iter budget;
-the model's achievable range with these derived parameters does not
-include the target. See the [nPSO page](./algorithms/npso.md) for the
-trajectory.
+achieved was 0.114 at T≈0.9999 under the new Bayesian search default
+(`--search-strategy bayesian`). The search exhausted its 100-iter
+budget; the model's achievable range with these derived parameters
+does not include the target. See the [nPSO page](./algorithms/npso.md)
+for the trajectory.
 
 ### Runtime ordering
 
