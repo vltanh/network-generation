@@ -18,7 +18,12 @@ MODELS = ("nPSO1", "nPSO2", "nPSO3")
 DEFAULT_MODEL = "nPSO2"
 
 SEARCH_STRATEGIES = ("bayesian", "secant")
-DEFAULT_SEARCH_STRATEGY = "bayesian"
+# Secant is the empirical winner on the (target, iters) grid swept by
+# tools/npso_bo_sweep/sweep_n200.json: lower or equal median diff at
+# the same iter budget, fewer MATLAB calls because of step_tol /
+# diff_tol early termination. Keep BO available as an opt-in for
+# regimes where realisation-to-realisation noise dominates the trend.
+DEFAULT_SEARCH_STRATEGY = "secant"
 DEFAULT_SEARCH_INITIAL_POINTS = 5
 DEFAULT_SEARCH_SAMPLES_PER_T = 1
 
