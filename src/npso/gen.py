@@ -24,7 +24,7 @@ SEARCH_STRATEGIES = ("bayesian", "secant")
 # diff_tol early termination. Keep BO available as an opt-in for
 # regimes where realisation-to-realisation noise dominates the trend.
 DEFAULT_SEARCH_STRATEGY = "secant"
-DEFAULT_SEARCH_INITIAL_POINTS = 5
+DEFAULT_SEARCH_INITIAL_POINTS = 3
 DEFAULT_SEARCH_SAMPLES_PER_T = 1
 
 SEARCH_LOG_NAME = "search_log.json"
@@ -380,27 +380,44 @@ def run_npso_generation(
             if converged_in_replay:
                 pass
             elif search_strategy == "bayesian":
-                from skopt import Optimizer
-                from skopt.space import Real
+                # Optuna TPE is noise-tolerant by construction (it models
+                # densities of good vs bad probes rather than fitting a
+                # GP), and it supports the same early-stop / diff_tol /
+                # step_tol gates as the secant strategy. We pass
+                # n_startup_trials small (default 3) so the surrogate
+                # takes over quickly on the small budgets typical here.
+                import optuna
+                optuna.logging.set_verbosity(optuna.logging.WARNING)
 
-                opt = Optimizer(
-                    dimensions=[Real(max(search_t_min, 1e-4), 1.0, name="T")],
-                    base_estimator="GP",
-                    acq_func="EI",
-                    n_initial_points=min(search_initial_points, max_iters),
-                    initial_point_generator="lhs",
-                    random_state=int(seed) % (2**32 - 1),
+                tpe_n_startup = max(1, min(search_initial_points, max_iters))
+                study = optuna.create_study(
+                    direction="minimize",
+                    sampler=optuna.samplers.TPESampler(
+                        n_startup_trials=tpe_n_startup,
+                        seed=int(seed) % (2**32 - 1),
+                    ),
                 )
-                # Replay prior iters into the GP so resume keeps its memory.
+                # Replay prior iters so resume keeps the surrogate's memory.
                 for r in iter_records:
-                    opt.tell([float(r["T"])], abs(float(r["ccoeff"]) - target_global_ccoeff))
+                    study.add_trial(
+                        optuna.trial.create_trial(
+                            params={"T": float(r["T"])},
+                            distributions={"T": optuna.distributions.FloatDistribution(
+                                max(search_t_min, 1e-4), 1.0)},
+                            value=abs(float(r["ccoeff"]) - target_global_ccoeff),
+                        )
+                    )
 
+                prev_diff = None
                 for it in range(start_iter, max_iters):
-                    suggestion = opt.ask()
-                    T = float(suggestion[0])
+                    trial = study.ask({
+                        "T": optuna.distributions.FloatDistribution(
+                            max(search_t_min, 1e-4), 1.0),
+                    })
+                    T = float(trial.params["T"])
                     if T < search_t_min:
                         break
-                    logging.info(f"[iter {it}] (bayesian) T={T}")
+                    logging.info(f"[iter {it}] (bayesian/tpe) T={T}")
                     with timed("Generation"):
                         mean_cc, edge_df, com_df, samples, _ = _eval_T_with_samples(
                             runner, fallback_factory, scratch_dir, T,
@@ -409,7 +426,7 @@ def run_npso_generation(
                         )
                     if mean_cc is None:
                         logging.error(f"Missing MATLAB outputs at T={T}")
-                        opt.tell(suggestion, 2.0)  # penalise so BO doesn't re-pick
+                        study.tell(trial, 2.0)  # penalise so TPE de-weights this region
                         continue
                     global_ccoeff = mean_cc
                     rec = {"T": T, "ccoeff": global_ccoeff}
@@ -418,7 +435,7 @@ def run_npso_generation(
                     iter_records.append(rec)
                     _write_search_log(search_log_path, inputs_sha256, iter_records)
                     diff = abs(global_ccoeff - target_global_ccoeff)
-                    opt.tell(suggestion, diff)
+                    study.tell(trial, diff)
                     if best_global_ccoeff is None or diff < best_diff:
                         best_T = T
                         best_edge_df = edge_df
@@ -431,6 +448,9 @@ def run_npso_generation(
                     )
                     if best_diff < search_diff_tol:
                         break
+                    if prev_diff is not None and abs(prev_diff - diff) < search_step_tol:
+                        break
+                    prev_diff = diff
             else:
                 # secant strategy
                 for it in range(start_iter, max_iters):

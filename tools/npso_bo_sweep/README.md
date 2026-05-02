@@ -45,6 +45,33 @@ python tools/npso_bo_sweep/analyze.py tools/npso_bo_sweep/sweep_n200.json
 `EngineRunner`, so 120 runs at N=200 take ~10 minutes on a Pop!_OS
 laptop.
 
+## Update: TPE backend + tuned defaults (sweep_n200_tpe.json + sweep_n50.json)
+
+The first round (`sweep_n200.json`) used `skopt.Optimizer` with EI on
+a deterministic GP. After `sweep_n200_tpe.json`, the BO backend
+switched to Optuna's TPE sampler (noise-tolerant by construction,
+no GP misfit), `n_initial_points` dropped from 5 to 3, and BO got
+the same `diff_tol`/`step_tol` early-stop as secant.
+
+It still loses to secant on this objective. At N=200 with TPE,
+secant beats or ties BO on five of six (target, iters=30, samples=1)
+cells; the only BO win is target=0.180 (a tie at the diff_tol floor).
+At N=50 (noisier — per-T spread up to 0.045 vs trend 0.07), BO wins
+target=0.300 narrowly but loses target=0.280 and target=0.320.
+Neither test convincingly flips the default.
+
+The structural reason: nPSO's `cc(T)` is monotone in expectation with
+S/N ≥ 1.5 even at N=50. Secant's bracket-update on the sign of the
+residual is the optimal access pattern for that geometry. BO would
+win when the trend is multi-modal or S/N drops below ~1, neither of
+which holds for nPSO in the swept configs.
+
+The default in `src/npso/gen.py` and `externals/ec-sbm/src/
+gen_clustered_v3.py` is therefore `--search-strategy secant` /
+`--pso-search-strategy secant`. BO via Optuna TPE remains an
+opt-in alternative, useful for ablation or for users searching
+configs outside the swept regime.
+
 ## Findings (N=200, m=6, γ=2.5, c=5, nPSO2 with uniform mixing)
 
 Cc-vs-T characterisation: the achievable mean ccoeff range is
