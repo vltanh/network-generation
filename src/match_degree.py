@@ -879,6 +879,9 @@ def match_missing_degrees_cluster_preserving_rewire(out_degs, exist_neighbor,
             exist_neighbor[v].add(u)
 
     valid_edges = placed - set(leftover)
+    for u, v in valid_edges:
+        bp = _bp_key(b, u, v)
+        bp_budget[bp] = max(0, bp_budget.get(bp, 0) - 1)
     return valid_edges, leftover
 
 
@@ -893,12 +896,6 @@ def match_missing_degrees_cluster_preserving_hybrid_bands(out_degs, exist_neighb
     valid_edges, leftover_edges = match_missing_degrees_cluster_preserving_rewire(
         out_degs, exist_neighbor, b, bp_budget, max_retries=10,
     )
-
-    # Refund bp_budget for the leftover edges so the fallback can replace
-    # them (the rewire variant decremented optimistically inside the helper).
-    for u, v in leftover_edges:
-        bp = _bp_key(b, u, v)
-        bp_budget[bp] = bp_budget.get(bp, 0) + 1
 
     if not leftover_edges:
         return {"hybrid_rewire": valid_edges, "hybrid_true_greedy": set()}

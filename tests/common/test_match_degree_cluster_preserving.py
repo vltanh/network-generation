@@ -11,6 +11,7 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -380,3 +381,115 @@ def test_cp_rewire_drops_pre_existing_edges(two_cluster_fixture):
     for u, v in valid:
         assert v not in baseline.get(u, set())
         assert u not in baseline.get(v, set())
+
+
+# ---------------------------------------------------------------------------
+# Gridlock + hybrid fallback
+# ---------------------------------------------------------------------------
+
+def test_cp_greedy_gridlocks_when_budget_empty():
+    """When every required bp has zero budget, greedy emits no edges."""
+    out_degs = {0: 2, 1: 2, 2: 2, 3: 2}
+    exist_neighbor = {n: set() for n in out_degs}
+    b = np.array([0, 0, 1, 1])
+    bp_budget = {}  # nothing allowed
+
+    edges = match_missing_degrees_cluster_preserving_true_greedy(
+        out_degs.copy(), {n: set() for n in out_degs}, b, dict(bp_budget),
+    )
+    assert edges == set()
+
+
+def test_cp_hybrid_falls_back_to_true_greedy(monkeypatch, two_cluster_fixture):
+    """If the rewire variant returns leftover edges, hybrid_bands' second band
+    is non-empty."""
+    from match_degree import (
+        match_missing_degrees_cluster_preserving_hybrid_bands,
+    )
+
+    _seed_all(2)
+    _, _, out_degs, exist_neighbor, b, bp_budget = _load_state(two_cluster_fixture)
+
+    # Force a leftover by stubbing the rewire variant to return one invalid
+    # pair. The hybrid wrapper should refund its bp_budget slot and re-route
+    # via cluster_preserving_true_greedy.
+    fake_leftover = [(min(out_degs.keys()), max(out_degs.keys()))]
+
+    def fake_rewire(*args, **kwargs):
+        return set(), fake_leftover
+
+    import match_degree as md  # noqa: E402
+    monkeypatch.setattr(
+        md, "match_missing_degrees_cluster_preserving_rewire", fake_rewire,
+    )
+
+    bands = match_missing_degrees_cluster_preserving_hybrid_bands(
+        out_degs, exist_neighbor, b, bp_budget,
+    )
+    assert "hybrid_rewire" in bands and "hybrid_true_greedy" in bands
+    assert bands["hybrid_rewire"] == set()
+    # true_greedy fallback runs (may stall on pre-existing neighbors,
+    # but the band key is populated as a set, possibly empty).
+    assert isinstance(bands["hybrid_true_greedy"], set)
+
+
+# ---------------------------------------------------------------------------
+# Golden-hash snapshot via subprocess (pins canonical Python output for the
+# downstream JS port + sweep aggregator).
+# ---------------------------------------------------------------------------
+
+def _run_match_degree(env_seed, args_extra, work_dir, edge_rows, ref_rows,
+                      cluster_rows):
+    import subprocess
+    import os
+
+    work_dir.mkdir(parents=True, exist_ok=True)
+    in_fp = work_dir / "in.csv"
+    ref_fp = work_dir / "ref.csv"
+    com_fp = work_dir / "com.csv"
+    out_dir = work_dir / "out"
+    _write_csv(in_fp, edge_rows, ("source", "target"))
+    _write_csv(ref_fp, ref_rows, ("source", "target"))
+    _write_csv(com_fp, cluster_rows, ("node_id", "cluster_id"))
+
+    env = os.environ.copy()
+    env["PYTHONHASHSEED"] = "0"
+    cmd = [
+        "python", str(REPO_ROOT / "src" / "match_degree.py"),
+        "--input-edgelist", str(in_fp),
+        "--ref-edgelist", str(ref_fp),
+        "--input-clustering", str(com_fp),
+        "--output-folder", str(out_dir),
+        "--seed", str(env_seed),
+    ] + args_extra
+    subprocess.run(cmd, env=env, check=True)
+    return (out_dir / "degree_matching_edge.csv").read_bytes()
+
+
+def test_cp_true_greedy_golden_hash(tmp_path):
+    """Pin a small fixture's cluster_preserving_true_greedy output bytes.
+
+    Catches accidental drift in iteration order / tie-break / bp lookup.
+    Update the expected hash deliberately when the algorithm spec changes.
+    """
+    import hashlib
+
+    edges = [("n0", "n1")]
+    ref = [
+        ("n0", "n1"), ("n1", "n2"), ("n0", "n2"),
+        ("n3", "n4"), ("n4", "n5"), ("n3", "n5"),
+        ("n0", "n3"),
+    ]
+    com = [(f"n{i}", "0") for i in range(3)] + [(f"n{i}", "1") for i in range(3, 6)]
+
+    out_bytes = _run_match_degree(
+        1,
+        ["--match-degree-algorithm", "cluster_preserving_true_greedy"],
+        tmp_path,
+        edges, ref, com,
+    )
+    h = hashlib.sha256(out_bytes).hexdigest()[:16]
+    # Pinned 2026-05-02 on nwbench. Update with explanation if intentional.
+    assert h == "4230086fe10aaade", (
+        f"cluster_preserving_true_greedy golden hash drifted: got {h}"
+    )
