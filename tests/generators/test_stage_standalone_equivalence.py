@@ -13,8 +13,13 @@ intermediate. The stages are publicly importable scripts; if `pipeline.sh`
 relies on env vars or argument shapes that the stage's docstring or CLI
 help does not advertise, the standalone run drifts silently.
 
-Marked `slow`. ec-sbm-v1 and ec-sbm-v2 only — the simple gens have one
-substantive stage each (profile + gen) and the surface drift is small.
+Marked `slow`. ec-sbm-v1 and ec-sbm-v2 only. ec-sbm-v3 also runs the
+same stages but its gen_clustered invocation under `--method pso`
+takes an extra `--cluster-ccoeff` input plus the `--pso-*` knobs;
+extending the replay helpers to v3 would mean teaching them the PSO
+branch and is left as follow-up. The simple gens have one substantive
+stage each (profile + gen) and the surface drift is small enough that
+they are out of scope here too.
 """
 from __future__ import annotations
 
