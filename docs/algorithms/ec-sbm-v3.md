@@ -4,14 +4,24 @@
 
 ## What changes from v2
 
-**Stage 2 is a per-cluster PSO sample, not a constructive K_{k+1} core.**
-v2 builds the clique-and-attach skeleton in
-[`gen_kec_core.py`](../../externals/ec-sbm/src/gen_kec_core.py); v3
-calls a Python port of the
+**Stage 2 is a per-cluster PSO sample, not residual-degree-weighted
+attach.** Both v1/v2 and v3 share the same
+[`gen_clustered.py`](../../externals/ec-sbm/src/gen_clustered.py)
+driver and select between methods via `--method`:
+`res-deg-weighted` (the K_{k+1} clique + greedy-then-residual-degree-
+weighted-random attach in
+[`gen_kec_core.py`](../../externals/ec-sbm/src/gen_kec_core.py)) is
+the v1/v2 path; `pso` calls a Python port of the
 [Popularity-Similarity-Optimization](https://www.nature.com/articles/nature11459)
 model in [`gen_pso_core.py`](../../externals/ec-sbm/src/gen_pso_core.py)
 once per cluster, with the cluster's mincut `k` doubling as PSO's `m`
-parameter (capped at `n-1` and floored at 1).
+parameter (capped at `n-1` and floored at `--pso-m-floor`).
+
+**Profile gains `--method`.** When `method=pso`,
+[`profile.py`](../../externals/ec-sbm/src/profile.py) additionally
+emits `cluster_ccoeff.csv` — one float per cluster iid, the empirical
+intra-induced global clustering coefficient that v3's T-search
+targets. The other profile artifacts are identical to v1/v2.
 
 Stages 1, 3, 4 are unchanged from v2. The residual SBM still runs over
 all blocks with the same `--scope all --gen-outlier-mode combined
@@ -49,13 +59,11 @@ Stage 2 iterates clusters in `cluster_iid` ascending order
    array `gen_kec_core` mutates in v1 / v2). The highest-degree
    surviving node becomes PSO arrival index 1 (centre of the
    hyperbolic disk).
-3. **Resolve `m`.** `m = max(k, m_floor, round(empirical_mean_intra_deg / 2))`
-   capped at `n - 1` under `--pso-m-policy auto` (default).
-   `--pso-m-policy floor` skips the empirical lift. `m >= k` keeps
-   the cluster k-edge-connected (the K_{m+1} sub-clique built by the
-   "connect to all existing" branch when `t - 1 <= m` is itself
-   m-edge-connected, and every later attachment of `m` edges
-   preserves the mincut).
+3. **Resolve `m`.** `m = min(max(k, --pso-m-floor), n - 1)`
+   (default `m_floor = 1`). `m >= k` keeps the cluster
+   k-edge-connected (the K_{m+1} sub-clique built by the "connect to
+   all existing" branch when `t - 1 <= m` is itself m-edge-connected,
+   and every later attachment of `m` edges preserves the mincut).
 4. **Short-circuit if trivial.** When `n <= m + 1`, PSO produces the
    complete graph regardless of `T`. One call at `--pso-initial-t`,
    one log entry tagged `note: complete_graph`, no search.
@@ -229,10 +237,9 @@ Pipeline (`./src/ec-sbm/pipeline.sh --version v3 ...`) and standalone
   arrival order, this means the highest-degree empirical node sits at
   the centre and the kth-highest at radius `2 log k`. Override only for
   ablation.
-- `--pso-m-policy {auto|floor}`: how to derive m. `auto` lifts to the
-  empirical mean intra-cluster degree (default), `floor` keeps it at
-  `max(k, --pso-m-floor)`.
-- `--pso-m-floor N`: hard lower bound on m (default `1`).
+- `--pso-m-floor N`: hard lower bound on m. `m = min(max(k, this), n - 1)`.
+  Default `1`. Raise to give triangle capacity to clusters whose
+  empirical mincut is degenerate (k=1 trees).
 - `--pso-search-strategy {bayesian|secant}`: default `bayesian`.
 - `--pso-search-max-iters N`: T-search iter cap (default `30`).
 - `--pso-search-initial-points N`: BO LHS warm-up before the GP

@@ -46,9 +46,9 @@ def pso_core():
 
 @pytest.fixture(scope="module")
 def gen_v3():
-    # gen_clustered_v3 imports gen_pso_core + gen_kec_core; load it first
+    # gen_clustered imports gen_pso_core + gen_kec_core; load it first
     # so its dependencies sit on sys.path.
-    return _load("gen_clustered_v3", "gen_clustered_v3.py")
+    return _load("gen_clustered", "gen_clustered.py")
 
 
 @pytest.mark.parametrize("N,m", [(20, 3), (50, 4), (100, 5), (15, 7), (8, 3)])
@@ -95,21 +95,13 @@ def test_pso_singleton_returns_no_edges(pso_core):
     assert pso_core.pso_cluster_edges(1, 1, 0.5, 3.0, 0) == []
 
 
-def test_resolve_m_floor_policy(gen_v3):
-    # floor: ignore empirical mean degree.
-    assert gen_v3._resolve_m(k=2, n=10, m_policy="floor", m_floor=1, empirical_mean_deg=8.0) == 2
-    assert gen_v3._resolve_m(k=1, n=10, m_policy="floor", m_floor=3, empirical_mean_deg=8.0) == 3
-
-
-def test_resolve_m_auto_policy(gen_v3):
-    # auto: lift to round(empirical_mean_deg / 2) when above k & m_floor.
-    assert gen_v3._resolve_m(k=1, n=20, m_policy="auto", m_floor=1, empirical_mean_deg=8.0) == 4
-    # auto: still respects k floor.
-    assert gen_v3._resolve_m(k=5, n=20, m_policy="auto", m_floor=1, empirical_mean_deg=2.0) == 5
+def test_resolve_m_uses_max_of_k_and_floor(gen_v3):
+    assert gen_v3._resolve_m(k=2, n=10, m_floor=1) == 2
+    assert gen_v3._resolve_m(k=1, n=10, m_floor=3) == 3
 
 
 def test_resolve_m_capped_at_n_minus_1(gen_v3):
-    assert gen_v3._resolve_m(k=10, n=4, m_policy="floor", m_floor=1, empirical_mean_deg=0) == 3
+    assert gen_v3._resolve_m(k=10, n=4, m_floor=1) == 3
 
 
 def test_bayesian_search_runs_and_logs_iters(gen_v3):
@@ -120,8 +112,7 @@ def test_bayesian_search_runs_and_logs_iters(gen_v3):
         target_ccoeff=0.3, base_seed=12345,
         max_iters=10, diff_tol=1e-6, step_tol=1e-6,
         t_min=0.01, t_max=0.99, initial_T=0.5,
-        m_policy="floor", m_floor=2, empirical_mean_deg=4.0,
-        strategy="bayesian", initial_points=4, samples_per_T=1,
+        m_floor=2, strategy="bayesian", initial_points=4, samples_per_T=1,
     )
     assert m == 2
     assert 0.01 <= best_T <= 0.99
@@ -139,7 +130,6 @@ def test_samples_per_T_averages_multiple_draws(gen_v3):
         target_ccoeff=0.4, base_seed=7,
         max_iters=3, diff_tol=1e-6, step_tol=1e-6,
         t_min=0.05, t_max=0.95, initial_T=0.5,
-        m_policy="floor", m_floor=2, empirical_mean_deg=4.0,
-        strategy="secant", initial_points=2, samples_per_T=3,
+        m_floor=2, strategy="secant", initial_points=2, samples_per_T=3,
     )
     assert all(len(r.get("samples") or []) == 3 for r in recs)

@@ -24,7 +24,6 @@ EDGE_CORRECTION=""
 ALGORITHM=""
 # v3-only PSO knobs.
 PSO_GAMMA=""
-PSO_M_POLICY=""
 PSO_M_FLOOR=""
 PSO_SEARCH_STRATEGY=""
 PSO_SEARCH_MAX_ITERS=""
@@ -52,7 +51,6 @@ while [[ "$#" -gt 0 ]]; do
         --edge-correction) EDGE_CORRECTION="$2"; shift ;;
         --match-degree-algorithm) ALGORITHM="$2"; shift ;;
         --pso-gamma) PSO_GAMMA="$2"; shift ;;
-        --pso-m-policy) PSO_M_POLICY="$2"; shift ;;
         --pso-m-floor) PSO_M_FLOOR="$2"; shift ;;
         --pso-search-strategy) PSO_SEARCH_STRATEGY="$2"; shift ;;
         --pso-search-max-iters) PSO_SEARCH_MAX_ITERS="$2"; shift ;;
@@ -98,7 +96,6 @@ case "${VERSION}" in
         : "${EDGE_CORRECTION:=rewire}"
         : "${ALGORITHM:=true_greedy}"
         : "${PSO_GAMMA:=2.0}"
-        : "${PSO_M_POLICY:=auto}"
         : "${PSO_M_FLOOR:=1}"
         : "${PSO_SEARCH_STRATEGY:=secant}"
         : "${PSO_SEARCH_MAX_ITERS:=30}"
@@ -204,13 +201,25 @@ mkdir -p "${STG_PROFILE_DIR}" "${STG_GEN_CLUSTERED_DIR}" \
 # ==========================================
 echo "=== Starting Stage 1: Profile ==="
 
+if [ "${VERSION}" = "v3" ]; then
+    PROFILE_METHOD="pso"
+else
+    PROFILE_METHOD="res-deg-weighted"
+fi
+
 STG_PROFILE_PARAMS="${STG_PROFILE_DIR}/params.txt"
 write_params_file "${STG_PROFILE_PARAMS}" \
     "outlier_mode=${OUTLIER_MODE}" \
-    "drop_outlier_outlier_edges=${DROP_OO_BOOL}"
+    "drop_outlier_outlier_edges=${DROP_OO_BOOL}" \
+    "method=${PROFILE_METHOD}"
 
 IN_PROFILE="${INPUT_EDGELIST} ${INPUT_CLUSTERING} ${STG_PROFILE_PARAMS}"
-OUT_PROFILE="${STG_PROFILE_DIR}/node_id.csv ${STG_PROFILE_DIR}/cluster_id.csv ${STG_PROFILE_DIR}/assignment.csv ${STG_PROFILE_DIR}/degree.csv ${STG_PROFILE_DIR}/mincut.csv ${STG_PROFILE_DIR}/edge_counts.csv ${STG_PROFILE_DIR}/com.csv"
+OUT_PROFILE_BASE="${STG_PROFILE_DIR}/node_id.csv ${STG_PROFILE_DIR}/cluster_id.csv ${STG_PROFILE_DIR}/assignment.csv ${STG_PROFILE_DIR}/degree.csv ${STG_PROFILE_DIR}/mincut.csv ${STG_PROFILE_DIR}/edge_counts.csv ${STG_PROFILE_DIR}/com.csv"
+if [ "${PROFILE_METHOD}" = "pso" ]; then
+    OUT_PROFILE="${OUT_PROFILE_BASE} ${STG_PROFILE_DIR}/cluster_ccoeff.csv"
+else
+    OUT_PROFILE="${OUT_PROFILE_BASE}"
+fi
 
 if ! is_step_done "${STG_PROFILE_DIR}/done" "${OUT_PROFILE}"; then
     run_stage "${STG_PROFILE_DIR}/time_and_err.log" \
@@ -235,9 +244,8 @@ if [ "${VERSION}" = "v3" ]; then
     write_params_file "${STG_GEN_CLUSTERED_PARAMS}" \
         "seed=${SEED}" \
         "n_threads=${N_THREADS}" \
-        "version=v3" \
+        "method=pso" \
         "pso_gamma=${PSO_GAMMA}" \
-        "pso_m_policy=${PSO_M_POLICY}" \
         "pso_m_floor=${PSO_M_FLOOR}" \
         "pso_search_strategy=${PSO_SEARCH_STRATEGY}" \
         "pso_search_max_iters=${PSO_SEARCH_MAX_ITERS}" \
@@ -252,6 +260,7 @@ else
     write_params_file "${STG_GEN_CLUSTERED_PARAMS}" \
         "seed=${SEED}" \
         "n_threads=${N_THREADS}" \
+        "method=res-deg-weighted" \
         "sbm_overlay=${SBM_OVERLAY_BOOL}"
 fi
 
@@ -267,19 +276,18 @@ fi
 if ! is_step_done "${STG_GEN_CLUSTERED_DIR}/done" "${OUT_GEN_CLUSTERED}"; then
     if [ "${VERSION}" = "v3" ]; then
         run_stage "${STG_GEN_CLUSTERED_DIR}/time_and_err.log" \
-            python "${PACKAGE_PY_DIR}/gen_clustered_v3.py" \
+            python "${PACKAGE_PY_DIR}/gen_clustered.py" \
+            --method pso \
             --node-id "${STG_PROFILE_DIR}/node_id.csv" \
             --cluster-id "${STG_PROFILE_DIR}/cluster_id.csv" \
             --assignment "${STG_PROFILE_DIR}/assignment.csv" \
             --degree "${STG_PROFILE_DIR}/degree.csv" \
             --mincut "${STG_PROFILE_DIR}/mincut.csv" \
             --edge-counts "${STG_PROFILE_DIR}/edge_counts.csv" \
-            --orig-edgelist "${INPUT_EDGELIST}" \
-            --orig-clustering "${INPUT_CLUSTERING}" \
+            --cluster-ccoeff "${STG_PROFILE_DIR}/cluster_ccoeff.csv" \
             --output-folder "${STG_GEN_CLUSTERED_DIR}" \
             --seed "${SEED}" \
             --pso-gamma "${PSO_GAMMA}" \
-            --pso-m-policy "${PSO_M_POLICY}" \
             --pso-m-floor "${PSO_M_FLOOR}" \
             --pso-search-strategy "${PSO_SEARCH_STRATEGY}" \
             --pso-search-max-iters "${PSO_SEARCH_MAX_ITERS}" \
@@ -293,6 +301,7 @@ if ! is_step_done "${STG_GEN_CLUSTERED_DIR}/done" "${OUT_GEN_CLUSTERED}"; then
     else
         run_stage "${STG_GEN_CLUSTERED_DIR}/time_and_err.log" \
             python "${PACKAGE_PY_DIR}/gen_clustered.py" \
+            --method res-deg-weighted \
             --node-id "${STG_PROFILE_DIR}/node_id.csv" \
             --cluster-id "${STG_PROFILE_DIR}/cluster_id.csv" \
             --assignment "${STG_PROFILE_DIR}/assignment.csv" \
