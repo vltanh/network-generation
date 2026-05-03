@@ -3,3 +3,6 @@ __pycache__
 
 # Runtime artifacts
 complete.log
+
+# Reproducible generator outputs (regen via run_generator.sh)
+examples/output/
