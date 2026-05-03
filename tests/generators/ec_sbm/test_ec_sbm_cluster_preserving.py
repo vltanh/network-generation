@@ -38,7 +38,10 @@ def _run_dir(out_root, gen):
 
 
 @pytest.mark.slow
-def test_ec_sbm_cluster_preserving_hybrid_emits_two_bands(gen_name, tmp_path):
+def test_ec_sbm_cluster_preserving_stack_emits_two_bands(gen_name, tmp_path):
+    """Stacking ``cluster_preserving_rewire`` then
+    ``cluster_preserving_true_greedy`` emits both bands when the rewire
+    stage has any leftover stubs."""
     out_root = tmp_path / "synth"
     out_root.mkdir()
     env = os.environ.copy()
@@ -55,7 +58,8 @@ def test_ec_sbm_cluster_preserving_hybrid_emits_two_bands(gen_name, tmp_path):
         "--seed", "1",
         "--n-threads", "1",
         "--ec-sbm-dir", str(EC_SBM_DIR),
-        "--degree-matcher", "cluster_preserving_hybrid",
+        "--degree-matcher",
+        "cluster_preserving_rewire,cluster_preserving_true_greedy",
         "--keep-state",
     ]
     proc = subprocess.run(
@@ -73,11 +77,11 @@ def test_ec_sbm_cluster_preserving_hybrid_emits_two_bands(gen_name, tmp_path):
     assert md_sources.exists(), f"missing {md_sources}"
     bands = json.loads(md_sources.read_text())
     expected_keys = {
-        "match_degree_cluster_preserving_hybrid_rewire",
-        "match_degree_cluster_preserving_hybrid_true_greedy",
+        "match_degree_cluster_preserving_rewire",
+        "match_degree_cluster_preserving_true_greedy",
     }
     assert expected_keys & set(bands.keys()), (
-        f"{gen_name}: cluster_preserving_hybrid produced no expected bands; "
+        f"{gen_name}: stacked CP rewire+TG produced no expected bands; "
         f"got {set(bands.keys())}"
     )
 

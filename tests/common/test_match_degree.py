@@ -35,7 +35,6 @@ from match_degree import (  # noqa: E402
     load_reference_topologies,
     load_remap_topologies,
     match_missing_degrees_greedy,
-    match_missing_degrees_hybrid,
     match_missing_degrees_random_greedy,
     match_missing_degrees_rewire,
     match_missing_degrees_true_greedy,
@@ -227,28 +226,6 @@ def test_rewire_returns_valid_and_invalid_edges():
     _algo_invariants(valid, out_degs, baseline)
 
 
-def test_hybrid_output_matches_invariants():
-    out_degs, exist_neighbor = _setup_simple()
-    baseline = {k: set(v) for k, v in exist_neighbor.items()}
-
-    edges = match_missing_degrees_hybrid(out_degs.copy(), exist_neighbor)
-    _algo_invariants(edges, out_degs, baseline)
-
-
-def test_hybrid_no_worse_than_rewire_alone():
-    """Hybrid adds a greedy fallback on top of rewire's leftovers, so its
-    final edge count is ≥ rewire's (never loses resolved edges)."""
-    random.seed(3)
-    out_degs, en1 = _setup_simple(n_nodes=10, base_degree=4, seed=3)
-    hybrid_edges = match_missing_degrees_hybrid(out_degs.copy(), en1)
-
-    random.seed(3)
-    out_degs, en2 = _setup_simple(n_nodes=10, base_degree=4, seed=3)
-    rewire_edges, _ = match_missing_degrees_rewire(out_degs.copy(), en2)
-
-    assert len(hybrid_edges) >= len(rewire_edges)
-
-
 def test_greedy_stub_budget_respected():
     """No algorithm can create more edges than half the total stubs."""
     out_degs, exist_neighbor = _setup_simple(n_nodes=6, base_degree=3)
@@ -259,7 +236,6 @@ def test_greedy_stub_budget_respected():
         match_missing_degrees_greedy,
         match_missing_degrees_true_greedy,
         match_missing_degrees_random_greedy,
-        match_missing_degrees_hybrid,
     ):
         out_degs_copy = out_degs.copy()
         en = {k: set(v) for k, v in exist_neighbor.items()}
@@ -279,7 +255,6 @@ def test_algorithms_respect_prior_neighbors():
         match_missing_degrees_greedy,
         match_missing_degrees_true_greedy,
         match_missing_degrees_random_greedy,
-        match_missing_degrees_hybrid,
     ):
         out_degs_copy = out_degs.copy()
         en = {k: set(v) for k, v in base.items()}
@@ -310,7 +285,7 @@ def test_cli_produces_csv_with_canonical_columns(tmp_path, input_edgelist, ref_e
          "--input-edgelist", str(input_edgelist),
          "--ref-edgelist", str(ref_edgelist),
          "--output-folder", str(out_dir),
-         "--degree-matcher", "hybrid",
+         "--degree-matcher", "rewire,true_greedy",
          "--seed", "1"],
         env=env, capture_output=True, text=True,
     )
@@ -341,7 +316,7 @@ def test_cli_remap_mode_flag(tmp_path, input_edgelist, ref_edgelist):
          "--input-edgelist", str(input_edgelist),
          "--ref-edgelist", str(ref_edgelist),
          "--output-folder", str(out_dir),
-         "--remap", "--degree-matcher", "hybrid", "--seed", "1"],
+         "--remap", "--degree-matcher", "rewire,true_greedy", "--seed", "1"],
         env=env, capture_output=True, text=True,
     )
     assert result.returncode == 0, result.stderr

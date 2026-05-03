@@ -26,7 +26,6 @@ from match_degree import (  # noqa: E402
     load_reference_topologies,
     load_remap_topologies,
     match_missing_degrees_cluster_preserving_greedy,
-    match_missing_degrees_cluster_preserving_hybrid,
     match_missing_degrees_cluster_preserving_random_greedy,
     match_missing_degrees_cluster_preserving_rewire,
     match_missing_degrees_cluster_preserving_true_greedy,
@@ -182,8 +181,6 @@ CP_DETERMINISTIC = [
 CP_RANDOM = [
     ("cluster_preserving_random_greedy",
      match_missing_degrees_cluster_preserving_random_greedy),
-    ("cluster_preserving_hybrid",
-     match_missing_degrees_cluster_preserving_hybrid),
 ]
 
 
@@ -398,39 +395,6 @@ def test_cp_greedy_gridlocks_when_budget_empty():
         out_degs.copy(), {n: set() for n in out_degs}, b, dict(bp_budget),
     )
     assert edges == set()
-
-
-def test_cp_hybrid_falls_back_to_true_greedy(monkeypatch, two_cluster_fixture):
-    """If the rewire variant returns leftover edges, hybrid_bands' second band
-    is non-empty."""
-    from match_degree import (
-        match_missing_degrees_cluster_preserving_hybrid_bands,
-    )
-
-    _seed_all(2)
-    _, _, out_degs, exist_neighbor, b, bp_budget = _load_state(two_cluster_fixture)
-
-    # Force a leftover by stubbing the rewire variant to return one invalid
-    # pair. The hybrid wrapper should refund its bp_budget slot and re-route
-    # via cluster_preserving_true_greedy.
-    fake_leftover = [(min(out_degs.keys()), max(out_degs.keys()))]
-
-    def fake_rewire(*args, **kwargs):
-        return set(), fake_leftover
-
-    import match_degree as md  # noqa: E402
-    monkeypatch.setattr(
-        md, "match_missing_degrees_cluster_preserving_rewire", fake_rewire,
-    )
-
-    bands = match_missing_degrees_cluster_preserving_hybrid_bands(
-        out_degs, exist_neighbor, b, bp_budget,
-    )
-    assert "hybrid_rewire" in bands and "hybrid_true_greedy" in bands
-    assert bands["hybrid_rewire"] == set()
-    # true_greedy fallback runs (may stall on pre-existing neighbors,
-    # but the band key is populated as a set, possibly empty).
-    assert isinstance(bands["hybrid_true_greedy"], set)
 
 
 # ---------------------------------------------------------------------------

@@ -385,18 +385,16 @@ write_params_file "${STG_MATCH_DEGREE_EDGES_PARAMS}" \
     "matcher_use_remap=${REMAP_ENABLE}"
 
 # cluster_preserving_* algorithms need the input + reference clustering;
-# the global family ignores them. Mode is inferred from the algorithm
-# name prefix.
+# the global family ignores them. Stack-aware: attach the CP flags if
+# any comma-separated step starts with cluster_preserving_.
 MATCH_DEGREE_CP_FLAGS=()
-case "${ALGORITHM}" in
-    cluster_preserving_*)
-        MATCH_DEGREE_CP_FLAGS=(
-            --input-clustering "${INPUT_CLUSTERING}"
-            --ref-clustering "${INPUT_CLUSTERING}"
-            --outlier-mode "${GEN_OUTLIER_MODE}"
-        )
-        ;;
-esac
+if echo ",${ALGORITHM}," | grep -q ',cluster_preserving_'; then
+    MATCH_DEGREE_CP_FLAGS=(
+        --input-clustering "${INPUT_CLUSTERING}"
+        --ref-clustering "${INPUT_CLUSTERING}"
+        --outlier-mode "${GEN_OUTLIER_MODE}"
+    )
+fi
 MATCH_DEGREE_REMAP_FLAG=()
 if [ "${REMAP_ENABLE}" = "1" ]; then
     MATCH_DEGREE_REMAP_FLAG=(--remap)
