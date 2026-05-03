@@ -894,6 +894,156 @@ function runClusterPreservingRandomGreedyReplay(payload, trace) {
   return Array.from(edges).map(s => s.split("-").map(Number));
 }
 
+// ── replay: cluster_preserving_rewire ──────────────────────────
+// Mirrors matcher.html's runClusterPreservingRewire spec (and the
+// algorithm behind cluster_preserving_rewire + cluster_preserving_2opt_rewire,
+// minus gt.generate_sbm which is non-portable). The trace, produced by
+// tools/viz_check/match_degree/instrumented/cprewire_kernel_check.cpp,
+// records every RNG-influenced decision as one of three entry kinds:
+//   { kind: "stub",    pair, side: "u"|"v", node }
+//   { kind: "shuffle", pair, j_seq: [...] }
+//   { kind: "repair",  attempt, u, v, bp, idx, coin: 0|1|null }
+// JS replay walks the trace in order, applying each decision verbatim.
+function runClusterPreservingRewireReplay(payload, trace) {
+  const { b, bp } = _cpUnpack(payload);
+  const residual = residualFrom(payload);
+  const adj = _adjFromExist(payload);
+
+  // Residual is keyed by integer iid; build localResidual mirroring it.
+  const localResidual = {};
+  for (const k in residual) localResidual[parseInt(k, 10)] = residual[k];
+
+  // Stable "stub" / "shuffle" / "repair" cursors, respecting the order
+  // the C++ ref emitted (each phase's entries appear in pair-key order
+  // for stub+shuffle, then attempt-major repair entries).
+  let cursor = 0;
+  function nextEntry(expectKind) {
+    while (cursor < trace.length) {
+      const e = trace[cursor];
+      if (e.kind === expectKind) { cursor++; return e; }
+      // Otherwise leave the cursor where it is so the caller can probe
+      // a different kind. Used at the boundary between phase 1 (stub+
+      // shuffle) and phase 2 (repair).
+      return null;
+    }
+    return null;
+  }
+
+  // Phase 1: walk stubs + shuffles in C++ trace order. Group by pair.
+  const validPool = {};   // bpKey -> [[u, v], ...]
+  const validSet = new Set();
+  const pairsByBp = {};   // bpKey -> [[u, v], ...] in raw draw order
+  // Read stubs paired (u, v) until we hit a "shuffle" entry; that
+  // shuffle always closes the current pair-bucket.
+  while (cursor < trace.length && trace[cursor].kind !== "repair") {
+    const e = trace[cursor];
+    if (e.kind === "stub") {
+      // Consume two consecutive stubs (u then v).
+      const stubU = trace[cursor++];
+      const stubV = trace[cursor++];
+      if (!stubV || stubV.kind !== "stub" || stubV.pair !== stubU.pair) {
+        throw new Error(`expected stub pair at ${cursor - 1}`);
+      }
+      const u = stubU.node, v = stubV.node;
+      localResidual[u] -= 1;
+      localResidual[v] -= 1;
+      (pairsByBp[stubU.pair] = pairsByBp[stubU.pair] || []).push([u, v]);
+    } else if (e.kind === "shuffle") {
+      cursor++;
+      const pairs = pairsByBp[e.pair] || [];
+      // Apply j_seq: i = pairs.length-1, ..., 1; swap pairs[i] with pairs[j_seq[k]].
+      let k = 0;
+      for (let i = pairs.length - 1; i > 0; i--, k++) {
+        const j = e.j_seq[k];
+        const tmp = pairs[i]; pairs[i] = pairs[j]; pairs[j] = tmp;
+      }
+      // Detect invalid pairs in shuffled order; rest go into validPool.
+      validPool[e.pair] = [];
+      const queueLocal = [];
+      for (const [u, v] of pairs) {
+        if (u === v) { queueLocal.push([u, v]); continue; }
+        const ek = edgeKey(u, v);
+        if (validSet.has(ek)) { queueLocal.push([u, v]); continue; }
+        validSet.add(ek);
+        validPool[e.pair].push([Math.min(u, v), Math.max(u, v)]);
+      }
+      pairsByBp[e.pair] = queueLocal;  // residual invalids for phase 2
+    } else {
+      throw new Error(`unexpected trace kind ${e.kind} at ${cursor}`);
+    }
+  }
+  // Aggregate phase-1 invalid edges in pair-key order (matches C++).
+  const invalidEdges = [];
+  for (const k of Object.keys(pairsByBp).sort()) {
+    for (const pr of pairsByBp[k]) invalidEdges.push(pr);
+  }
+
+  // Phase 2: apply repair entries.
+  let queue = invalidEdges.slice();
+  while (cursor < trace.length) {
+    const e = trace[cursor++];
+    if (e.kind !== "repair") {
+      throw new Error(`expected repair at ${cursor - 1}, got ${e.kind}`);
+    }
+    const u = e.u, v = e.v;
+    const bpStr = e.bp;
+    // Pop the matching (u, v) from the queue (C++ pops front).
+    const qIdx = queue.findIndex(p => p[0] === u && p[1] === v);
+    if (qIdx >= 0) queue.splice(qIdx, 1);
+    const pool = validPool[bpStr] || [];
+    if (pool.length === 0) {
+      queue.push([u, v]);
+      continue;
+    }
+    const idx = e.idx;
+    const [x, y] = pool[idx];
+    const [Astr, Bstr] = bpStr.split("-");
+    const A = parseInt(Astr, 10);
+    const B = parseInt(Bstr, 10);
+    let new1, new2;
+    if (A !== B) {
+      const uA = (b[u] === A) ? u : v;
+      const uB = (b[u] === A) ? v : u;
+      const xA = (b[x] === A) ? x : y;
+      const xB = (b[x] === A) ? y : x;
+      new1 = [Math.min(uA, xB), Math.max(uA, xB)];
+      new2 = [Math.min(xA, uB), Math.max(xA, uB)];
+    } else if (e.coin === 0) {
+      new1 = [Math.min(u, x), Math.max(u, x)];
+      new2 = [Math.min(v, y), Math.max(v, y)];
+    } else {
+      new1 = [Math.min(u, y), Math.max(u, y)];
+      new2 = [Math.min(v, x), Math.max(v, x)];
+    }
+    const k1 = edgeKey(new1[0], new1[1]);
+    const k2 = edgeKey(new2[0], new2[1]);
+    if (new1[0] !== new1[1] && new2[0] !== new2[1]
+        && !validSet.has(k1) && !validSet.has(k2) && k1 !== k2) {
+      validSet.delete(edgeKey(x, y));
+      pool[idx] = pool[pool.length - 1];
+      pool.pop();
+      validSet.add(k1); validSet.add(k2);
+      pool.push(new1); pool.push(new2);
+    } else {
+      queue.push([u, v]);
+    }
+  }
+
+  // Phase 3: commit (sorted bp-key order, drop exist_neighbor collisions).
+  const placed = [];
+  for (const key of Object.keys(validPool).sort()) {
+    for (const [u, v] of validPool[key]) {
+      if (adj.get(u) && adj.get(u).has(v)) continue;
+      if (adj.get(v) && adj.get(v).has(u)) continue;
+      placed.push([u, v]);
+      if (!adj.has(u)) adj.set(u, new Set());
+      if (!adj.has(v)) adj.set(v, new Set());
+      adj.get(u).add(v); adj.get(v).add(u);
+    }
+  }
+  return placed;
+}
+
 // ── runner ─────────────────────────────────────────────────────
 function isSimple(edges, exist) {
   const seen = new Set();
@@ -942,6 +1092,8 @@ if (mode === "replay") {
       edges = runClusterPreservingTrueGreedyReplay(payload, trace); break;
     case "cluster_preserving_random_greedy":
       edges = runClusterPreservingRandomGreedyReplay(payload, trace); break;
+    case "cluster_preserving_rewire":
+      edges = runClusterPreservingRewireReplay(payload, trace); break;
     default:
       process.stderr.write(`unknown algo: ${algo}\n`);
       process.exit(2);

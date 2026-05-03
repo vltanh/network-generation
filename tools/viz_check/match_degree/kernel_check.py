@@ -87,6 +87,7 @@ from match_degree import (  # noqa: E402
     match_missing_degrees_cluster_preserving_greedy,
     match_missing_degrees_cluster_preserving_true_greedy,
     match_missing_degrees_cluster_preserving_random_greedy,
+    match_missing_degrees_cluster_preserving_rewire,
     subtract_existing_edges,
 )
 
@@ -106,12 +107,22 @@ ALGOS = [
     "cluster_preserving_greedy",
     "cluster_preserving_true_greedy",
     "cluster_preserving_random_greedy",
+    "cluster_preserving_rewire",
 ]
+# CP variants that share the heap / weighted-pick scaffolds with their
+# non-CP twins; these route through the existing instrumented Python
+# runner + replay-mode JS for byte-equality.
 CP_ALGOS = {
     "cluster_preserving_greedy",
     "cluster_preserving_true_greedy",
     "cluster_preserving_random_greedy",
 }
+# CP variants that need a standalone C++ reference (matching the SBM
+# kernel-check pattern) because their canonical impl uses graph-tool's
+# pcg64_k1024 + std::uniform_int_distribution combo, which is non-portable
+# across libc++ / libstdc++ versions.
+CPP_REF_ALGOS = {"cluster_preserving_rewire"}
+CPP_REF_BINARY = Path("/tmp/md_cprewire_kernel_check")
 
 
 # ---------------------------------------------------------------------------
@@ -335,7 +346,7 @@ def run_python(algo: str, fixture: dict, seed: int, remap: bool, tmpdir: Path):
     # passing into the canonical fn since the algo decrements it.
     b_arr = None
     bp_budget_initial = None
-    if algo in CP_ALGOS:
+    if algo in CP_ALGOS or algo == "cluster_preserving_rewire":
         cluster_of = fixture.get("cluster_of", {})
         b_arr = build_block_array(node_iid2id, cluster_of)
         in_iid_edges = [
@@ -353,6 +364,15 @@ def run_python(algo: str, fixture: dict, seed: int, remap: bool, tmpdir: Path):
     if algo == "rewire":
         edges, _invalid = match_missing_degrees_rewire(
             dict(updated_out_degs), exist_neighbor, max_retries=10
+        )
+        new_edges = list(edges)
+    elif algo == "cluster_preserving_rewire":
+        # Canonical needs (b, bp_budget) plus the raw edge lists for the
+        # gt.generate_sbm call. Returns ``(valid_edges, leftover)``; the
+        # leftover hand-off path (hybrid composer) is not exercised here.
+        edges, _leftover = match_missing_degrees_cluster_preserving_rewire(
+            dict(updated_out_degs), exist_neighbor,
+            b_arr, dict(bp_budget_initial),
         )
         new_edges = list(edges)
     elif algo in CP_ALGOS:
@@ -525,16 +545,28 @@ def run_cell(
     # mode the target degrees come from the ref edgelist on the same ID
     # space and there is no rank pairing to enforce, so we record but do
     # not flag.
+    # cluster_preserving_rewire's canonical Python pads out_degs_array
+    # via row_sums adjustment when bp_budget overshoots residual stub
+    # mass at a block (match_degree.py:822-839). gt.generate_sbm then
+    # draws those padded stubs, which can land beyond the per-node
+    # target. This is canonical-by-design for ec-sbm's matcher path; the
+    # JS spec (and the cpp ref) does NOT pad, so the byte-equal pair
+    # (cpp ref vs JS replay) is on a different edge count than canonical.
+    # Skip the overshoot invariant for this algo; the byte-equal replay
+    # is the load-bearing check.
+    overshoot_relevant = (algo != "cluster_preserving_rewire")
     flags = {
         "simple_ok": simple_ok,
-        "no_overshoot": over_ok,
+        "no_overshoot": over_ok if overshoot_relevant else True,
         "rank_mono": (rank_ok if remap else True),
     }
     notes = []
     if not simple_ok:
         notes.append(f"simple-graph: {simple_msg}")
-    if not over_ok:
+    if not over_ok and overshoot_relevant:
         notes.append(f"overshoot: {over_msg}")
+    elif not over_ok:
+        notes.append(f"overshoot (canonical pads, expected): {over_msg}")
     if remap and not rank_ok:
         notes.append(f"rank: {rank_msg}")
 
@@ -594,15 +626,57 @@ def run_js_replay(mjs_path: Path, payload: dict, algo: str, trace: list) -> dict
     return json.loads(proc.stdout)
 
 
+def run_cpp_ref_cprewire(payload: dict, seed: int) -> dict:
+    """Drive the standalone C++ cp_rewire reference. Returns
+    {edges, trace} or {_error}. The C++ ref mirrors the matcher.html JS
+    SPEC (per-bp weighted urn pair sample + Fisher-Yates shuffle + 2-opt
+    repair) using std::mt19937; the JS replay below consumes the trace
+    and reproduces the same edges.
+    """
+    if not CPP_REF_BINARY.exists():
+        return {"_error": f"binary not built: {CPP_REF_BINARY} (run "
+                          f"tools/viz_check/match_degree/instrumented/build.sh)"}
+    job = {
+        "seed": int(seed),
+        "iids": list(payload["iids"]),
+        "residual": dict(payload["target_deg"]),
+        "exist_neighbor": dict(payload["exist_neighbor"]),
+        "b": dict(payload.get("b", {})),
+        "bp_budget": dict(payload.get("bp_budget", {})),
+    }
+    proc = subprocess.run(
+        [str(CPP_REF_BINARY)],
+        input=json.dumps(job), capture_output=True, text=True,
+    )
+    if proc.returncode != 0:
+        return {"_error": proc.stderr.strip() or proc.stdout.strip()}
+    return json.loads(proc.stdout)
+
+
 def replay_cross_check(payload: dict, mjs_path: Path, algo: str,
                        seed: int) -> dict:
-    """Per-cell faithful-replay check: instrumented canonical → JS replay
-    → assert the edge sets match.
+    """Per-cell faithful-replay check: canonical reference → JS replay
+    → assert edge sets match.
+
+    For non-rewire CP variants and the four base algos, the canonical
+    side is the instrumented Python runner monkey-patching ``random.*``.
+    For ``cluster_preserving_rewire`` the canonical side is a standalone
+    C++ binary that mirrors the matcher.html JS spec — same approach the
+    SBM kernel-check tool uses (tools/viz_check/sbm/instrumented/
+    kernel_check.cpp), since the production Python implementation
+    delegates the per-bp stub draw to ``gt.generate_sbm`` whose RNG
+    (pcg64_k1024 + std::uniform_int_distribution) is not portable.
     """
-    canonical = run_canonical_instrumented(algo, payload, seed)
-    if "_error" in canonical:
-        return {"replay_ok": False,
-                "diff": f"instrumented runner: {canonical['_error']}"}
+    if algo == "cluster_preserving_rewire":
+        canonical = run_cpp_ref_cprewire(payload, seed)
+        if "_error" in canonical:
+            return {"replay_ok": False,
+                    "diff": f"cpp ref: {canonical['_error']}"}
+    else:
+        canonical = run_canonical_instrumented(algo, payload, seed)
+        if "_error" in canonical:
+            return {"replay_ok": False,
+                    "diff": f"instrumented runner: {canonical['_error']}"}
     js = run_js_replay(mjs_path, payload, algo, canonical.get("trace", []))
     if "_error" in js:
         return {"replay_ok": False, "diff": f"js replay: {js['_error']}"}
@@ -814,7 +888,7 @@ def main():
                     # stub-pair sampler (graph-tool not portable). Skip
                     # the rng-mode structural cross-check; replay-mode
                     # byte-equal verification covers correctness.
-                    if do_js and algo not in CP_ALGOS:
+                    if do_js and algo not in CP_ALGOS and algo not in CPP_REF_ALGOS:
                         payload = js_payload_for_cell(fx, cell["_py"], seed)
                         js = cross_check(cell, run_js(mjs_path, payload, algo))
                     replay = None
