@@ -5,8 +5,8 @@ Covers:
     via a JSON range map (1-based inclusive).
   - end-to-end ``main``: undirected dedup (keep the first occurrence of
     each canonical pair), self-loop drop, ``sources.json`` with
-    contiguous ranges, stage-4 contract for simple_pipeline (stage-2
-    edges + match_degree edges → combined edge.csv).
+    contiguous ranges, stage-3b contract for simple_pipeline (stage-2
+    edges + stage-3a match_degree edges → combined edge.csv).
 """
 from __future__ import annotations
 
@@ -143,9 +143,9 @@ def test_combine_sources_json_reflects_contiguous_ranges(tmp_path):
 
 
 def test_combine_stable_on_only_one_nonempty_source(tmp_path):
-    """Stage 3 (match_degree) may emit an empty degree_matching_edge.csv
-    when nothing needs matching. Stage 4 must still produce a valid
-    combined output with the stage-2 edges intact."""
+    """Stage 3a (match_degree) may emit an empty degree_matching_edge.csv
+    when nothing needs matching. Stage 3b (combine) must still produce a
+    valid combined output with the stage-2 edges intact."""
     e1 = tmp_path / "e1.csv"
     e2 = tmp_path / "e2.csv"
     _write(e1, [("a", "b"), ("c", "d")])

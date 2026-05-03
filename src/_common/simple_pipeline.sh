@@ -163,42 +163,45 @@ else
 fi
 
 # ==========================================
-# STAGE 3 + 4: Optional post-gen degree matching + combine.
+# STAGE 3: Optional post-gen degree matching + combine.
 # Guarded by GEN_MATCH_DEGREE_ENABLE. When enabled, the shared tool
-# src/match_degree.py tops up missing stubs against the input edgelist,
-# then src/combine_edgelists.py merges stage-2 + stage-3 with provenance.
+# src/match_degree.py tops up missing stubs against the input edgelist
+# (3a), then src/combine_edgelists.py merges stage-2 + stage-3a with
+# provenance (3b).
 # Only meaningful for gens whose stage-2 edge.csv is keyed by input node
 # IDs (e.g. sbm). Gens that emit fresh node IDs (lfr, npso) or integer
 # IDs without remap (abcd, abcd+o) need extra wiring first.
 # ==========================================
 if [ "${GEN_MATCH_DEGREE_ENABLE}" = "1" ]; then
-    STG3_EDGES_DIR="${STATE_DIR}/match_degree/edges"
-    STG4_DIR="${STATE_DIR}/match_degree"
-    mkdir -p "${STG3_EDGES_DIR}" "${STG4_DIR}"
+    STG_MATCH_DEGREE_EDGES_DIR="${STATE_DIR}/match_degree/edges"
+    STG_MATCH_DEGREE_DIR="${STATE_DIR}/match_degree"
+    mkdir -p "${STG_MATCH_DEGREE_EDGES_DIR}" "${STG_MATCH_DEGREE_DIR}"
 
-    echo "=== Starting Stage 3: Match Degree (${GEN_NAME}) ==="
-    STG3_PARAMS="${STG3_EDGES_DIR}/params.txt"
-    write_params_file "${STG3_PARAMS}" \
+    echo "=== Starting Stage 3: Degree Matching & Combine (${GEN_NAME}) ==="
+
+    # 3a. Match Degrees
+    STG_MATCH_DEGREE_EDGES_PARAMS="${STG_MATCH_DEGREE_EDGES_DIR}/params.txt"
+    write_params_file "${STG_MATCH_DEGREE_EDGES_PARAMS}" \
         "seed=$((SEED + 1))" \
         "matcher=${GEN_MATCH_DEGREE_ALGORITHM}" \
         "matcher_use_remap=${GEN_MATCH_DEGREE_USE_REMAP}"
 
-    IN_3="${STG2_DIR}/edge.csv ${INPUT_EDGELIST} ${INPUT_CLUSTERING} ${STG3_PARAMS}"
-    OUT_3="${STG3_EDGES_DIR}/degree_matching_edge.csv"
+    IN_MATCH_DEGREE="${STG2_DIR}/edge.csv ${INPUT_EDGELIST} ${INPUT_CLUSTERING} ${STG_MATCH_DEGREE_EDGES_PARAMS}"
+    OUT_MATCH_DEGREE="${STG_MATCH_DEGREE_EDGES_DIR}/degree_matching_edge.csv"
 
-    STG3_REMAP_FLAG=()
+    MATCH_DEGREE_REMAP_FLAG=()
     if [ "${GEN_MATCH_DEGREE_USE_REMAP}" = "1" ]; then
-        STG3_REMAP_FLAG=(--remap)
+        MATCH_DEGREE_REMAP_FLAG=(--remap)
     fi
 
     # cluster_preserving_* algorithms need the input + reference clustering
     # to build the per-(min_block, max_block) budget; the global family
     # ignores them. Mode is inferred from the algorithm-name prefix so
     # there is no separate --match-degree-mode flag to keep in sync.
-    STG3_CP_FLAGS=()
+    MATCH_DEGREE_CP_FLAGS=()
     case "${GEN_MATCH_DEGREE_ALGORITHM}" in
         cluster_preserving_*)
-            STG3_CP_FLAGS=(
+            MATCH_DEGREE_CP_FLAGS=(
                 --input-clustering "${STG2_DIR}/com.csv"
                 --ref-clustering   "${INPUT_CLUSTERING}"
                 --outlier-mode     "${GEN_MATCH_DEGREE_OUTLIER_MODE}"
@@ -206,49 +209,49 @@ if [ "${GEN_MATCH_DEGREE_ENABLE}" = "1" ]; then
             ;;
     esac
 
-    if ! is_step_done "${STG3_EDGES_DIR}/done" "${OUT_3}"; then
-        run_stage "${STG3_EDGES_DIR}/time_and_err.log" \
+    if ! is_step_done "${STG_MATCH_DEGREE_EDGES_DIR}/done" "${OUT_MATCH_DEGREE}"; then
+        run_stage "${STG_MATCH_DEGREE_EDGES_DIR}/time_and_err.log" \
             python "${SRC_DIR}/match_degree.py" \
             --input-edgelist "${STG2_DIR}/edge.csv" \
             --ref-edgelist   "${INPUT_EDGELIST}" \
             --degree-matcher "${GEN_MATCH_DEGREE_ALGORITHM}" \
-            "${STG3_REMAP_FLAG[@]}" \
-            "${STG3_CP_FLAGS[@]}" \
-            --output-folder  "${STG3_EDGES_DIR}" \
+            "${MATCH_DEGREE_REMAP_FLAG[@]}" \
+            "${MATCH_DEGREE_CP_FLAGS[@]}" \
+            --output-folder  "${STG_MATCH_DEGREE_EDGES_DIR}" \
             --seed           "$((SEED + 1))"
-        mark_done "${STG3_EDGES_DIR}/done" "Stage 3 (match_degree)" "${IN_3}" "${OUT_3}"
+        mark_done "${STG_MATCH_DEGREE_EDGES_DIR}/done" "Stage 3a (match_degree)" "${IN_MATCH_DEGREE}" "${OUT_MATCH_DEGREE}"
     else
-        note_stage_skipped "${STG3_EDGES_DIR}/time_and_err.log"
-        echo "Skipping Stage 3: Valid state found."
+        note_stage_skipped "${STG_MATCH_DEGREE_EDGES_DIR}/time_and_err.log"
+        echo "Skipping Stage 3a: Valid state found."
     fi
 
-    echo "=== Starting Stage 4: Combine (${GEN_NAME}) ==="
-    IN_4="${STG2_DIR}/edge.csv ${STG3_EDGES_DIR}/degree_matching_edge.csv"
-    OUT_4="${STG4_DIR}/edge.csv ${STG4_DIR}/sources.json"
+    # 3b. Final Combination
+    IN_MATCH_DEGREE_COMBINE="${STG2_DIR}/edge.csv ${STG_MATCH_DEGREE_EDGES_DIR}/degree_matching_edge.csv"
+    OUT_MATCH_DEGREE_COMBINE="${STG_MATCH_DEGREE_DIR}/edge.csv ${STG_MATCH_DEGREE_DIR}/sources.json"
 
-    if ! is_step_done "${STG4_DIR}/done" "${OUT_4}"; then
-        run_stage "${STG4_DIR}/time_and_err.log" \
+    if ! is_step_done "${STG_MATCH_DEGREE_DIR}/done" "${OUT_MATCH_DEGREE_COMBINE}"; then
+        run_stage "${STG_MATCH_DEGREE_DIR}/time_and_err.log" \
             python "${SRC_DIR}/combine_edgelists.py" \
             --edgelist-1 "${STG2_DIR}/edge.csv" \
             --name-1     "gen" \
-            --edgelist-2 "${STG3_EDGES_DIR}/degree_matching_edge.csv" \
+            --edgelist-2 "${STG_MATCH_DEGREE_EDGES_DIR}/degree_matching_edge.csv" \
             --name-2     "match_degree" \
-            --output-folder   "${STG4_DIR}" \
+            --output-folder   "${STG_MATCH_DEGREE_DIR}" \
             --output-filename "edge.csv"
-        mark_done "${STG4_DIR}/done" "Stage 4 (combine)" "${IN_4}" "${OUT_4}"
+        mark_done "${STG_MATCH_DEGREE_DIR}/done" "Stage 3b (match_degree/combine)" "${IN_MATCH_DEGREE_COMBINE}" "${OUT_MATCH_DEGREE_COMBINE}"
     else
-        note_stage_skipped "${STG4_DIR}/time_and_err.log"
-        echo "Skipping Stage 4: Valid state found."
+        note_stage_skipped "${STG_MATCH_DEGREE_DIR}/time_and_err.log"
+        echo "Skipping Stage 3b: Valid state found."
     fi
 fi
 
 # ==========================================
 # Promote final outputs. Copy (not move) so stage done-files stay valid.
-# When match_degree is enabled, promote stage-4's edge.csv + sources.json.
+# When match_degree is enabled, promote stage-3b's edge.csv + sources.json.
 # ==========================================
 if [ "${GEN_MATCH_DEGREE_ENABLE}" = "1" ]; then
-    cp "${STG4_DIR}/edge.csv"     "${OUTPUT_DIR}/edge.csv"
-    cp "${STG4_DIR}/sources.json" "${OUTPUT_DIR}/sources.json"
+    cp "${STG_MATCH_DEGREE_DIR}/edge.csv"     "${OUTPUT_DIR}/edge.csv"
+    cp "${STG_MATCH_DEGREE_DIR}/sources.json" "${OUTPUT_DIR}/sources.json"
 else
     cp "${STG2_DIR}/edge.csv"     "${OUTPUT_DIR}/edge.csv"
 fi
@@ -262,10 +265,10 @@ append_stage_log "${FINAL_LOG}" "Stage 1 (profile)" "${STG1_SETUP_DIR}/run.log"
 append_stage_log "${FINAL_LOG}" "Stage 2 (gen)"     "${STG2_DIR}/time_and_err.log"
 append_stage_log "${FINAL_LOG}" "Stage 2 (gen)"     "${STG2_DIR}/run.log"
 if [ "${GEN_MATCH_DEGREE_ENABLE}" = "1" ]; then
-    append_stage_log "${FINAL_LOG}" "Stage 3 (match_degree)" "${STG3_EDGES_DIR}/time_and_err.log"
-    append_stage_log "${FINAL_LOG}" "Stage 3 (match_degree)" "${STG3_EDGES_DIR}/run.log"
-    append_stage_log "${FINAL_LOG}" "Stage 4 (combine)"      "${STG4_DIR}/time_and_err.log"
-    append_stage_log "${FINAL_LOG}" "Stage 4 (combine)"      "${STG4_DIR}/run.log"
+    append_stage_log "${FINAL_LOG}" "Stage 3a (match_degree)"         "${STG_MATCH_DEGREE_EDGES_DIR}/time_and_err.log"
+    append_stage_log "${FINAL_LOG}" "Stage 3a (match_degree)"         "${STG_MATCH_DEGREE_EDGES_DIR}/run.log"
+    append_stage_log "${FINAL_LOG}" "Stage 3b (match_degree/combine)" "${STG_MATCH_DEGREE_DIR}/time_and_err.log"
+    append_stage_log "${FINAL_LOG}" "Stage 3b (match_degree/combine)" "${STG_MATCH_DEGREE_DIR}/run.log"
 fi
 
 # ==========================================
