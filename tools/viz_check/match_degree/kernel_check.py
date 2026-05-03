@@ -61,6 +61,7 @@ import os
 import random
 import subprocess
 import sys
+from collections import defaultdict
 from pathlib import Path
 
 import numpy as np
@@ -80,15 +81,37 @@ from match_degree import (  # noqa: E402
     load_reference_topologies,
     load_remap_topologies,
     match_missing_degrees_greedy,
-    match_missing_degrees_hybrid,
     match_missing_degrees_random_greedy,
     match_missing_degrees_rewire,
     match_missing_degrees_true_greedy,
+    match_missing_degrees_cluster_preserving_greedy,
+    match_missing_degrees_cluster_preserving_true_greedy,
+    match_missing_degrees_cluster_preserving_random_greedy,
     subtract_existing_edges,
 )
 
 
-ALGOS = ["greedy", "true_greedy", "random_greedy", "rewire", "hybrid"]
+# Hybrid was retired from canonical Python in favor of the comma-
+# separated stack syntax (--degree-matcher A,B,C); the harness drops
+# it here too. cluster_preserving_rewire is deliberately omitted from
+# the byte-equal checker: its canonical Python implementation calls
+# ``gt.generate_sbm`` whose RNG is not portable to Node, so the JS port
+# (matcher.html viz) is documented as algorithmically faithful but not
+# byte-equal. The three other CP variants share the heap / weighted-
+# pick scaffolds with their non-CP twins, so they slot into the
+# existing replay harness once we feed (b, bp_budget) through the
+# payload.
+ALGOS = [
+    "greedy", "true_greedy", "random_greedy", "rewire",
+    "cluster_preserving_greedy",
+    "cluster_preserving_true_greedy",
+    "cluster_preserving_random_greedy",
+]
+CP_ALGOS = {
+    "cluster_preserving_greedy",
+    "cluster_preserving_true_greedy",
+    "cluster_preserving_random_greedy",
+}
 
 
 # ---------------------------------------------------------------------------
@@ -131,11 +154,17 @@ def small20_fixture() -> dict:
     drop = {(1, 2), (9, 10), (15, 16), (1, 9), (19, 1), (1, 5), (4, 8), (10, 14)}
     in_edges = [e for e in ref_edges if normalize_edge(*e) not in drop]
     nodes = C1 + C2 + C3 + OUT
+    cluster_of = {}
+    for n in C1: cluster_of[n] = "C1"
+    for n in C2: cluster_of[n] = "C2"
+    for n in C3: cluster_of[n] = "C3"
+    for n in OUT: cluster_of[n] = "OUT"
     return {
         "name": "small20",
         "nodes": nodes,
         "ref_edges": [normalize_edge(*e) for e in ref_edges],
         "in_edges": [normalize_edge(*e) for e in in_edges],
+        "cluster_of": cluster_of,
     }
 
 
@@ -196,6 +225,7 @@ def random100_fixture(seed: int = 42) -> dict:
         "nodes": nodes,
         "ref_edges": sorted(ref_edges),
         "in_edges": sorted(in_edges),
+        "cluster_of": cluster_of,
     }
 
 
@@ -213,6 +243,55 @@ ALGO_FN = {
     "true_greedy": match_missing_degrees_true_greedy,
     "random_greedy": match_missing_degrees_random_greedy,
 }
+
+CP_ALGO_FN = {
+    "cluster_preserving_greedy": match_missing_degrees_cluster_preserving_greedy,
+    "cluster_preserving_true_greedy": match_missing_degrees_cluster_preserving_true_greedy,
+    "cluster_preserving_random_greedy": match_missing_degrees_cluster_preserving_random_greedy,
+}
+
+
+def build_block_array(node_iid2id, cluster_of):
+    """Build the block array `b` indexed by iid, mirroring
+    src/match_degree.py:build_block_assignment in spirit (cluster ids
+    sorted ascending take iids 0..K-1; nodes outside any cluster fall
+    into a single 'OUT' bucket K). For our fixtures every node has a
+    cluster label, so the OUT bucket only kicks in for the small20
+    fixture's outlier pair.
+    """
+    cluster_names = sorted({c for c in cluster_of.values() if c != "OUT"})
+    cluster2blk = {c: i for i, c in enumerate(cluster_names)}
+    out_blk = len(cluster2blk)
+    n = len(node_iid2id)
+    b = np.empty(n, dtype=int)
+    for iid, node_id in node_iid2id.items():
+        try:
+            n_int = int(node_id)
+        except (TypeError, ValueError):
+            n_int = node_id
+        cl = cluster_of.get(n_int)
+        b[iid] = cluster2blk.get(cl, out_blk)
+    return b
+
+
+def build_bp_budget(b, in_edges_iid, ref_edges_iid):
+    """Direct-mode budget = ref bp count − input bp count, clamped at 0.
+    Mirrors src/match_degree.py:build_bp_budget_direct's bookkeeping.
+    """
+    def bp_counts(edges):
+        c = defaultdict(int)
+        for u, v in edges:
+            bu, bv = int(b[u]), int(b[v])
+            c[(min(bu, bv), max(bu, bv))] += 1
+        return c
+    inp_bp = bp_counts(in_edges_iid)
+    ref_bp = bp_counts(ref_edges_iid)
+    out = {}
+    for k, ref_cnt in ref_bp.items():
+        diff = ref_cnt - inp_bp.get(k, 0)
+        if diff > 0:
+            out[k] = diff
+    return out
 
 
 def run_python(algo: str, fixture: dict, seed: int, remap: bool, tmpdir: Path):
@@ -251,14 +330,36 @@ def run_python(algo: str, fixture: dict, seed: int, remap: bool, tmpdir: Path):
     random.seed(seed)
     np.random.seed(seed)
 
+    # Build (b, bp_budget) for CP algos. Block array indexed by iid;
+    # budget = ref-bp-count - input-bp-count clamped at 0. Cloned before
+    # passing into the canonical fn since the algo decrements it.
+    b_arr = None
+    bp_budget_initial = None
+    if algo in CP_ALGOS:
+        cluster_of = fixture.get("cluster_of", {})
+        b_arr = build_block_array(node_iid2id, cluster_of)
+        in_iid_edges = [
+            (node_id2iid[str(u)], node_id2iid[str(v)])
+            for (u, v) in fixture["in_edges"]
+            if str(u) in node_id2iid and str(v) in node_id2iid
+        ]
+        ref_iid_edges = [
+            (node_id2iid[str(u)], node_id2iid[str(v)])
+            for (u, v) in fixture["ref_edges"]
+            if str(u) in node_id2iid and str(v) in node_id2iid
+        ]
+        bp_budget_initial = build_bp_budget(b_arr, in_iid_edges, ref_iid_edges)
+
     if algo == "rewire":
         edges, _invalid = match_missing_degrees_rewire(
             dict(updated_out_degs), exist_neighbor, max_retries=10
         )
         new_edges = list(edges)
-    elif algo == "hybrid":
-        edges = match_missing_degrees_hybrid(dict(updated_out_degs), exist_neighbor)
-        new_edges = list(edges)
+    elif algo in CP_ALGOS:
+        new_edges = list(CP_ALGO_FN[algo](
+            dict(updated_out_degs), exist_neighbor,
+            b_arr, dict(bp_budget_initial),
+        ))
     else:
         new_edges = list(ALGO_FN[algo](dict(updated_out_degs), exist_neighbor))
 
@@ -277,6 +378,10 @@ def run_python(algo: str, fixture: dict, seed: int, remap: bool, tmpdir: Path):
         "node_iid2id": node_iid2id,
         "node_id2iid": node_id2iid,
         "in_deg_per_iid": in_deg_per_iid,
+        # CP-only: forwarded into the JS / instrumented payload so the
+        # replay sees the same (b, bp_budget) snapshot.
+        "b": (b_arr.tolist() if b_arr is not None else None),
+        "bp_budget": bp_budget_initial,
     }
 
 
@@ -531,15 +636,26 @@ def js_payload_for_cell(fixture: dict, py_result: dict, seed: int) -> dict:
 
     JS port is generic over (target_deg, exist_neighbor, seed); it does
     not know about the original ref/input edgelists. We pass IIDs only.
+    For CP algos, also pass the block array `b` and the initial
+    bp_budget (both keyed in iid space) so the JS replay sees the same
+    gate the canonical algorithm enforces.
     """
     target = py_result["target_deg"]
     exist = py_result["exist_neighbor_in"]
-    return {
+    payload = {
         "seed": int(seed),
         "iids": sorted(target.keys()),
         "target_deg": {str(k): int(v) for k, v in target.items()},
         "exist_neighbor": {str(k): sorted(int(x) for x in v) for k, v in exist.items()},
     }
+    if py_result.get("b") is not None:
+        payload["b"] = {str(iid): int(blk) for iid, blk in enumerate(py_result["b"])}
+    if py_result.get("bp_budget") is not None:
+        payload["bp_budget"] = {
+            f"{int(k[0])}-{int(k[1])}": int(v)
+            for k, v in py_result["bp_budget"].items()
+        }
+    return payload
 
 
 def run_js(mjs_path: Path, payload: dict, algo: str) -> dict:
@@ -692,7 +808,13 @@ def main():
                 for seed in args.seeds:
                     cell = run_cell(fx, algo, seed, remap, tmp_root)
                     js = None
-                    if do_js:
+                    # CP algos: the viz JS kernel for CP shares the gate
+                    # logic but uses an LCG that doesn't match Python's
+                    # PRNG, and cp_rewire deliberately uses a different
+                    # stub-pair sampler (graph-tool not portable). Skip
+                    # the rng-mode structural cross-check; replay-mode
+                    # byte-equal verification covers correctness.
+                    if do_js and algo not in CP_ALGOS:
                         payload = js_payload_for_cell(fx, cell["_py"], seed)
                         js = cross_check(cell, run_js(mjs_path, payload, algo))
                     replay = None

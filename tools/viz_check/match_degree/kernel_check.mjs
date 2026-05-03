@@ -716,6 +716,184 @@ function runHybridReplay(payload, trace) {
   return Array.from(all).map(s => s.split("-").map(Number));
 }
 
+// ── CP shared helpers ──────────────────────────────────────────
+// Block-pair key matches canonical _bp_key: (min(b[u], b[v]), max(...)).
+// Budget map keyed by "bi-bj" string (JS object keys must be strings;
+// the harness passes them in that form already).
+function _cpUnpack(payload) {
+  const b = {};
+  const src = payload.b || {};
+  for (const k in src) b[parseInt(k, 10)] = parseInt(src[k], 10);
+  const bp = {};
+  const bsrc = payload.bp_budget || {};
+  for (const k in bsrc) bp[k] = parseInt(bsrc[k], 10);
+  return { b, bp };
+}
+function _bpKey(b, u, v) {
+  const bu = b[u], bv = b[v];
+  return bu < bv ? `${bu}-${bv}` : `${bv}-${bu}`;
+}
+function _bpAvail(bp, key) { return (bp[key] || 0) > 0; }
+
+// ── replay: cluster_preserving_greedy ──────────────────────────
+// Mirrors src/match_degree.py:match_missing_degrees_cluster_preserving_greedy.
+// Same heap+set scaffold as runGreedyReplay; partner candidates are
+// sorted(available_node_set - invalid) THEN filtered by
+// bp_budget[bp_key] > 0 — the python source filters after the sort,
+// and we must too because the canonical relies on sorted-int order
+// for the within-burst pick.
+function runClusterPreservingGreedyReplay(payload, _trace) {
+  const { b, bp } = _cpUnpack(payload);
+  const targetEntries = Object.entries(payload.target_deg)
+    .map(([k, v]) => [parseInt(k, 10), Number(v)])
+    .filter(([_, v]) => v > 0)
+    .sort((a, c) => a[0] - c[0]);
+  const availDeg = new Map(targetEntries);
+  const availSet = new Set(targetEntries.map(([k, _]) => k));
+  const adj = _adjFromExist(payload);
+  const heap = [];
+  for (const [n, d] of targetEntries) heap.push([-d, n]);
+  heap.sort((x, y) => (x[0] - y[0]) || (x[1] - y[1]));
+  const edges = new Set();
+  while (heap.length > 0) {
+    const [, u] = _heapPopMin(heap);
+    if (!availDeg.has(u)) continue;
+    const invalid = new Set(adj.get(u) || []);
+    invalid.add(u);
+    let candidates = [];
+    for (const n of availSet) if (!invalid.has(n)) candidates.push(n);
+    candidates.sort((a, c) => a - c);
+    candidates = candidates.filter(n => _bpAvail(bp, _bpKey(b, u, n)));
+    const availK = Math.min(availDeg.get(u), candidates.length);
+    for (let k = 0; k < availK; k++) {
+      const partner = candidates[k];
+      const key = _bpKey(b, u, partner);
+      if (!_bpAvail(bp, key)) continue;
+      edges.add(edgeKey(u, partner));
+      if (!adj.has(u)) adj.set(u, new Set());
+      if (!adj.has(partner)) adj.set(partner, new Set());
+      adj.get(u).add(partner); adj.get(partner).add(u);
+      bp[key] -= 1;
+      availDeg.set(partner, availDeg.get(partner) - 1);
+      if (availDeg.get(partner) === 0) {
+        availSet.delete(partner);
+        availDeg.delete(partner);
+      }
+    }
+    availDeg.delete(u);
+    availSet.delete(u);
+  }
+  return Array.from(edges).map(s => s.split("-").map(Number));
+}
+
+// ── replay: cluster_preserving_true_greedy ─────────────────────
+// Dynamic heap with re-push. Valid targets filter on bp_budget>0;
+// argmax(current_degrees[x], -x) over the in-budget set.
+function runClusterPreservingTrueGreedyReplay(payload, _trace) {
+  const { b, bp } = _cpUnpack(payload);
+  const targetEntries = Object.entries(payload.target_deg)
+    .map(([k, v]) => [parseInt(k, 10), Number(v)])
+    .filter(([_, v]) => v > 0)
+    .sort((a, c) => a[0] - c[0]);
+  const currentDeg = new Map(targetEntries);
+  const adj = _adjFromExist(payload);
+  const heap = [];
+  for (const [n, d] of targetEntries) heap.push([-d, n]);
+  heap.sort((x, y) => (x[0] - y[0]) || (x[1] - y[1]));
+  const edges = new Set();
+  while (heap.length > 0) {
+    const [negDeg, u] = _heapPopMin(heap);
+    const degU = -negDeg;
+    if (!currentDeg.has(u) || currentDeg.get(u) !== degU) continue;
+    const invalid = adj.get(u) || new Set();
+    const validTargets = [];
+    for (const n of currentDeg.keys()) {
+      if (n === u) continue;
+      if (invalid.has(n)) continue;
+      if (!_bpAvail(bp, _bpKey(b, u, n))) continue;
+      validTargets.push(n);
+    }
+    if (validTargets.length === 0) {
+      currentDeg.delete(u);
+      continue;
+    }
+    let v = null, vDeg = -1;
+    for (const n of validTargets) {
+      const d = currentDeg.get(n);
+      if (d > vDeg || (d === vDeg && (v === null || n < v))) { v = n; vDeg = d; }
+    }
+    const key = _bpKey(b, u, v);
+    edges.add(edgeKey(u, v));
+    if (!adj.has(u)) adj.set(u, new Set());
+    if (!adj.has(v)) adj.set(v, new Set());
+    adj.get(u).add(v); adj.get(v).add(u);
+    bp[key] -= 1;
+    currentDeg.set(u, currentDeg.get(u) - 1);
+    currentDeg.set(v, currentDeg.get(v) - 1);
+    if (currentDeg.get(u) > 0) _heapPushMin(heap, [-currentDeg.get(u), u]);
+    else currentDeg.delete(u);
+    if (currentDeg.get(v) > 0) _heapPushMin(heap, [-currentDeg.get(v), v]);
+    else if (currentDeg.has(v)) currentDeg.delete(v);
+  }
+  return Array.from(edges).map(s => s.split("-").map(Number));
+}
+
+// ── replay: cluster_preserving_random_greedy ───────────────────
+// Weighted-random u, weighted-random v restricted to in-budget.
+// Consumes the same trace shape (`choices` entries) the
+// canonical match_missing_degrees_cluster_preserving_random_greedy
+// emits via random.choices(weights).
+function runClusterPreservingRandomGreedyReplay(payload, trace) {
+  const tr = makeTrace(trace);
+  const { b, bp } = _cpUnpack(payload);
+  const targetEntries = Object.entries(payload.target_deg)
+    .map(([k, v]) => [parseInt(k, 10), Number(v)])
+    .filter(([_, v]) => v > 0)
+    .sort((a, c) => a[0] - c[0]);
+  const availableDegrees = new Map(targetEntries);
+  const availableNodes = targetEntries.map(([k, _]) => k);
+  const adj = _adjFromExist(payload);
+  const edges = new Set();
+  while (availableNodes.length > 0) {
+    const uEntry = tr.next("choices");
+    const uIdx = uEntry.indices[0];
+    const u = availableNodes[uIdx];
+    const invalid = adj.get(u) || new Set();
+    const validTargets = [];
+    for (const n of availableNodes) {
+      if (n === u) continue;
+      if (invalid.has(n)) continue;
+      if (!_bpAvail(bp, _bpKey(b, u, n))) continue;
+      validTargets.push(n);
+    }
+    if (validTargets.length === 0) {
+      const i = availableNodes.indexOf(u);
+      availableNodes.splice(i, 1);
+      continue;
+    }
+    const vEntry = tr.next("choices");
+    const vIdx = vEntry.indices[0];
+    const v = validTargets[vIdx];
+    const key = _bpKey(b, u, v);
+    edges.add(edgeKey(u, v));
+    if (!adj.has(u)) adj.set(u, new Set());
+    if (!adj.has(v)) adj.set(v, new Set());
+    adj.get(u).add(v); adj.get(v).add(u);
+    bp[key] -= 1;
+    availableDegrees.set(u, availableDegrees.get(u) - 1);
+    availableDegrees.set(v, availableDegrees.get(v) - 1);
+    if (availableDegrees.get(u) === 0) {
+      const i = availableNodes.indexOf(u);
+      availableNodes.splice(i, 1);
+    }
+    if (availableDegrees.get(v) === 0) {
+      const i = availableNodes.indexOf(v);
+      if (i >= 0) availableNodes.splice(i, 1);
+    }
+  }
+  return Array.from(edges).map(s => s.split("-").map(Number));
+}
+
 // ── runner ─────────────────────────────────────────────────────
 function isSimple(edges, exist) {
   const seen = new Set();
@@ -758,6 +936,12 @@ if (mode === "replay") {
     case "random_greedy":  edges = runRandomGreedyReplay(payload, trace); break;
     case "rewire":         edges = runRewireReplay(payload, trace); break;
     case "hybrid":         edges = runHybridReplay(payload, trace); break;
+    case "cluster_preserving_greedy":
+      edges = runClusterPreservingGreedyReplay(payload, trace); break;
+    case "cluster_preserving_true_greedy":
+      edges = runClusterPreservingTrueGreedyReplay(payload, trace); break;
+    case "cluster_preserving_random_greedy":
+      edges = runClusterPreservingRandomGreedyReplay(payload, trace); break;
     default:
       process.stderr.write(`unknown algo: ${algo}\n`);
       process.exit(2);
@@ -769,6 +953,17 @@ if (mode === "replay") {
     case "random_greedy":  edges = runRandomGreedy(payload, seed); break;
     case "rewire":         edges = runRewire(payload, seed, false); break;
     case "hybrid":         edges = runHybrid(payload, seed); break;
+    // The non-replay (rng-mode) path mirrors the matcher.html viz
+    // kernel for the non-CP algos. CP algos in viz mode have their
+    // own divergence (graph-tool RNG for cp_rewire) and are not
+    // covered by the structural rng-mode check; the harness skips
+    // run_js for CP algos and relies on replay-mode byte-equal
+    // verification instead.
+    case "cluster_preserving_greedy":
+    case "cluster_preserving_true_greedy":
+    case "cluster_preserving_random_greedy":
+      process.stderr.write(`rng-mode CP not supported; use mode=replay for ${algo}\n`);
+      process.exit(2);
     default:
       process.stderr.write(`unknown algo: ${algo}\n`);
       process.exit(2);

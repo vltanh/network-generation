@@ -14,7 +14,9 @@ CLI: reads ``{algo, payload, seed}`` on stdin, writes
 The harness builds the (target_deg, exist_neighbor) pair the JS port also
 consumes and feeds both sides the same trace so JS replay byte-equals
 canonical edges (modulo set-iteration order; the harness compares sorted
-edge lists).
+edge lists). CP algos additionally consume ``payload.b`` (block array
+indexed by iid) and ``payload.bp_budget`` (initial per-(min, max) bp cap)
+so the canonical fn sees the same gate the page enforces.
 """
 from __future__ import annotations
 
@@ -23,6 +25,8 @@ import random as _random
 import sys
 from collections import deque
 from pathlib import Path
+
+import numpy as np
 
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
@@ -104,6 +108,12 @@ ALGO_FN = {
     "random_greedy": _md.match_missing_degrees_random_greedy,
 }
 
+CP_ALGO_FN = {
+    "cluster_preserving_greedy": _md.match_missing_degrees_cluster_preserving_greedy,
+    "cluster_preserving_true_greedy": _md.match_missing_degrees_cluster_preserving_true_greedy,
+    "cluster_preserving_random_greedy": _md.match_missing_degrees_cluster_preserving_random_greedy,
+}
+
 
 def _payload_to_state(payload):
     iids = list(payload["iids"])
@@ -116,6 +126,29 @@ def _payload_to_state(payload):
     return iids, target, exist
 
 
+def _payload_to_cp_state(payload):
+    """Pull (b, bp_budget) out of the payload.
+
+    ``b`` arrives as a dict {iid_str: blk}; ``bp_budget`` as
+    {"bi-bj": cnt}. Both are converted to the shapes canonical Python
+    expects: ``b`` as a numpy array indexed by iid, ``bp_budget`` as a
+    mutable dict keyed by tuple ``(min_blk, max_blk)``.
+    """
+    b_dict = payload.get("b") or {}
+    if not b_dict:
+        return None, None
+    n = max(int(k) for k in b_dict.keys()) + 1
+    b = np.empty(n, dtype=int)
+    for k, v in b_dict.items():
+        b[int(k)] = int(v)
+    bp_budget_in = payload.get("bp_budget") or {}
+    bp_budget = {}
+    for k, v in bp_budget_in.items():
+        a, c = k.split("-")
+        bp_budget[(int(a), int(c))] = int(v)
+    return b, bp_budget
+
+
 def run_canonical(algo, payload, seed):
     iids, target, exist = _payload_to_state(payload)
     recorder = TraceRecorder()
@@ -124,12 +157,15 @@ def run_canonical(algo, payload, seed):
     try:
         if algo in ALGO_FN:
             edges = ALGO_FN[algo](dict(target), exist)
+        elif algo in CP_ALGO_FN:
+            b, bp_budget = _payload_to_cp_state(payload)
+            edges = CP_ALGO_FN[algo](
+                dict(target), exist, b, dict(bp_budget),
+            )
         elif algo == "rewire":
             edges, _invalid = _md.match_missing_degrees_rewire(
                 dict(target), exist, max_retries=10,
             )
-        elif algo == "hybrid":
-            edges = _md.match_missing_degrees_hybrid(dict(target), exist)
         else:
             raise SystemExit(f"unknown algo: {algo}")
     finally:
