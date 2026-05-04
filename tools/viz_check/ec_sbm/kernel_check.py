@@ -1,10 +1,10 @@
-"""EC-SBM v1 + v2 verification harness.
+"""EC-SBM v1 + v2 + v3 verification harness.
 
 Drives ``src/ec-sbm/pipeline.sh`` end-to-end on at least two fixtures
 and at least five seeds per version, then verifies the documented
 guarantees against the artifacts under ``--keep-state``.
 
-Common to v1 + v2:
+Common to all versions:
 
 * Per-cluster edge connectivity ≥ k(C) where k(C) is the input's
   per-cluster min cut (Nagamochi-Ono-Ibaraki via ``pymincut``).
@@ -36,6 +36,18 @@ v2-specific:
   max_block) bucket. Implemented by re-running ``synthesize_residual_subnetwork``
   in-process with the kept stage-3a inputs at ``edge_correction='rewire'``
   vs ``edge_correction='none'`` from the same seeded RNG state.
+
+v3-specific:
+
+* Profile emits ``cluster_ccoeff.csv`` (one float per cluster iid).
+* gen_clustered emits ``pso_search_log.json`` (per-cluster T-search log
+  with chosen ``best_T`` + ``best_ccoeff`` + iter records).
+* The K_{k+1} core check is dropped (v3's stage 2 has no clique seed);
+  the per-cluster k-edge-connectivity floor still must hold under
+  ``m = max(k, m_floor)``.
+* v2's rewire block-preserving check is reused — stage 3 is the same
+  code under ``--version v3``, only the stage-2 input it consumes
+  differs.
 
 Usage::
 
@@ -400,6 +412,55 @@ def check_kclique_present(edge_pairs: set, deg_csv: Path, assign_csv: Path,
     return len(issues) == 0, issues
 
 
+def check_v3_pso_log(state_dir: Path) -> tuple[bool, str]:
+    """v3 stage 2 must emit ``pso_search_log.json`` with one entry per
+    cluster_iid, and each cluster's ``best_ccoeff`` should be reasonably
+    close to its ``target_ccoeff``. We accept ``diff <= 0.25`` as the
+    sanity bar for the small fixtures (with diff_tol=0.01 and a low iter
+    cap, exact match is not required; the search may also stop early on
+    plateau via step_tol).
+    """
+    pso_log = state_dir / "gen_clustered" / "pso_search_log.json"
+    cluster_ccoeff_csv = state_dir / "profile" / "cluster_ccoeff.csv"
+    if not cluster_ccoeff_csv.exists():
+        return False, f"profile cluster_ccoeff.csv missing under {state_dir}"
+    if not pso_log.exists():
+        return False, f"gen_clustered pso_search_log.json missing under {state_dir}"
+    with pso_log.open() as f:
+        log = json.load(f)
+    if not log:
+        return False, "pso_search_log.json is empty"
+    targets = pd.read_csv(cluster_ccoeff_csv, header=None)[0].to_numpy(dtype=float)
+    bad = []
+    skipped = 0
+    for cluster_iid_str, entry in log.items():
+        target = float(entry.get("target_ccoeff", 0.0))
+        if abs(target - targets[int(cluster_iid_str)]) > 1e-6:
+            bad.append(f"cluster {cluster_iid_str} target mismatch")
+            continue
+        bcc = entry.get("best_ccoeff")
+        if bcc is None:
+            continue
+        # m == 1 → tree → cc == 0 by construction. The T-search has no
+        # knob to recover the cluster's empirical cc; skip the bar.
+        if int(entry.get("m", 0)) <= 1:
+            skipped += 1
+            continue
+        diff = abs(float(bcc) - target)
+        if diff > 0.25:
+            bad.append(
+                f"cluster {cluster_iid_str} (m={entry.get('m')}) best_cc={bcc:.3f} "
+                f"far from target={target:.3f} (diff={diff:.3f})"
+            )
+    if bad:
+        return False, "; ".join(bad[:5])
+    return True, (
+        f"{len(log)} cluster(s) logged"
+        + (f"; {skipped} skipped (m<=1, tree)" if skipped else "")
+        + "; best_cc within target band"
+    )
+
+
 def check_v1_no_residual_deficit(out_edges_pairs: set, deg_csv: Path,
                                  node_id_csv: Path) -> tuple[bool, str]:
     """Stage-4a (greedy attach) tops up degrees so output ≥ input per node.
@@ -707,17 +768,19 @@ def run_one(version: str, fx: dict, seed: int, work_root: Path,
     assign_csv = profile_dir / "assignment.csv"
     mincut_csv = profile_dir / "mincut.csv"
     node_id_csv = profile_dir / "node_id.csv"
-    kk_ok, kk_issues = check_kclique_present(out_pairs, deg_csv, assign_csv,
-                                             mincut_csv, fx)
-    res["kclique_ok"] = kk_ok
-    res["kclique_diag"] = ("; ".join(kk_issues[:3]) if kk_issues
-                           else "all per-cluster K_{k+1} cores intact")
+    if version in ("v1", "v2"):
+        kk_ok, kk_issues = check_kclique_present(out_pairs, deg_csv, assign_csv,
+                                                 mincut_csv, fx)
+        res["kclique_ok"] = kk_ok
+        res["kclique_diag"] = ("; ".join(kk_issues[:3]) if kk_issues
+                               else "all per-cluster K_{k+1} cores intact")
+    # v3 has no K_{k+1} core (PSO replaces it).
 
     if version == "v1":
         v1_ok, v1_msg = check_v1_no_residual_deficit(out_pairs, deg_csv, node_id_csv)
         res["v1_match_deficit_ok"] = v1_ok
         res["v1_match_deficit_diag"] = v1_msg
-    else:
+    elif version == "v2":
         try:
             v2_ok, v2_msg = check_v2_rewire_block_preserving(state_dir, fx, seed)
             res["v2_rewire_ok"] = v2_ok
@@ -733,6 +796,14 @@ def run_one(version: str, fx: dict, seed: int, work_root: Path,
         except Exception as exc:
             res["kec_replay_ok"] = False
             res["kec_replay_diag"] = f"check raised {type(exc).__name__}: {exc}"
+    else:  # v3
+        try:
+            v3_ok, v3_msg = check_v3_pso_log(state_dir)
+            res["v3_pso_log_ok"] = v3_ok
+            res["v3_pso_log_diag"] = v3_msg
+        except Exception as exc:
+            res["v3_pso_log_ok"] = False
+            res["v3_pso_log_diag"] = f"check raised {type(exc).__name__}: {exc}"
 
     if verbose:
         print(f"\n   [{res['name']}] proc returncode={proc.returncode}")
@@ -756,8 +827,8 @@ def fmt_check(label: str, ok: bool, diag: str) -> str:
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("--seeds", type=int, nargs="*", default=[1, 2, 3, 4, 5])
-    ap.add_argument("--versions", nargs="*", default=["v1", "v2"],
-                    choices=["v1", "v2"])
+    ap.add_argument("--versions", nargs="*", default=["v1", "v2", "v3"],
+                    choices=["v1", "v2", "v3"])
     ap.add_argument("--verbose", action="store_true")
     ap.add_argument("--keep-tmp", action="store_true",
                     help="leave the per-run output trees on disk")
@@ -802,25 +873,32 @@ def main():
                     print(fmt_check("simple graph", res["simple_ok"], res["simple_diag"]))
                     print(fmt_check("cluster assignment", res["cluster_ok"], res["cluster_diag"]))
                     print(fmt_check("k-edge-connectivity", res["kconnect_ok"], res["kconnect_diag"]))
-                    print(fmt_check("K_{k+1} core present", res["kclique_ok"], res["kclique_diag"]))
+                    if version in ("v1", "v2"):
+                        print(fmt_check("K_{k+1} core present", res["kclique_ok"], res["kclique_diag"]))
                     if version == "v1":
                         print(fmt_check("v1 matcher residual",
                                         res["v1_match_deficit_ok"],
                                         res["v1_match_deficit_diag"]))
-                    else:
+                    elif version == "v2":
                         print(fmt_check("v2 rewire block-preserving",
                                         res["v2_rewire_ok"],
                                         res["v2_rewire_diag"]))
                         print(fmt_check("kec js-replay byte-eq",
                                         res["kec_replay_ok"],
                                         res["kec_replay_diag"]))
+                    else:  # v3
+                        print(fmt_check("v3 pso search log",
+                                        res["v3_pso_log_ok"],
+                                        res["v3_pso_log_diag"]))
 
                     seed_ok = (
                         res["simple_ok"] and res["cluster_ok"]
-                        and res["kconnect_ok"] and res["kclique_ok"]
+                        and res["kconnect_ok"]
+                        and res.get("kclique_ok", True)
                         and (res.get("v1_match_deficit_ok", True))
                         and (res.get("v2_rewire_ok", True))
                         and (res.get("kec_replay_ok", True))
+                        and (res.get("v3_pso_log_ok", True))
                     )
                     overall = overall and seed_ok
 
@@ -830,10 +908,11 @@ def main():
     n_all_ok = sum(
         1 for r in summary if r.get("pipeline_ok")
         and r.get("simple_ok") and r.get("cluster_ok")
-        and r.get("kconnect_ok") and r.get("kclique_ok")
+        and r.get("kconnect_ok") and r.get("kclique_ok", True)
         and r.get("v1_match_deficit_ok", True)
         and r.get("v2_rewire_ok", True)
         and r.get("kec_replay_ok", True)
+        and r.get("v3_pso_log_ok", True)
     )
     print(f"runs: {n_runs}, pipeline-ok: {n_pipeline_ok}, all-checks-ok: {n_all_ok}")
     print("OVERALL: " + ("PASS" if overall else "FAIL"))
