@@ -79,9 +79,10 @@ write_params_file "${FINAL_PARAMS}" "${GEN_TOPLEVEL_PARAMS[@]}"
 log_invocation_header "${FINAL_LOG}" "${SEED}" "${KEEP_STATE}"
 
 if is_step_done "${FINAL_DONE}" "${FINAL_OUT}"; then
-    # Top-level done must not coexist with an inconsistent .state/.
-    if [ -d "${OUTPUT_DIR}/.state" ] && ! is_state_tree_consistent "${OUTPUT_DIR}/.state"; then
-        echo "Top-level done valid but .state/ is inconsistent; regenerating to restore cache."
+    # When --keep-state is set, .state/ must exist and be consistent. If missing
+    # or stale, drop the top-level done so the pipeline regenerates everything.
+    if [ "${KEEP_STATE}" = "1" ] && ! is_state_tree_consistent "${OUTPUT_DIR}/.state"; then
+        echo "Top-level done valid but .state/ is missing or inconsistent; regenerating to restore cache."
         rm -rf "${OUTPUT_DIR}/.state" "${FINAL_DONE}"
     else
         echo "Skipping entire pipeline: valid top-level done-file found."
