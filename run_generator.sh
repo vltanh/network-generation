@@ -42,7 +42,7 @@ output_suffix=""
 
 seed=1
 n_threads=1
-timeout_duration="3d"
+timeout_duration="7d"
 abcd_dir="${SCRIPT_DIR}/externals/abcd"
 lfr_binary="${SCRIPT_DIR}/externals/lfr/unweighted_undirected/benchmark"
 npso_dir="${SCRIPT_DIR}/externals/npso"
@@ -123,23 +123,23 @@ if [ "${is_macro}" -eq 1 ]; then
         log "Error: --network and --clustering-id are required when using --macro."
         exit 1
     fi
-    
+
     INP_EDGE="data/empirical_networks/networks/${network_id}/${network_id}.csv"
     INP_COM="data/reference_clusterings/clusterings/${clustering_id}/${network_id}/com.csv"
-    
+
     OUT_DIR="data/synthetic_networks/networks/${generator}/${clustering_id}/${network_id}/${run_id}"
     STATS_DIR="data/synthetic_networks/stats/${generator}/${clustering_id}/${network_id}/${run_id}"
-    
+
     EMPIRICAL_NETWORK_STATS_DIR="data/empirical_networks/stats/${network_id}"
     REFERENCE_STATS_DIR="data/reference_clusterings/stats/${clustering_id}/${network_id}"
-    
+
     dataset_name="${network_id} (Clustering: ${clustering_id}, Run: ${run_id})"
 else
     if [ -z "${custom_inp_edge}" ] || [ -z "${custom_inp_com}" ] || [ -z "${custom_out_dir}" ]; then
         log "Error: In custom mode, you must provide --input-edgelist, --input-clustering, and --output-dir."
         exit 1
     fi
-    
+
     INP_EDGE="${custom_inp_edge}"
     INP_COM="${custom_inp_com}"
 
@@ -163,7 +163,7 @@ else
     else
         REFERENCE_STATS_DIR="${custom_out_dir}/stats/reference/cluster${clustering_id:+/${clustering_id}}${network_id:+/${network_id}}"
     fi
-    
+
     # Build a clean log display string
     dataset_name="[Custom] ${network_id:+"${network_id} "}${clustering_id:+"(Clustering: ${clustering_id}) "}(Run: ${run_id})"
 fi
@@ -197,15 +197,15 @@ SYNTH_NETWORK_STATS_DIR="${STATS_DIR}/network"
 run_cluster_stats() {
     if [ "${run_stats_flag}" -eq 0 ]; then return; fi
     local edge_file=$1; local com_file=$2; local stats_dir=$3
-    
+
     log "Evaluating synthetic cluster stats state via Python StateTracker..."
     mkdir -p "${stats_dir}"
-    
+
     { /usr/bin/time -v python "${SCRIPT_DIR}/network_evaluation/network_stats/compute_cluster_stats.py" \
         --network "${edge_file}" \
         --community "${com_file}" \
         --outdir "${stats_dir}"; } 2> "${stats_dir}/error.log"
-        
+
     if [ ${?} -ne 0 ]; then
         log "ERROR: Cluster stats computation failed."
     else
@@ -219,14 +219,14 @@ run_cluster_stats() {
 run_network_stats() {
     if [ "${run_stats_flag}" -eq 0 ]; then return; fi
     local edge_file=$1; local stats_dir=$2
-    
+
     log "Evaluating synthetic network stats state via Python StateTracker..."
     mkdir -p "${stats_dir}"
-    
+
     { /usr/bin/time -v python "${SCRIPT_DIR}/network_evaluation/network_stats/compute_network_stats.py" \
         --network "${edge_file}" \
         --outdir "${stats_dir}"; } 2> "${stats_dir}/error.log"
-        
+
     if [ ${?} -ne 0 ]; then
         log "ERROR: Network stats computation failed."
     else
@@ -284,13 +284,13 @@ run_comparison() {
     local synth_c_stats=$1; local ref_c_stats=$2
     local synth_n_stats=$3; local ref_n_stats=$4
     local out_dir=$5
-    
+
     if [ -d "${synth_c_stats}" ] && [ -d "${ref_c_stats}" ] && \
        [ -d "${synth_n_stats}" ] && [ -d "${ref_n_stats}" ]; then
-        
+
         log "Running statistics comparison..."
         mkdir -p "${out_dir}"
-        
+
         { /usr/bin/time -v python "${SCRIPT_DIR}/network_evaluation/compare/compare_pair.py" \
             --cluster-1-folder "${synth_c_stats}" \
             --cluster-2-folder "${ref_c_stats}" \
@@ -298,7 +298,7 @@ run_comparison() {
             --network-2-folder "${ref_n_stats}" \
             --output-file "${out_dir}/comparison.csv" \
             --is-compare-sequence; } 2> "${out_dir}/error.log"
-            
+
         if [ ${?} -ne 0 ]; then
             log "ERROR: Statistics comparison failed."
         else
