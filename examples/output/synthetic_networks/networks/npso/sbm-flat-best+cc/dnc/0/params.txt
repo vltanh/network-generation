@@ -1,0 +1,12 @@
+gen_model=nPSO2
+gen_search_diff_tol=0.005
+gen_search_max_iters=100
+gen_search_step_tol=0.0001
+gen_search_t_min=0.0005
+matcher=true_greedy
+matcher_enable=0
+matcher_use_remap=1
+n_threads=1
+profile_drop_oo_edges=false
+profile_outlier_mode=singleton
+seed=1

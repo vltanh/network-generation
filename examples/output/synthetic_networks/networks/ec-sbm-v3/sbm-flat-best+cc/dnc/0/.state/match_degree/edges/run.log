@@ -1,0 +1,11 @@
+2026-05-07 14:30:24,523 - INFO - --- Starting Degree Matching (stack=cluster_preserving_true_greedy) ---
+2026-05-07 14:30:24,553 - INFO - Loaded reference topologies elapsed: 0.0299 seconds
+2026-05-07 14:30:24,569 - INFO - Subtracted existing edges elapsed: 0.0162 seconds
+2026-05-07 14:30:24,613 - INFO - Built per-bp budget (direct mode) elapsed: 0.0439 seconds
+2026-05-07 14:30:24,614 - INFO - Starting Cluster-Preserving True Greedy matching algorithm...
+2026-05-07 14:30:24,614 - INFO - Initial missing stubs: 5752 (Target edges: 2876)
+2026-05-07 14:30:25,111 - WARNING - Finished with 121 gridlocked nodes.
+2026-05-07 14:30:25,113 - INFO - Stack step 'cluster_preserving_true_greedy': placed 2593 edges
+2026-05-07 14:30:25,113 - INFO - Added 2593 edges total across 1 step(s)
+2026-05-07 14:30:25,113 - INFO - Degree matching (stacked) elapsed: 0.4997 seconds
+2026-05-07 14:30:25,119 - INFO - Exported edgelist elapsed: 0.0061 seconds

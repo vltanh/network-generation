@@ -1,0 +1,8 @@
+2026-05-07 14:31:16,601 - INFO - Starting SBM Generation...
+2026-05-07 14:31:16,601 - INFO - Seed: 1 n_threads: 1
+2026-05-07 14:31:16,663 - INFO - N=906 clusters=66
+2026-05-07 14:31:16,663 - INFO - Input loading elapsed: 0.0624 seconds
+2026-05-07 14:31:16,665 - INFO - Generation elapsed: 0.0018 seconds
+2026-05-07 14:31:17,616 - INFO - simplify_edges: dropped 2802 self-loops / parallel edges from edge.csv
+2026-05-07 14:31:17,624 - INFO - Export elapsed: 0.9585 seconds
+2026-05-07 14:31:17,624 - INFO - SBM generation complete.

@@ -1,0 +1,5 @@
+2026-05-07 14:30:11,477 - INFO - Starting EC-SBM outlier generation (scope=all, outlier_mode=combined)...
+2026-05-07 14:30:11,709 - INFO - Setup elapsed: 0.2320 seconds
+2026-05-07 14:30:11,719 - INFO - SBM synthesis elapsed: 0.0091 seconds
+2026-05-07 14:30:11,725 - INFO - Export elapsed: 0.0064 seconds
+2026-05-07 14:30:11,725 - INFO - Outlier generation complete.

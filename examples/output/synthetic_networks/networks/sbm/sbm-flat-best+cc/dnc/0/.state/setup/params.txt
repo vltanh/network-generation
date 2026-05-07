@@ -1,0 +1,2 @@
+drop_outlier_outlier_edges=false
+outlier_mode=combined

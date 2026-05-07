@@ -1,0 +1,3 @@
+outlier_mode=singleton
+scope=outlier-incident
+seed=2

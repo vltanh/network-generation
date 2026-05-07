@@ -1,0 +1,8 @@
+2026-05-07 14:29:30,356 - INFO - Starting ABCD Generation...
+2026-05-07 14:29:30,356 - INFO - Seed: 1
+2026-05-07 14:29:30,359 - INFO - xi=0.7040943522868923 total_clusters=374
+2026-05-07 14:29:30,359 - INFO - Input loading elapsed: 0.0025 seconds
+2026-05-07 14:29:38,458 - INFO - Generation elapsed: 8.0978 seconds
+2026-05-07 14:29:38,471 - INFO - Dropping 309 singleton cluster(s) from com.csv
+2026-05-07 14:29:38,479 - INFO - Export elapsed: 0.0210 seconds
+2026-05-07 14:29:38,480 - INFO - ABCD generation complete.

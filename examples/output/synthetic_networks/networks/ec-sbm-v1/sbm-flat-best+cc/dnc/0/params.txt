@@ -1,0 +1,9 @@
+gen_clustered_sbm_overlay=true
+gen_outlier_assign_mode=singleton
+gen_outlier_scope=outlier-incident
+matcher=greedy
+matcher_use_remap=0
+n_threads=1
+profile_drop_oo_edges=false
+profile_outlier_mode=excluded
+seed=1

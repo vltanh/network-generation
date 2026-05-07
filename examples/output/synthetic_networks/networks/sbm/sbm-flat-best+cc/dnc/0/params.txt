@@ -1,0 +1,7 @@
+matcher=cluster_preserving_true_greedy
+matcher_enable=1
+matcher_use_remap=0
+n_threads=1
+profile_drop_oo_edges=false
+profile_outlier_mode=combined
+seed=1

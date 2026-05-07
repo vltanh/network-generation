@@ -1,0 +1,8 @@
+2026-05-07 14:30:32,615 - INFO - Starting LFR Generation...
+2026-05-07 14:30:32,615 - INFO - Seed: 1
+2026-05-07 14:30:32,740 - INFO - N=906 k=23.02207505518764 maxk=368 minc=3 maxc=78 mu=0.6215681965463778 t1=1.4511398602847603 t2=1.7218449194702876
+2026-05-07 14:30:32,741 - INFO - Input loading + parameter computation elapsed: 0.1254 seconds
+2026-05-07 14:30:34,220 - INFO - Generation elapsed: 1.4790 seconds
+2026-05-07 14:30:34,243 - INFO - simplify_edges: dropped 10352 self-loops / parallel edges from edge.csv
+2026-05-07 14:30:34,251 - INFO - Export elapsed: 0.0314 seconds
+2026-05-07 14:30:34,251 - INFO - LFR generation complete.

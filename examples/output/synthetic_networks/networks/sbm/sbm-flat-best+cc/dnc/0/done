@@ -1,0 +1,6 @@
+60e57ada6fc438cb448fb65c542cfd827a4509e4a5c9a13faa9d83c366d6bf76  /home/vltanh/Documents/netsci-research/network-generation/examples/input/empirical_networks/networks/dnc/dnc.csv
+d4276aa63a9cde3e5ce36a129d4c4a00af02cbf3a2d652333e028b5ddedf714f  /home/vltanh/Documents/netsci-research/network-generation/examples/input/reference_clusterings/clusterings/sbm-flat-best+cc/dnc/com.csv
+ad5f190a6430dc5d51b11045e32305c1928438c32cb4edcd7979ff3b62233030  /home/vltanh/Documents/netsci-research/network-generation/examples/output/synthetic_networks/networks/sbm/sbm-flat-best+cc/dnc/0/params.txt
+c1275b06dc0bf13623ad9e61d8ff42d044ec37ee68d998ee611feddc82ae4f14  /home/vltanh/Documents/netsci-research/network-generation/examples/output/synthetic_networks/networks/sbm/sbm-flat-best+cc/dnc/0/edge.csv
+d4276aa63a9cde3e5ce36a129d4c4a00af02cbf3a2d652333e028b5ddedf714f  /home/vltanh/Documents/netsci-research/network-generation/examples/output/synthetic_networks/networks/sbm/sbm-flat-best+cc/dnc/0/com.csv
+2289e56fde4c40a13c2e5fcd6fb9b1029fa04e4a23d6d177c7837be937b500b3  /home/vltanh/Documents/netsci-research/network-generation/examples/output/synthetic_networks/networks/sbm/sbm-flat-best+cc/dnc/0/sources.json

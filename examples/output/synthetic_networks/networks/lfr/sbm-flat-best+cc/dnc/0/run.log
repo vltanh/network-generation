@@ -1,0 +1,71 @@
+=== Invocation 2026-05-07T19:30:31Z | seed=1 | keep_state=1 | pid=2396309 | host=nah-popos ===
+=== [Stage 1 (profile)] /home/vltanh/Documents/netsci-research/network-generation/examples/output/synthetic_networks/networks/lfr/sbm-flat-best+cc/dnc/0/.state/setup/time_and_err.log ===
+[Stage 1 (profile)] === 2026-05-07T19:30:31Z | pid=2396309 | host=nah-popos | EXECUTED ===
+[Stage 1 (profile)] 	Command being timed: "python /home/vltanh/Documents/netsci-research/network-generation/src/lfr/profile.py --edgelist /home/vltanh/Documents/netsci-research/network-generation/examples/input/empirical_networks/networks/dnc/dnc.csv --clustering /home/vltanh/Documents/netsci-research/network-generation/examples/input/reference_clusterings/clusterings/sbm-flat-best+cc/dnc/com.csv --output-folder /home/vltanh/Documents/netsci-research/network-generation/examples/output/synthetic_networks/networks/lfr/sbm-flat-best+cc/dnc/0/.state/setup --params-file /home/vltanh/Documents/netsci-research/network-generation/examples/output/synthetic_networks/networks/lfr/sbm-flat-best+cc/dnc/0/.state/setup/params.txt"
+[Stage 1 (profile)] 	User time (seconds): 0.36
+[Stage 1 (profile)] 	System time (seconds): 0.05
+[Stage 1 (profile)] 	Percent of CPU this job got: 98%
+[Stage 1 (profile)] 	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:00.42
+[Stage 1 (profile)] 	Average shared text size (kbytes): 0
+[Stage 1 (profile)] 	Average unshared data size (kbytes): 0
+[Stage 1 (profile)] 	Average stack size (kbytes): 0
+[Stage 1 (profile)] 	Average total size (kbytes): 0
+[Stage 1 (profile)] 	Maximum resident set size (kbytes): 86452
+[Stage 1 (profile)] 	Average resident set size (kbytes): 0
+[Stage 1 (profile)] 	Major (requiring I/O) page faults: 0
+[Stage 1 (profile)] 	Minor (reclaiming a frame) page faults: 13841
+[Stage 1 (profile)] 	Voluntary context switches: 21
+[Stage 1 (profile)] 	Involuntary context switches: 113
+[Stage 1 (profile)] 	Swaps: 0
+[Stage 1 (profile)] 	File system inputs: 0
+[Stage 1 (profile)] 	File system outputs: 32
+[Stage 1 (profile)] 	Socket messages sent: 0
+[Stage 1 (profile)] 	Socket messages received: 0
+[Stage 1 (profile)] 	Signals delivered: 0
+[Stage 1 (profile)] 	Page size (bytes): 4096
+[Stage 1 (profile)] 	Exit status: 0
+[Stage 1 (profile)] === exit=0 ===
+
+=== [Stage 1 (profile)] /home/vltanh/Documents/netsci-research/network-generation/examples/output/synthetic_networks/networks/lfr/sbm-flat-best+cc/dnc/0/.state/setup/run.log ===
+[Stage 1 (profile)] 2026-05-07 14:30:31,484 - INFO - Input reading elapsed: 0.0176 seconds
+[Stage 1 (profile)] 2026-05-07 14:30:31,484 - INFO - Outlier transform elapsed: 0.0002 seconds
+[Stage 1 (profile)] 2026-05-07 14:30:31,485 - INFO - Mappings computation elapsed: 0.0008 seconds
+[Stage 1 (profile)] 2026-05-07 14:30:31,491 - INFO - Outputs export elapsed: 0.0063 seconds
+
+=== [Stage 2 (gen)] /home/vltanh/Documents/netsci-research/network-generation/examples/output/synthetic_networks/networks/lfr/sbm-flat-best+cc/dnc/0/.state/gen/time_and_err.log ===
+[Stage 2 (gen)] === 2026-05-07T19:30:31Z | pid=2396309 | host=nah-popos | EXECUTED ===
+[Stage 2 (gen)] 	Command being timed: "python /home/vltanh/Documents/netsci-research/network-generation/src/lfr/gen.py --degree /home/vltanh/Documents/netsci-research/network-generation/examples/output/synthetic_networks/networks/lfr/sbm-flat-best+cc/dnc/0/.state/setup/degree.csv --cluster-sizes /home/vltanh/Documents/netsci-research/network-generation/examples/output/synthetic_networks/networks/lfr/sbm-flat-best+cc/dnc/0/.state/setup/cluster_sizes.csv --mixing-parameter /home/vltanh/Documents/netsci-research/network-generation/examples/output/synthetic_networks/networks/lfr/sbm-flat-best+cc/dnc/0/.state/setup/mixing_parameter.txt --lfr-binary /home/vltanh/Documents/netsci-research/network-generation/externals/lfr/unweighted_undirected/benchmark --output-folder /home/vltanh/Documents/netsci-research/network-generation/examples/output/synthetic_networks/networks/lfr/sbm-flat-best+cc/dnc/0/.state/gen --seed 1"
+[Stage 2 (gen)] 	User time (seconds): 2.70
+[Stage 2 (gen)] 	System time (seconds): 0.11
+[Stage 2 (gen)] 	Percent of CPU this job got: 98%
+[Stage 2 (gen)] 	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:02.85
+[Stage 2 (gen)] 	Average shared text size (kbytes): 0
+[Stage 2 (gen)] 	Average unshared data size (kbytes): 0
+[Stage 2 (gen)] 	Average stack size (kbytes): 0
+[Stage 2 (gen)] 	Average total size (kbytes): 0
+[Stage 2 (gen)] 	Maximum resident set size (kbytes): 145476
+[Stage 2 (gen)] 	Average resident set size (kbytes): 0
+[Stage 2 (gen)] 	Major (requiring I/O) page faults: 0
+[Stage 2 (gen)] 	Minor (reclaiming a frame) page faults: 27552
+[Stage 2 (gen)] 	Voluntary context switches: 25
+[Stage 2 (gen)] 	Involuntary context switches: 448
+[Stage 2 (gen)] 	Swaps: 0
+[Stage 2 (gen)] 	File system inputs: 0
+[Stage 2 (gen)] 	File system outputs: 560
+[Stage 2 (gen)] 	Socket messages sent: 0
+[Stage 2 (gen)] 	Socket messages received: 0
+[Stage 2 (gen)] 	Signals delivered: 0
+[Stage 2 (gen)] 	Page size (bytes): 4096
+[Stage 2 (gen)] 	Exit status: 0
+[Stage 2 (gen)] === exit=0 ===
+
+=== [Stage 2 (gen)] /home/vltanh/Documents/netsci-research/network-generation/examples/output/synthetic_networks/networks/lfr/sbm-flat-best+cc/dnc/0/.state/gen/run.log ===
+[Stage 2 (gen)] 2026-05-07 14:30:32,615 - INFO - Starting LFR Generation...
+[Stage 2 (gen)] 2026-05-07 14:30:32,615 - INFO - Seed: 1
+[Stage 2 (gen)] 2026-05-07 14:30:32,740 - INFO - N=906 k=23.02207505518764 maxk=368 minc=3 maxc=78 mu=0.6215681965463778 t1=1.4511398602847603 t2=1.7218449194702876
+[Stage 2 (gen)] 2026-05-07 14:30:32,741 - INFO - Input loading + parameter computation elapsed: 0.1254 seconds
+[Stage 2 (gen)] 2026-05-07 14:30:34,220 - INFO - Generation elapsed: 1.4790 seconds
+[Stage 2 (gen)] 2026-05-07 14:30:34,243 - INFO - simplify_edges: dropped 10352 self-loops / parallel edges from edge.csv
+[Stage 2 (gen)] 2026-05-07 14:30:34,251 - INFO - Export elapsed: 0.0314 seconds
+[Stage 2 (gen)] 2026-05-07 14:30:34,251 - INFO - LFR generation complete.
+

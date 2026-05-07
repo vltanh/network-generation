@@ -1,0 +1,1043 @@
+2026-05-07 14:30:44,404 - INFO - Starting nPSO Generation...
+2026-05-07 14:30:44,404 - INFO - Seed: 1 n_threads: 1 model: nPSO2
+2026-05-07 14:30:44,405 - INFO - N=906 m=12 gamma=2.0 c=374 target_ccoeff=0.5482011904886444 mixing_proportions=[0.08609271523178808, 0.08388520971302428, 0.06070640176600441, 0.05187637969094923, 0.039735099337748346, 0.026490066225165563, 0.023178807947019868, 0.023178807947019868, 0.017660044150110375, 0.017660044150110375, 0.016556291390728478, 0.01434878587196468, 0.011037527593818985, 0.011037527593818985, 0.011037527593818985, 0.008830022075055188, 0.008830022075055188, 0.00772626931567329, 0.00772626931567329, 0.00772626931567329, 0.00772626931567329, 0.006622516556291391, 0.005518763796909493, 0.004415011037527594, 0.004415011037527594, 0.0033112582781456954, 0.0033112582781456954, 0.0033112582781456954, 0.0033112582781456954, 0.0033112582781456954, 0.0033112582781456954, 0.002207505518763797, 0.002207505518763797, 0.002207505518763797, 0.002207505518763797, 0.002207505518763797, 0.002207505518763797, 0.002207505518763797, 0.002207505518763797, 0.002207505518763797, 0.002207505518763797, 0.002207505518763797, 0.002207505518763797, 0.002207505518763797, 0.002207505518763797, 0.002207505518763797, 0.002207505518763797, 0.002207505518763797, 0.002207505518763797, 0.002207505518763797, 0.002207505518763797, 0.002207505518763797, 0.002207505518763797, 0.002207505518763797, 0.002207505518763797, 0.002207505518763797, 0.002207505518763797, 0.002207505518763797, 0.002207505518763797, 0.002207505518763797, 0.002207505518763797, 0.002207505518763797, 0.002207505518763797, 0.002207505518763797, 0.002207505518763797, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985, 0.0011037527593818985]
+2026-05-07 14:30:44,406 - INFO - Starting persistent MATLAB engine session...
+2026-05-07 14:30:50,322 - INFO - [iter 0] (secant) T=0.5
+2026-05-07 14:30:52,382 - INFO - Generation elapsed: 2.0595 seconds
+2026-05-07 14:30:52,382 - INFO - Global clustering coefficient: 0.09931738260396679
+2026-05-07 14:30:52,383 - INFO - Step: 2.0  Best T: 0.5  Best ccoeff: 0.09931738260396679  Best diff: 0.4488838078846776
+2026-05-07 14:30:52,383 - INFO - [iter 1] (secant) T=0.25
+2026-05-07 14:30:54,007 - INFO - Generation elapsed: 1.6245 seconds
+2026-05-07 14:30:54,008 - INFO - Global clustering coefficient: 0.10001619761978309
+2026-05-07 14:30:54,008 - INFO - Step: 0.0006988150158162981  Best T: 0.25  Best ccoeff: 0.10001619761978309  Best diff: 0.44818499286886126
+2026-05-07 14:30:54,008 - INFO - [iter 2] (secant) T=0.125
+2026-05-07 14:30:55,249 - INFO - Generation elapsed: 1.2413 seconds
+2026-05-07 14:30:55,250 - INFO - Global clustering coefficient: 0.101897149778761
+2026-05-07 14:30:55,250 - INFO - Step: 0.0018809521589779193  Best T: 0.125  Best ccoeff: 0.101897149778761  Best diff: 0.44630404070988333
+2026-05-07 14:30:55,250 - INFO - [iter 3] (secant) T=0.0625
+2026-05-07 14:30:56,692 - INFO - Generation elapsed: 1.4420 seconds
+2026-05-07 14:30:56,693 - INFO - Global clustering coefficient: 0.10277290956893348
+2026-05-07 14:30:56,693 - INFO - Step: 0.0008757597901724729  Best T: 0.0625  Best ccoeff: 0.10277290956893348  Best diff: 0.4454282809197109
+2026-05-07 14:30:56,693 - INFO - [iter 4] (secant) T=0.03125
+2026-05-07 14:30:58,446 - INFO - Generation elapsed: 1.7528 seconds
+2026-05-07 14:30:58,446 - INFO - Global clustering coefficient: 0.10014067443121066
+2026-05-07 14:30:58,446 - INFO - Step: 0.002632235137722816  Best T: 0.0625  Best ccoeff: 0.10277290956893348  Best diff: 0.4454282809197109
+2026-05-07 14:30:58,447 - INFO - [iter 5] (secant) T=0.015625
+2026-05-07 14:31:00,213 - INFO - Generation elapsed: 1.7665 seconds
+2026-05-07 14:31:00,213 - INFO - Global clustering coefficient: 0.10640080108053242
+2026-05-07 14:31:00,214 - INFO - Step: 0.006260126649321754  Best T: 0.015625  Best ccoeff: 0.10640080108053242  Best diff: 0.44180038940811195
+2026-05-07 14:31:00,214 - INFO - [iter 6] (secant) T=0.0078125
+2026-05-07 14:31:01,519 - INFO - Generation elapsed: 1.3054 seconds
+2026-05-07 14:31:01,519 - INFO - Global clustering coefficient: 0.10484013969619521
+2026-05-07 14:31:01,520 - INFO - Step: 0.0015606613843372058  Best T: 0.015625  Best ccoeff: 0.10640080108053242  Best diff: 0.44180038940811195
+2026-05-07 14:31:01,520 - INFO - [iter 7] (secant) T=0.00390625
+2026-05-07 14:31:02,713 - INFO - Generation elapsed: 1.1935 seconds
+2026-05-07 14:31:02,713 - INFO - Global clustering coefficient: 0.10683620329679507
+2026-05-07 14:31:02,714 - INFO - Step: 0.001996063600599854  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:02,714 - INFO - [iter 8] (secant) T=0.001953125
+2026-05-07 14:31:04,148 - INFO - Generation elapsed: 1.4342 seconds
+2026-05-07 14:31:04,148 - INFO - Global clustering coefficient: 0.10293122078798456
+2026-05-07 14:31:04,149 - INFO - Step: 0.003904982508810509  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:04,149 - INFO - [iter 9] (secant) T=0.0009765625
+2026-05-07 14:31:04,290 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:04,293 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:04,293 - INFO - Generation elapsed: 0.1445 seconds
+2026-05-07 14:31:04,294 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:04,294 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:04,294 - INFO - [iter 10] (secant) T=0.0009765625
+2026-05-07 14:31:04,347 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:04,350 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:04,350 - INFO - Generation elapsed: 0.0561 seconds
+2026-05-07 14:31:04,350 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:04,350 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:04,350 - INFO - [iter 11] (secant) T=0.0009765625
+2026-05-07 14:31:04,375 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:04,379 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:04,379 - INFO - Generation elapsed: 0.0287 seconds
+2026-05-07 14:31:04,379 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:04,379 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:04,379 - INFO - [iter 12] (secant) T=0.0009765625
+2026-05-07 14:31:04,414 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:04,416 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:04,417 - INFO - Generation elapsed: 0.0377 seconds
+2026-05-07 14:31:04,417 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:04,417 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:04,417 - INFO - [iter 13] (secant) T=0.0009765625
+2026-05-07 14:31:04,437 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:04,440 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:04,441 - INFO - Generation elapsed: 0.0239 seconds
+2026-05-07 14:31:04,441 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:04,441 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:04,441 - INFO - [iter 14] (secant) T=0.0009765625
+2026-05-07 14:31:04,470 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:04,473 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:04,474 - INFO - Generation elapsed: 0.0328 seconds
+2026-05-07 14:31:04,474 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:04,474 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:04,474 - INFO - [iter 15] (secant) T=0.0009765625
+2026-05-07 14:31:04,512 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:04,515 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:04,515 - INFO - Generation elapsed: 0.0411 seconds
+2026-05-07 14:31:04,515 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:04,515 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:04,515 - INFO - [iter 16] (secant) T=0.0009765625
+2026-05-07 14:31:04,545 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:04,548 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:04,549 - INFO - Generation elapsed: 0.0335 seconds
+2026-05-07 14:31:04,549 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:04,549 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:04,549 - INFO - [iter 17] (secant) T=0.0009765625
+2026-05-07 14:31:04,586 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:04,588 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:04,588 - INFO - Generation elapsed: 0.0393 seconds
+2026-05-07 14:31:04,588 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:04,588 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:04,588 - INFO - [iter 18] (secant) T=0.0009765625
+2026-05-07 14:31:04,624 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:04,627 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:04,627 - INFO - Generation elapsed: 0.0392 seconds
+2026-05-07 14:31:04,627 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:04,627 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:04,628 - INFO - [iter 19] (secant) T=0.0009765625
+2026-05-07 14:31:04,647 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:04,650 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:04,650 - INFO - Generation elapsed: 0.0220 seconds
+2026-05-07 14:31:04,650 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:04,650 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:04,650 - INFO - [iter 20] (secant) T=0.0009765625
+2026-05-07 14:31:04,676 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:04,678 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:04,678 - INFO - Generation elapsed: 0.0282 seconds
+2026-05-07 14:31:04,678 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:04,678 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:04,678 - INFO - [iter 21] (secant) T=0.0009765625
+2026-05-07 14:31:04,701 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:04,704 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:04,704 - INFO - Generation elapsed: 0.0259 seconds
+2026-05-07 14:31:04,704 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:04,704 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:04,704 - INFO - [iter 22] (secant) T=0.0009765625
+2026-05-07 14:31:04,738 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:04,741 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:04,741 - INFO - Generation elapsed: 0.0368 seconds
+2026-05-07 14:31:04,741 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:04,741 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:04,741 - INFO - [iter 23] (secant) T=0.0009765625
+2026-05-07 14:31:04,789 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:04,792 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:04,793 - INFO - Generation elapsed: 0.0514 seconds
+2026-05-07 14:31:04,796 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:04,796 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:04,796 - INFO - [iter 24] (secant) T=0.0009765625
+2026-05-07 14:31:04,821 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:04,823 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:04,823 - INFO - Generation elapsed: 0.0271 seconds
+2026-05-07 14:31:04,823 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:04,823 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:04,824 - INFO - [iter 25] (secant) T=0.0009765625
+2026-05-07 14:31:04,848 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:04,851 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:04,851 - INFO - Generation elapsed: 0.0273 seconds
+2026-05-07 14:31:04,851 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:04,851 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:04,851 - INFO - [iter 26] (secant) T=0.0009765625
+2026-05-07 14:31:04,868 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:04,870 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:04,870 - INFO - Generation elapsed: 0.0188 seconds
+2026-05-07 14:31:04,870 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:04,870 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:04,870 - INFO - [iter 27] (secant) T=0.0009765625
+2026-05-07 14:31:04,885 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:04,887 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:04,887 - INFO - Generation elapsed: 0.0174 seconds
+2026-05-07 14:31:04,887 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:04,888 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:04,888 - INFO - [iter 28] (secant) T=0.0009765625
+2026-05-07 14:31:04,909 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:04,911 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:04,911 - INFO - Generation elapsed: 0.0239 seconds
+2026-05-07 14:31:04,912 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:04,912 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:04,912 - INFO - [iter 29] (secant) T=0.0009765625
+2026-05-07 14:31:04,984 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:04,987 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:04,987 - INFO - Generation elapsed: 0.0750 seconds
+2026-05-07 14:31:04,987 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:04,987 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:04,987 - INFO - [iter 30] (secant) T=0.0009765625
+2026-05-07 14:31:05,126 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:05,128 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:05,128 - INFO - Generation elapsed: 0.1413 seconds
+2026-05-07 14:31:05,128 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:05,128 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:05,128 - INFO - [iter 31] (secant) T=0.0009765625
+2026-05-07 14:31:05,284 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:05,287 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:05,287 - INFO - Generation elapsed: 0.1589 seconds
+2026-05-07 14:31:05,287 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:05,287 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:05,287 - INFO - [iter 32] (secant) T=0.0009765625
+2026-05-07 14:31:05,335 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:05,337 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:05,337 - INFO - Generation elapsed: 0.0498 seconds
+2026-05-07 14:31:05,337 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:05,337 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:05,337 - INFO - [iter 33] (secant) T=0.0009765625
+2026-05-07 14:31:05,428 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:05,432 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:05,432 - INFO - Generation elapsed: 0.0944 seconds
+2026-05-07 14:31:05,432 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:05,432 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:05,432 - INFO - [iter 34] (secant) T=0.0009765625
+2026-05-07 14:31:05,474 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:05,477 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:05,477 - INFO - Generation elapsed: 0.0454 seconds
+2026-05-07 14:31:05,477 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:05,477 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:05,477 - INFO - [iter 35] (secant) T=0.0009765625
+2026-05-07 14:31:05,498 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:05,500 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:05,500 - INFO - Generation elapsed: 0.0226 seconds
+2026-05-07 14:31:05,500 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:05,500 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:05,500 - INFO - [iter 36] (secant) T=0.0009765625
+2026-05-07 14:31:05,553 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:05,557 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:05,557 - INFO - Generation elapsed: 0.0567 seconds
+2026-05-07 14:31:05,557 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:05,557 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:05,557 - INFO - [iter 37] (secant) T=0.0009765625
+2026-05-07 14:31:05,615 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:05,618 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:05,618 - INFO - Generation elapsed: 0.0611 seconds
+2026-05-07 14:31:05,618 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:05,618 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:05,618 - INFO - [iter 38] (secant) T=0.0009765625
+2026-05-07 14:31:05,657 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:05,661 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:05,661 - INFO - Generation elapsed: 0.0423 seconds
+2026-05-07 14:31:05,661 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:05,661 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:05,661 - INFO - [iter 39] (secant) T=0.0009765625
+2026-05-07 14:31:05,704 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:05,707 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:05,707 - INFO - Generation elapsed: 0.0462 seconds
+2026-05-07 14:31:05,707 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:05,707 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:05,707 - INFO - [iter 40] (secant) T=0.0009765625
+2026-05-07 14:31:05,750 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:05,753 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:05,754 - INFO - Generation elapsed: 0.0462 seconds
+2026-05-07 14:31:05,754 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:05,754 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:05,754 - INFO - [iter 41] (secant) T=0.0009765625
+2026-05-07 14:31:05,791 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:05,794 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:05,794 - INFO - Generation elapsed: 0.0404 seconds
+2026-05-07 14:31:05,794 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:05,794 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:05,794 - INFO - [iter 42] (secant) T=0.0009765625
+2026-05-07 14:31:05,910 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:05,913 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:05,913 - INFO - Generation elapsed: 0.1190 seconds
+2026-05-07 14:31:05,913 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:05,914 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:05,914 - INFO - [iter 43] (secant) T=0.0009765625
+2026-05-07 14:31:06,020 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:06,024 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:06,024 - INFO - Generation elapsed: 0.1102 seconds
+2026-05-07 14:31:06,024 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:06,024 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:06,024 - INFO - [iter 44] (secant) T=0.0009765625
+2026-05-07 14:31:06,127 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:06,131 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:06,131 - INFO - Generation elapsed: 0.1069 seconds
+2026-05-07 14:31:06,131 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:06,131 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:06,131 - INFO - [iter 45] (secant) T=0.0009765625
+2026-05-07 14:31:06,159 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:06,161 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:06,161 - INFO - Generation elapsed: 0.0302 seconds
+2026-05-07 14:31:06,162 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:06,162 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:06,162 - INFO - [iter 46] (secant) T=0.0009765625
+2026-05-07 14:31:06,184 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:06,187 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:06,187 - INFO - Generation elapsed: 0.0252 seconds
+2026-05-07 14:31:06,187 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:06,187 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:06,187 - INFO - [iter 47] (secant) T=0.0009765625
+2026-05-07 14:31:06,220 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:06,222 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:06,222 - INFO - Generation elapsed: 0.0354 seconds
+2026-05-07 14:31:06,223 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:06,223 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:06,223 - INFO - [iter 48] (secant) T=0.0009765625
+2026-05-07 14:31:06,239 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:06,241 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:06,242 - INFO - Generation elapsed: 0.0189 seconds
+2026-05-07 14:31:06,242 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:06,242 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:06,242 - INFO - [iter 49] (secant) T=0.0009765625
+2026-05-07 14:31:06,285 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:06,288 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:06,288 - INFO - Generation elapsed: 0.0466 seconds
+2026-05-07 14:31:06,288 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:06,288 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:06,289 - INFO - [iter 50] (secant) T=0.0009765625
+2026-05-07 14:31:06,350 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:06,353 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:06,354 - INFO - Generation elapsed: 0.0649 seconds
+2026-05-07 14:31:06,354 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:06,354 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:06,354 - INFO - [iter 51] (secant) T=0.0009765625
+2026-05-07 14:31:06,380 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:06,383 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:06,383 - INFO - Generation elapsed: 0.0290 seconds
+2026-05-07 14:31:06,383 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:06,383 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:06,383 - INFO - [iter 52] (secant) T=0.0009765625
+2026-05-07 14:31:06,418 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:06,421 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:06,421 - INFO - Generation elapsed: 0.0383 seconds
+2026-05-07 14:31:06,421 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:06,421 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:06,421 - INFO - [iter 53] (secant) T=0.0009765625
+2026-05-07 14:31:06,506 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:06,509 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:06,509 - INFO - Generation elapsed: 0.0873 seconds
+2026-05-07 14:31:06,509 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:06,509 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:06,509 - INFO - [iter 54] (secant) T=0.0009765625
+2026-05-07 14:31:06,525 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:06,528 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:06,529 - INFO - Generation elapsed: 0.0198 seconds
+2026-05-07 14:31:06,529 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:06,529 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:06,529 - INFO - [iter 55] (secant) T=0.0009765625
+2026-05-07 14:31:06,549 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:06,552 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:06,552 - INFO - Generation elapsed: 0.0230 seconds
+2026-05-07 14:31:06,552 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:06,552 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:06,552 - INFO - [iter 56] (secant) T=0.0009765625
+2026-05-07 14:31:06,603 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:06,606 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:06,606 - INFO - Generation elapsed: 0.0542 seconds
+2026-05-07 14:31:06,606 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:06,606 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:06,606 - INFO - [iter 57] (secant) T=0.0009765625
+2026-05-07 14:31:06,625 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:06,627 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:06,627 - INFO - Generation elapsed: 0.0209 seconds
+2026-05-07 14:31:06,627 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:06,627 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:06,627 - INFO - [iter 58] (secant) T=0.0009765625
+2026-05-07 14:31:06,642 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:06,644 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:06,645 - INFO - Generation elapsed: 0.0172 seconds
+2026-05-07 14:31:06,645 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:06,645 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:06,645 - INFO - [iter 59] (secant) T=0.0009765625
+2026-05-07 14:31:06,664 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:06,666 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:06,666 - INFO - Generation elapsed: 0.0217 seconds
+2026-05-07 14:31:06,666 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:06,666 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:06,666 - INFO - [iter 60] (secant) T=0.0009765625
+2026-05-07 14:31:06,687 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:06,690 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:06,690 - INFO - Generation elapsed: 0.0233 seconds
+2026-05-07 14:31:06,690 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:06,690 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:06,690 - INFO - [iter 61] (secant) T=0.0009765625
+2026-05-07 14:31:06,724 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:06,726 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:06,726 - INFO - Generation elapsed: 0.0362 seconds
+2026-05-07 14:31:06,726 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:06,726 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:06,726 - INFO - [iter 62] (secant) T=0.0009765625
+2026-05-07 14:31:06,775 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:06,779 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:06,779 - INFO - Generation elapsed: 0.0523 seconds
+2026-05-07 14:31:06,779 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:06,779 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:06,779 - INFO - [iter 63] (secant) T=0.0009765625
+2026-05-07 14:31:06,816 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:06,819 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:06,819 - INFO - Generation elapsed: 0.0402 seconds
+2026-05-07 14:31:06,819 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:06,819 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:06,819 - INFO - [iter 64] (secant) T=0.0009765625
+2026-05-07 14:31:06,851 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:06,855 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:06,855 - INFO - Generation elapsed: 0.0353 seconds
+2026-05-07 14:31:06,855 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:06,855 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:06,855 - INFO - [iter 65] (secant) T=0.0009765625
+2026-05-07 14:31:06,884 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:06,887 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:06,887 - INFO - Generation elapsed: 0.0321 seconds
+2026-05-07 14:31:06,887 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:06,887 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:06,887 - INFO - [iter 66] (secant) T=0.0009765625
+2026-05-07 14:31:06,906 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:06,908 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:06,908 - INFO - Generation elapsed: 0.0213 seconds
+2026-05-07 14:31:06,908 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:06,908 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:06,908 - INFO - [iter 67] (secant) T=0.0009765625
+2026-05-07 14:31:06,933 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:06,936 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:06,937 - INFO - Generation elapsed: 0.0280 seconds
+2026-05-07 14:31:06,937 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:06,937 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:06,937 - INFO - [iter 68] (secant) T=0.0009765625
+2026-05-07 14:31:06,960 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:06,964 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:06,964 - INFO - Generation elapsed: 0.0273 seconds
+2026-05-07 14:31:06,964 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:06,964 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:06,964 - INFO - [iter 69] (secant) T=0.0009765625
+2026-05-07 14:31:06,997 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:07,000 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:07,000 - INFO - Generation elapsed: 0.0363 seconds
+2026-05-07 14:31:07,001 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:07,001 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:07,001 - INFO - [iter 70] (secant) T=0.0009765625
+2026-05-07 14:31:07,044 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:07,048 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:07,048 - INFO - Generation elapsed: 0.0469 seconds
+2026-05-07 14:31:07,048 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:07,048 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:07,048 - INFO - [iter 71] (secant) T=0.0009765625
+2026-05-07 14:31:07,121 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:07,124 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:07,124 - INFO - Generation elapsed: 0.0763 seconds
+2026-05-07 14:31:07,124 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:07,124 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:07,124 - INFO - [iter 72] (secant) T=0.0009765625
+2026-05-07 14:31:07,207 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:07,211 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:07,211 - INFO - Generation elapsed: 0.0866 seconds
+2026-05-07 14:31:07,211 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:07,211 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:07,211 - INFO - [iter 73] (secant) T=0.0009765625
+2026-05-07 14:31:07,250 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:07,253 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:07,253 - INFO - Generation elapsed: 0.0420 seconds
+2026-05-07 14:31:07,253 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:07,253 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:07,253 - INFO - [iter 74] (secant) T=0.0009765625
+2026-05-07 14:31:07,302 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:07,306 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:07,306 - INFO - Generation elapsed: 0.0526 seconds
+2026-05-07 14:31:07,306 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:07,306 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:07,306 - INFO - [iter 75] (secant) T=0.0009765625
+2026-05-07 14:31:07,327 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:07,330 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:07,330 - INFO - Generation elapsed: 0.0243 seconds
+2026-05-07 14:31:07,330 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:07,331 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:07,331 - INFO - [iter 76] (secant) T=0.0009765625
+2026-05-07 14:31:07,357 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:07,361 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:07,361 - INFO - Generation elapsed: 0.0303 seconds
+2026-05-07 14:31:07,361 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:07,361 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:07,361 - INFO - [iter 77] (secant) T=0.0009765625
+2026-05-07 14:31:07,387 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:07,391 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:07,391 - INFO - Generation elapsed: 0.0298 seconds
+2026-05-07 14:31:07,391 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:07,391 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:07,391 - INFO - [iter 78] (secant) T=0.0009765625
+2026-05-07 14:31:07,452 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:07,455 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:07,455 - INFO - Generation elapsed: 0.0644 seconds
+2026-05-07 14:31:07,456 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:07,456 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:07,456 - INFO - [iter 79] (secant) T=0.0009765625
+2026-05-07 14:31:07,499 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:07,502 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:07,502 - INFO - Generation elapsed: 0.0464 seconds
+2026-05-07 14:31:07,502 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:07,502 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:07,502 - INFO - [iter 80] (secant) T=0.0009765625
+2026-05-07 14:31:07,546 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:07,549 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:07,550 - INFO - Generation elapsed: 0.0473 seconds
+2026-05-07 14:31:07,550 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:07,550 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:07,550 - INFO - [iter 81] (secant) T=0.0009765625
+2026-05-07 14:31:07,634 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:07,637 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:07,637 - INFO - Generation elapsed: 0.0875 seconds
+2026-05-07 14:31:07,637 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:07,637 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:07,637 - INFO - [iter 82] (secant) T=0.0009765625
+2026-05-07 14:31:07,728 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:07,730 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:07,730 - INFO - Generation elapsed: 0.0927 seconds
+2026-05-07 14:31:07,730 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:07,730 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:07,730 - INFO - [iter 83] (secant) T=0.0009765625
+2026-05-07 14:31:07,758 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:07,761 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:07,761 - INFO - Generation elapsed: 0.0305 seconds
+2026-05-07 14:31:07,761 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:07,761 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:07,761 - INFO - [iter 84] (secant) T=0.0009765625
+2026-05-07 14:31:07,786 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:07,789 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:07,789 - INFO - Generation elapsed: 0.0283 seconds
+2026-05-07 14:31:07,789 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:07,789 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:07,790 - INFO - [iter 85] (secant) T=0.0009765625
+2026-05-07 14:31:07,822 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:07,825 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:07,825 - INFO - Generation elapsed: 0.0359 seconds
+2026-05-07 14:31:07,825 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:07,826 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:07,826 - INFO - [iter 86] (secant) T=0.0009765625
+2026-05-07 14:31:07,885 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:07,889 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:07,889 - INFO - Generation elapsed: 0.0630 seconds
+2026-05-07 14:31:07,889 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:07,889 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:07,889 - INFO - [iter 87] (secant) T=0.0009765625
+2026-05-07 14:31:07,917 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:07,921 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:07,921 - INFO - Generation elapsed: 0.0318 seconds
+2026-05-07 14:31:07,921 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:07,921 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:07,921 - INFO - [iter 88] (secant) T=0.0009765625
+2026-05-07 14:31:07,980 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:07,983 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:07,983 - INFO - Generation elapsed: 0.0622 seconds
+2026-05-07 14:31:07,983 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:07,983 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:07,983 - INFO - [iter 89] (secant) T=0.0009765625
+2026-05-07 14:31:08,005 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:08,008 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:08,008 - INFO - Generation elapsed: 0.0247 seconds
+2026-05-07 14:31:08,008 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:08,008 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:08,008 - INFO - [iter 90] (secant) T=0.0009765625
+2026-05-07 14:31:08,076 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:08,079 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:08,079 - INFO - Generation elapsed: 0.0710 seconds
+2026-05-07 14:31:08,079 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:08,079 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:08,079 - INFO - [iter 91] (secant) T=0.0009765625
+2026-05-07 14:31:08,112 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:08,115 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:08,115 - INFO - Generation elapsed: 0.0356 seconds
+2026-05-07 14:31:08,115 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:08,115 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:08,115 - INFO - [iter 92] (secant) T=0.0009765625
+2026-05-07 14:31:08,150 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:08,153 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:08,153 - INFO - Generation elapsed: 0.0378 seconds
+2026-05-07 14:31:08,153 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:08,153 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:08,153 - INFO - [iter 93] (secant) T=0.0009765625
+2026-05-07 14:31:08,182 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:08,185 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:08,185 - INFO - Generation elapsed: 0.0319 seconds
+2026-05-07 14:31:08,185 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:08,185 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:08,185 - INFO - [iter 94] (secant) T=0.0009765625
+2026-05-07 14:31:08,212 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:08,214 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:08,214 - INFO - Generation elapsed: 0.0289 seconds
+2026-05-07 14:31:08,214 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:08,214 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:08,214 - INFO - [iter 95] (secant) T=0.0009765625
+2026-05-07 14:31:08,261 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:08,264 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:08,264 - INFO - Generation elapsed: 0.0498 seconds
+2026-05-07 14:31:08,264 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:08,264 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:08,264 - INFO - [iter 96] (secant) T=0.0009765625
+2026-05-07 14:31:08,300 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:08,302 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:08,303 - INFO - Generation elapsed: 0.0381 seconds
+2026-05-07 14:31:08,303 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:08,303 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:08,303 - INFO - [iter 97] (secant) T=0.0009765625
+2026-05-07 14:31:08,330 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:08,333 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:08,333 - INFO - Generation elapsed: 0.0304 seconds
+2026-05-07 14:31:08,333 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:08,333 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:08,333 - INFO - [iter 98] (secant) T=0.0009765625
+2026-05-07 14:31:08,365 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:08,368 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:08,368 - INFO - Generation elapsed: 0.0345 seconds
+2026-05-07 14:31:08,368 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:08,368 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:08,368 - INFO - [iter 99] (secant) T=0.0009765625
+2026-05-07 14:31:08,395 - ERROR - MATLAB iter failed (engine): File /usr/local/MATLAB/R2024a/toolbox/stats/stats/datasample.m, line 177, in datasample
+
+  File /home/vltanh/Documents/netsci-research/network-generation/externals/npso/nPSO_model.m, line 159, in nPSO_model
+
+  File /home/vltanh/Documents/netsci-research/network-generation/src/npso/matlab/run_npso.m, line 7, in run_npso
+There must be at least K positive weights when sampling without replacement.
+2026-05-07 14:31:08,399 - ERROR - MATLAB iter failed (subprocess): unknown MATLAB failure (no TSVs produced)
+2026-05-07 14:31:08,399 - INFO - Generation elapsed: 0.0308 seconds
+2026-05-07 14:31:08,399 - ERROR - Missing MATLAB outputs at T=0.0009765625
+2026-05-07 14:31:08,399 - INFO - Step: 2.0  Best T: 0.00390625  Best ccoeff: 0.10683620329679507  Best diff: 0.4413649871918493
+2026-05-07 14:31:08,403 - INFO - Dropping 119 singleton cluster(s) from com.csv
+2026-05-07 14:31:08,417 - INFO - nPSO generation complete.

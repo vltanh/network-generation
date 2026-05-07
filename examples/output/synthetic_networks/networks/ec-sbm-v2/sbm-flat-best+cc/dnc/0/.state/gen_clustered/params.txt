@@ -1,0 +1,4 @@
+gen_clustered_method=res-deg-weighted
+gen_clustered_sbm_overlay=false
+n_threads=1
+seed=1
