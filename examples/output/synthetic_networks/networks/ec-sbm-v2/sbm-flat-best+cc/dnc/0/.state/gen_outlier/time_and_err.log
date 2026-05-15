@@ -1,19 +1,19 @@
-=== 2026-05-07T19:30:11Z | pid=2394469 | host=nah-popos | EXECUTED ===
-	Command being timed: "python /home/vltanh/Documents/netsci-research/network-generation/src/combine_edgelists.py --edgelist-1 /home/vltanh/Documents/netsci-research/network-generation/examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/gen_clustered/edge.csv --json-1 /home/vltanh/Documents/netsci-research/network-generation/examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/gen_clustered/sources.json --edgelist-2 /home/vltanh/Documents/netsci-research/network-generation/examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/gen_outlier/edges/edge_outlier.csv --json-2 /home/vltanh/Documents/netsci-research/network-generation/examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/gen_outlier/edges/sources.json --output-folder /home/vltanh/Documents/netsci-research/network-generation/examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/gen_outlier --output-filename edge.csv"
-	User time (seconds): 0.42
-	System time (seconds): 0.05
-	Percent of CPU this job got: 96%
-	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:00.50
+=== 2026-05-15T03:49:45Z | pid=1736090 | host=nah-popos | EXECUTED ===
+	Command being timed: "python /home/vltanh/Documents/netsci-research/network-generation/src/combine_edgelists.py --edgelist-1 examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/gen_clustered/edge.csv --json-1 examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/gen_clustered/sources.json --edgelist-2 examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/gen_outlier/edges/edge_outlier.csv --json-2 examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/gen_outlier/edges/sources.json --output-folder examples/output/synthetic_networks/networks/ec-sbm-v2/sbm-flat-best+cc/dnc/0/.state/gen_outlier --output-filename edge.csv"
+	User time (seconds): 0.17
+	System time (seconds): 0.02
+	Percent of CPU this job got: 99%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:00.20
 	Average shared text size (kbytes): 0
 	Average unshared data size (kbytes): 0
 	Average stack size (kbytes): 0
 	Average total size (kbytes): 0
-	Maximum resident set size (kbytes): 86484
+	Maximum resident set size (kbytes): 86152
 	Average resident set size (kbytes): 0
 	Major (requiring I/O) page faults: 0
-	Minor (reclaiming a frame) page faults: 13683
+	Minor (reclaiming a frame) page faults: 13718
 	Voluntary context switches: 22
-	Involuntary context switches: 155
+	Involuntary context switches: 82
 	Swaps: 0
 	File system inputs: 0
 	File system outputs: 136

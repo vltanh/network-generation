@@ -16,6 +16,24 @@ set -euo pipefail
 CPU_LIST="${CPU_LIST:-}"
 MEM_CAP="${MEM_CAP:-}"
 SAMPLE_INTERVAL_S="${SAMPLE_INTERVAL_S:-}"
+NW_ENV="${NW_ENV:-}"
+NW_NPSO_ENV="${NW_NPSO_ENV:-$NW_ENV}"
+
+resolve_python() {
+    local bin_dir="$1"
+    if [ -n "${bin_dir}" ] && [ -x "${bin_dir}/python" ]; then
+        printf '%s\n' "${bin_dir}/python"
+        return 0
+    fi
+    if command -v python >/dev/null 2>&1; then
+        command -v python
+        return 0
+    fi
+    return 1
+}
+
+PYTHON_BIN="$(resolve_python "${NW_ENV}" || true)"
+NPSO_PYTHON_BIN="$(resolve_python "${NW_NPSO_ENV}" || true)"
 
 probe_version() {
     # Usage: probe_version <label> <cmd...>; prints "label version" or
@@ -63,11 +81,25 @@ uname -rsm
 
 echo
 echo "=== Toolchain ==="
-probe_version "python"        python -c 'import sys; print(sys.version.split()[0])'
-probe_version "graph-tool"    python -c 'import graph_tool; print(graph_tool.__version__)'
-probe_version "numpy"         python -c 'import numpy; print(numpy.__version__)'
-probe_version "pandas"        python -c 'import pandas; print(pandas.__version__)'
-probe_version "networkit"     python -c 'import networkit; print(networkit.__version__)'
-probe_version "powerlaw"      python -c 'import powerlaw; print(powerlaw.__version__)'
-probe_version "matlab.engine" python -c 'from importlib.metadata import version; print(version("matlabengine"))'
+if [ -n "${PYTHON_BIN}" ]; then
+    probe_version "python"        "${PYTHON_BIN}" -c 'import sys; print(sys.version.split()[0])'
+    probe_version "graph-tool"    "${PYTHON_BIN}" -c 'import graph_tool; print(graph_tool.__version__)'
+    probe_version "numpy"         "${PYTHON_BIN}" -c 'import numpy; print(numpy.__version__)'
+    probe_version "pandas"        "${PYTHON_BIN}" -c 'import pandas; print(pandas.__version__)'
+    probe_version "powerlaw"      "${PYTHON_BIN}" -c 'import powerlaw; print(powerlaw.__version__)'
+else
+    echo "python missing"
+    echo "graph-tool missing"
+    echo "numpy missing"
+    echo "pandas missing"
+    echo "powerlaw missing"
+fi
+
+if [ -n "${NPSO_PYTHON_BIN}" ]; then
+    probe_version "networkit"     "${NPSO_PYTHON_BIN}" -c 'import networkit; print(networkit.__version__)'
+    probe_version "matlab.engine" "${NPSO_PYTHON_BIN}" -c 'from importlib.metadata import version; print(version("matlabengine"))'
+else
+    echo "networkit missing"
+    echo "matlab.engine missing"
+fi
 probe_version "julia"         julia --version

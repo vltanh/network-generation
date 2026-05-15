@@ -1,19 +1,19 @@
-=== 2026-05-07T19:30:02Z | pid=2393573 | host=nah-popos | EXECUTED ===
-	Command being timed: "python /home/vltanh/Documents/netsci-research/network-generation/src/combine_edgelists.py --edgelist-1 /home/vltanh/Documents/netsci-research/network-generation/examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/gen_outlier/edge.csv --json-1 /home/vltanh/Documents/netsci-research/network-generation/examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/gen_outlier/sources.json --edgelist-2 /home/vltanh/Documents/netsci-research/network-generation/examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/match_degree/edges/degree_matching_edge.csv --json-2 /home/vltanh/Documents/netsci-research/network-generation/examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/match_degree/edges/sources.json --output-folder /home/vltanh/Documents/netsci-research/network-generation/examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/match_degree --output-filename edge.csv"
-	User time (seconds): 0.44
-	System time (seconds): 0.05
-	Percent of CPU this job got: 97%
-	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:00.51
+=== 2026-05-15T03:49:40Z | pid=1735742 | host=nah-popos | EXECUTED ===
+	Command being timed: "python /home/vltanh/Documents/netsci-research/network-generation/src/combine_edgelists.py --edgelist-1 examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/gen_outlier/edge.csv --json-1 examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/gen_outlier/sources.json --edgelist-2 examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/match_degree/edges/degree_matching_edge.csv --json-2 examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/match_degree/edges/sources.json --output-folder examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/match_degree --output-filename edge.csv"
+	User time (seconds): 0.17
+	System time (seconds): 0.02
+	Percent of CPU this job got: 98%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:00.20
 	Average shared text size (kbytes): 0
 	Average unshared data size (kbytes): 0
 	Average stack size (kbytes): 0
 	Average total size (kbytes): 0
-	Maximum resident set size (kbytes): 87016
+	Maximum resident set size (kbytes): 86144
 	Average resident set size (kbytes): 0
 	Major (requiring I/O) page faults: 0
-	Minor (reclaiming a frame) page faults: 13748
-	Voluntary context switches: 21
-	Involuntary context switches: 128
+	Minor (reclaiming a frame) page faults: 13744
+	Voluntary context switches: 22
+	Involuntary context switches: 58
 	Swaps: 0
 	File system inputs: 0
 	File system outputs: 176

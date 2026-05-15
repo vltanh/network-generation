@@ -1,6 +1,6 @@
-cc4d669a143dcae0c8e6619b87abaaec96065b649a86ed25d91715b9cee7ea6a  /home/vltanh/Documents/netsci-research/network-generation/examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/gen_outlier/edge.csv
-517a77b8511a4eac51789b495bfab75deaeefe21dc1f846d7181e7cd84bb9055  /home/vltanh/Documents/netsci-research/network-generation/examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/gen_outlier/sources.json
-9e9f38ff4da06bc3af9122ea6561b30312facc3ed987e47dae4d723df55f8c82  /home/vltanh/Documents/netsci-research/network-generation/examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/match_degree/edges/degree_matching_edge.csv
-3d4fc0c605138cdaae385c38a9aecd03fbef65a4e65789c35fc9152039b93e6f  /home/vltanh/Documents/netsci-research/network-generation/examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/match_degree/edges/sources.json
-4728412f3e5fb17f9b512d979e898eb0022c2df0ac47b6bee15e1c0b9d3b4dd1  /home/vltanh/Documents/netsci-research/network-generation/examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/edge.csv
-de75ca8ac788c9becd16a4a6d92e64e191b2badead2c1f93a6670a1b2da6b055  /home/vltanh/Documents/netsci-research/network-generation/examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/sources.json
+d0a3f8fa3239e64a0abbb5ac6571edd96f00de80ee9479a11548eb8a0f1d7bdb  examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/gen_outlier/edge.csv
+ee32e11973bdf4ac49802624b422118414f11cff472d01abf6320345f278d204  examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/gen_outlier/sources.json
+26713a3b936bcdb7d90149529e510501ad35569b4fcd60c75e3f05325e2cbbe7  examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/match_degree/edges/degree_matching_edge.csv
+9dd3803cb2aeac252682f8ce19883ee4c989d6fc7352dd1d6f12f79bfd75f3b7  examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/.state/match_degree/edges/sources.json
+bbfb0291d09b5d500d27eb7b222dd73108faf8069e20016726019e4c56dd8f81  examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/edge.csv
+75b55412707a41a76b49792a68b266570c206ea990c4e77c1a2f7f14cfc62b99  examples/output/synthetic_networks/networks/ec-sbm-v1/sbm-flat-best+cc/dnc/0/sources.json

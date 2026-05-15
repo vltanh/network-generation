@@ -1,19 +1,19 @@
-=== 2026-05-07T19:30:21Z | pid=2395376 | host=nah-popos | EXECUTED ===
-	Command being timed: "python /home/vltanh/Documents/netsci-research/network-generation/externals/ec-sbm/src/gen_outlier.py --orig-edgelist /home/vltanh/Documents/netsci-research/network-generation/examples/input/empirical_networks/networks/dnc/dnc.csv --orig-clustering /home/vltanh/Documents/netsci-research/network-generation/examples/input/reference_clusterings/clusterings/sbm-flat-best+cc/dnc/com.csv --exist-edgelist /home/vltanh/Documents/netsci-research/network-generation/examples/output/synthetic_networks/networks/ec-sbm-v3/sbm-flat-best+cc/dnc/0/.state/gen_clustered/edge.csv --scope all --outlier-mode combined --output-folder /home/vltanh/Documents/netsci-research/network-generation/examples/output/synthetic_networks/networks/ec-sbm-v3/sbm-flat-best+cc/dnc/0/.state/gen_outlier/edges --seed 2"
-	User time (seconds): 2.02
-	System time (seconds): 0.15
+=== 2026-05-15T03:49:49Z | pid=1736457 | host=nah-popos | EXECUTED ===
+	Command being timed: "python /home/vltanh/Documents/netsci-research/network-generation/externals/ec-sbm/src/gen_outlier.py --orig-edgelist examples/input/empirical_networks/networks/dnc/dnc.csv --orig-clustering examples/input/reference_clusterings/clusterings/sbm-flat-best+cc/dnc/com.csv --exist-edgelist examples/output/synthetic_networks/networks/ec-sbm-v3/sbm-flat-best+cc/dnc/0/.state/gen_clustered/edge.csv --scope all --outlier-mode combined --output-folder examples/output/synthetic_networks/networks/ec-sbm-v3/sbm-flat-best+cc/dnc/0/.state/gen_outlier/edges --seed 2"
+	User time (seconds): 1.01
+	System time (seconds): 0.08
 	Percent of CPU this job got: 99%
-	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:02.20
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:01.09
 	Average shared text size (kbytes): 0
 	Average unshared data size (kbytes): 0
 	Average stack size (kbytes): 0
 	Average total size (kbytes): 0
-	Maximum resident set size (kbytes): 260704
+	Maximum resident set size (kbytes): 260412
 	Average resident set size (kbytes): 0
 	Major (requiring I/O) page faults: 0
-	Minor (reclaiming a frame) page faults: 37961
-	Voluntary context switches: 216
-	Involuntary context switches: 355
+	Minor (reclaiming a frame) page faults: 37956
+	Voluntary context switches: 183
+	Involuntary context switches: 120
 	Swaps: 0
 	File system inputs: 0
 	File system outputs: 136

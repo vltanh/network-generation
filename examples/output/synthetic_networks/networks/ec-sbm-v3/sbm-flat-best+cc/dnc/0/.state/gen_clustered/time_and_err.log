@@ -1,19 +1,19 @@
-=== 2026-05-07T19:30:20Z | pid=2395376 | host=nah-popos | EXECUTED ===
-	Command being timed: "python /home/vltanh/Documents/netsci-research/network-generation/externals/ec-sbm/src/gen_clustered.py --method pso --node-id /home/vltanh/Documents/netsci-research/network-generation/examples/output/synthetic_networks/networks/ec-sbm-v3/sbm-flat-best+cc/dnc/0/.state/profile/node_id.csv --cluster-id /home/vltanh/Documents/netsci-research/network-generation/examples/output/synthetic_networks/networks/ec-sbm-v3/sbm-flat-best+cc/dnc/0/.state/profile/cluster_id.csv --assignment /home/vltanh/Documents/netsci-research/network-generation/examples/output/synthetic_networks/networks/ec-sbm-v3/sbm-flat-best+cc/dnc/0/.state/profile/assignment.csv --degree /home/vltanh/Documents/netsci-research/network-generation/examples/output/synthetic_networks/networks/ec-sbm-v3/sbm-flat-best+cc/dnc/0/.state/profile/degree.csv --mincut /home/vltanh/Documents/netsci-research/network-generation/examples/output/synthetic_networks/networks/ec-sbm-v3/sbm-flat-best+cc/dnc/0/.state/profile/mincut.csv --edge-counts /home/vltanh/Documents/netsci-research/network-generation/examples/output/synthetic_networks/networks/ec-sbm-v3/sbm-flat-best+cc/dnc/0/.state/profile/edge_counts.csv --cluster-ccoeff /home/vltanh/Documents/netsci-research/network-generation/examples/output/synthetic_networks/networks/ec-sbm-v3/sbm-flat-best+cc/dnc/0/.state/profile/cluster_ccoeff.csv --output-folder /home/vltanh/Documents/netsci-research/network-generation/examples/output/synthetic_networks/networks/ec-sbm-v3/sbm-flat-best+cc/dnc/0/.state/gen_clustered --seed 1 --pso-gamma 2.0 --pso-m-floor 1 --pso-search-strategy secant --pso-search-max-iters 30 --pso-search-initial-points 5 --pso-search-samples-per-T 3 --pso-search-diff-tol 0.01 --pso-search-step-tol 0.0001 --pso-search-t-min 0.01 --pso-search-t-max 0.99 --pso-initial-t 0.5"
-	User time (seconds): 0.82
-	System time (seconds): 0.06
-	Percent of CPU this job got: 98%
-	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:00.90
+=== 2026-05-15T03:49:48Z | pid=1736457 | host=nah-popos | EXECUTED ===
+	Command being timed: "python /home/vltanh/Documents/netsci-research/network-generation/externals/ec-sbm/src/gen_clustered.py --method pso --node-id examples/output/synthetic_networks/networks/ec-sbm-v3/sbm-flat-best+cc/dnc/0/.state/profile/node_id.csv --cluster-id examples/output/synthetic_networks/networks/ec-sbm-v3/sbm-flat-best+cc/dnc/0/.state/profile/cluster_id.csv --assignment examples/output/synthetic_networks/networks/ec-sbm-v3/sbm-flat-best+cc/dnc/0/.state/profile/assignment.csv --degree examples/output/synthetic_networks/networks/ec-sbm-v3/sbm-flat-best+cc/dnc/0/.state/profile/degree.csv --mincut examples/output/synthetic_networks/networks/ec-sbm-v3/sbm-flat-best+cc/dnc/0/.state/profile/mincut.csv --edge-counts examples/output/synthetic_networks/networks/ec-sbm-v3/sbm-flat-best+cc/dnc/0/.state/profile/edge_counts.csv --cluster-ccoeff examples/output/synthetic_networks/networks/ec-sbm-v3/sbm-flat-best+cc/dnc/0/.state/profile/cluster_ccoeff.csv --output-folder examples/output/synthetic_networks/networks/ec-sbm-v3/sbm-flat-best+cc/dnc/0/.state/gen_clustered --seed 1 --pso-gamma 2.0 --pso-m-floor 1 --pso-search-strategy secant --pso-search-max-iters 30 --pso-search-initial-points 5 --pso-search-samples-per-T 3 --pso-search-diff-tol 0.01 --pso-search-step-tol 0.0001 --pso-search-t-min 0.01 --pso-search-t-max 0.99 --pso-initial-t 0.5"
+	User time (seconds): 0.41
+	System time (seconds): 0.04
+	Percent of CPU this job got: 99%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:00.45
 	Average shared text size (kbytes): 0
 	Average unshared data size (kbytes): 0
 	Average stack size (kbytes): 0
 	Average total size (kbytes): 0
-	Maximum resident set size (kbytes): 95524
+	Maximum resident set size (kbytes): 95112
 	Average resident set size (kbytes): 0
 	Major (requiring I/O) page faults: 0
-	Minor (reclaiming a frame) page faults: 18769
-	Voluntary context switches: 21
-	Involuntary context switches: 191
+	Minor (reclaiming a frame) page faults: 18754
+	Voluntary context switches: 22
+	Involuntary context switches: 61
 	Swaps: 0
 	File system inputs: 0
 	File system outputs: 184

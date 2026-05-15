@@ -170,6 +170,17 @@ if [[ "${CHECK_ONLY:-0}" == "1" ]]; then
   exit 0
 fi
 
+# Make host snapshots use the same interpreter the benchmark will use, even
+# when --skip-preflight bypasses the dependency checks that normally export it.
+if [[ -z "${NW_ENV:-}" ]] || ! _nw_env_works "${NW_ENV:-}"; then
+  _resolved_nw_env="$(NW_ENV="${NW_ENV:-}" CONDA_PREFIX="${CONDA_PREFIX:-}" \
+                     NW_ENV_NAME="$NW_ENV_NAME" resolve_nw_env)"
+  if [[ -n "$_resolved_nw_env" ]]; then
+    export NW_ENV="$_resolved_nw_env"
+  fi
+fi
+export NW_NPSO_ENV="${NW_NPSO_ENV:-${NW_ENV:-}}"
+
 HOST_SNAPSHOT="$OUT_DIR/host_snapshot.txt"
 MEM_TIMELINE="$OUT_DIR/memory_timeline.csv"
 MEM_PEAK="$OUT_DIR/memory_peak.txt"
