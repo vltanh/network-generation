@@ -1,6 +1,6 @@
 # Benchmark guide
 
-Reproducible wall-clock + memory + byte-identity numbers for the seven
+Reproducible wall-clock + memory + byte-identity numbers for the eight
 generators on a single empirical input, recorded under
 `examples/benchmark/`. The harness is deliberately simple: shell scripts
 + `/usr/bin/time -v` + a cgroup memory sampler. Driver lives at
@@ -32,7 +32,7 @@ work starts and aborts with a single clear message if anything is
 missing (use `--skip-preflight` to bypass; `--check` runs only the
 preflight and exits).
 
-Defaults: 7 gens (`sbm,ec-sbm-v1,ec-sbm-v2,abcd,abcd+o,lfr,npso`), seeds
+Defaults: 8 gens (`sbm,ec-sbm-v1,ec-sbm-v2,ec-sbm-v3,abcd,abcd+o,lfr,npso`), seeds
 1..10, 10 kept runs + 2 warmups per (gen, seed), CPU pin to cores 0-3,
 16 GiB memory cap, sample interval 1 s. Wall time on a quiet i9-12900HK:
 ~12-18 minutes.
@@ -50,6 +50,7 @@ Outputs land under `examples/benchmark/`:
 
 | File | What it carries |
 |---|---|
+| `summary.csv` | per-generator aggregate wall-clock summary over kept runs |
 | `per_gen/results_<gen>.csv` | per-gen run table: `gen,seed,phase,run,time_s,peak_rss_kb,edge_sha256,com_sha256`. One file per generator. |
 | `host_snapshot.txt` | host + toolchain at run start (CPU model, kernel, conda env, gen versions) |
 | `memory_timeline.csv` | per-second cgroup memory.current + peak, tagged with the active gen |
